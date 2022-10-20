@@ -1,4 +1,14 @@
-# biosim4
+# biosim4_FPC_translation
+
+## Why this fork?
+
+At the starting this fork was a 1:1 crosscompilation from the origin C++ version to FreePascal 
+(using the Lazarus IDE). Beside the advantage of having a crossplattform codebase i mainly did
+this for the purpose of learning C++ Code and beeing able to adjust the simulation for my own 
+needs in my most favourite programming language.
+
+I realised this as fork as i truly want to point out who the real inventor of this program is.
+
 
 ## What is this?
 
@@ -16,23 +26,28 @@ I'll try to help if I can.
 Document Contents
 -----------------
 
-* [Code walkthrough](#CodeWalkthrough)
-* [Main data structures](#MainDataStructures)
-* [Config file](#ConfigFile)
-* [Program output](#ProgramOutput)
-* [Main program loop](#MainProgramLoop)
-* [Sensory inputs and action outputs](#SensoryInputsAndActionOutputs)
-* [Basic value types](#BasicValueTypes)
-* [Pheromones](#Pheromones)
-* [Useful utility functions](#UsefulUtilityFunctions)
-* [Installing the code](#InstallingTheCode)
-* [Building the executable](#BuildingTheExecutable)
-* [System requirements](#SystemRequirements)
-* [Compiling](#Compiling)
-* [Bugs](#Bugs)
-* [Execution](#Execution)
-* [Tools directory](#ToolsDirectory)
-* [Build log](#BuildLog)
+- [biosim4_FPC_translation](#biosim4_fpc_translation)
+  - [Why this fork?](#why-this-fork)
+  - [What is this?](#what-is-this)
+  - [Document Contents](#document-contents)
+  - [Code walkthrough<a name="CodeWalkthrough"></a>](#code-walkthrough)
+    - [Main data structures](#main-data-structures)
+    - [Config file](#config-file)
+    - [Program output](#program-output)
+    - [Main program loop](#main-program-loop)
+    - [Sensory inputs and action outputs](#sensory-inputs-and-action-outputs)
+    - [Basic value types](#basic-value-types)
+    - [Pheromones](#pheromones)
+    - [Useful utility functions](#useful-utility-functions)
+  - [## Installing the code](#-installing-the-code)
+  - [## Building the executable](#-building-the-executable)
+    - [System requirements](#system-requirements)
+    - [Compiling](#compiling)
+      - [Using the Lazarus-IDE](#using-the-lazarus-ide)
+      - [via console](#via-console)
+  - [## Execution](#-execution)
+  - [## Tools directory](#-tools-directory)
+  - [## Build log](#-build-log)
 
 
 Code walkthrough<a name="CodeWalkthrough"></a>
@@ -200,113 +215,29 @@ Copy the directory structure to a location of your choice.
 
 This code is known to run in the following environment:
 
-* Ubuntu 21.04, 22.04, or Debian 10 (Buster)
-* cimg-dev 2.4.5 or later
-* libopencv-dev 3.2 or later
-* gcc 8.3, 9.3 or 10.3
+* Linux 64 / Windows 64
+* Lazarus-IDE 2.30
+* FPC 3.2.0
 * python-igraph 0.8.3 (used only by tools/graph-nnet.py)
 * gnuplot 5.2.8 (used only by tools/graphlog.gp)
-
-The code also runs in distributions based on Ubuntu 20.04, but only if the default version of
-cimg-dev is replaced with version 2.8.4 or later.
 
 <a name="Compiling"></a>
 ### Compiling
 
-You have several options:
+You have two options:
 
-#### Code::Blocks project file
+#### Using the Lazarus-IDE
 
-The file named "biosim4.cbp" is a configuration file for the Code::Blocks IDE version 20.03.
+Open the biosim.lpi file through the IDE and press F9
 
-#### Makefile
+#### via console
 
-A Makefile is provided which was created from biosim4.cbp with cbp2make. Possible make commands include:
-
-* "make" with no arguments makes release and debug versions in ./bin/Release and ./bin/Debug
-* "make release" makes a release version in ./bin/Release
-* "make debug" makes a debug version in ./bin/Debug
-* "make clean" removes the intermediate build files
-
-#### Docker
-
-A Dockerfile is provided which leverages the aforementioned Makefile.
-
-To build a Docker environment in which you can compile the program:
+call 
 
 ```sh
-docker build -t biosim4 .
+cd src
+lazbuild -B biosim.lpi
 ```
-
-You can then compile the program with an ephemeral container:
-
-```sh
-docker run --rm -ti -v `pwd`:/app --name biosim biosim4 make
-```
-When you exit the container, the files compiled in your container files will persist in `./bin`.
-
-#### CMake
-
-A `CMakeList.txt` file is provided to allow development, build, test, installation and packaging with the CMake tool chain and all IDE's that support CMake. 
-
-To build with cmake you need to install cmake. Once installed use the procedure below:
-
-```sh
-mkdir build
-cd build
-cmake ../
-cmake --build ./
-```
-
-To make a test installation and run the program:
-
-```sh
-mkdir build
-cd build
-cmake ../
-cmake --build ./
-mkdir test_install
-cmake --install ./ --prefix ./test_install
-cd test_install
-./bin/biosim4
-```
-
-To make a release package:
-
-```sh
-mkdir build
-cd build
-cmake ../
-cmake --build ./
-cpack ./
-```
-
-<a name="Bugs"></a>
-## Bugs
---------------------
-
-If you try to compile the simulator under a distribution based on Ubuntu 20.04, you will encounter this
-bug in the version of CImg.h (package cimg-dev) provided by the package maintainer:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=951965
-
-In biosim4, CImg.h is used only as a convenient interface to OpenCV
-to generate movies of the simulated creatures in their 2D world. You have several
-choices if you want to proceed with Ubuntu 20.04:
-
-* You can strip out the code that generates the movies and just run the simulator without the movies. Most of
-that graphics code is in imageWriter.cpp and imageWriter.h.
-
-* You can upgrade your CImg.h to version 2.8.4 or later by installing the [Ubuntu 22.04 cimg-dev package](https://packages.ubuntu.com/jammy/cimg-dev), For example:
-```
-cd /tmp && \
-wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cimg/cimg-dev_2.9.4+dfsg-3_all.deb -O cimg-dev_2.9.4+dfsg-3_all.deb && \
-sudo apt install ./cimg-dev_2.9.4+dfsg-3_all.deb && \
-rm cimg-dev_2.9.4+dfsg-3_all.deb;
-```
-
-* You could convert the CImg.h function calls to use OpenCV directly. Sorry I don't have a guide for how
-to do that.
 
 <a name="Execution"></a>
 ## Execution
@@ -314,7 +245,7 @@ to do that.
 
 Test everything is working by executing the Debug or Release executable in the bin directory with the default config file ("biosim4.ini"). e.g.:
 ```
-./bin/Release/biosim4 biosim4.ini
+./src/biosim4 biosim4.ini
 ```
 
 You should have output something like:
@@ -323,16 +254,8 @@ You should have output something like:
 If this works then edit the config file ("biosim4.ini") for the parameters you want for the simulation run and execute the Debug or Release executable. Optionally specify the name of the config file as the first command line argument, e.g.:
 
 ```
-./bin/Release/biosim4 [biosim4.ini]
+./src/biosim4 [biosim4.ini]
 ```
-
-Note: If using docker,
-```sh
-docker run --rm -ti -v `pwd`:/app --name biosim biosim4 bash
-```
-will put you into
-an environment where you can run the above and have all your files persist when you exit (using `Ctrl-D`).
-
 
 <a name="ToolsDirectory"></a>
 ## Tools directory
@@ -367,44 +290,115 @@ cd tools && python3 graph-nnet.py
 ## Build log
 --------------------
 
-In case it helps for debugging the build process, here is a build log from Code::Blocks running under Ubuntu 21.04:
+In case it helps for debugging the build process, here is a build log from Lazarus running under Linux Mint Mate 20.3:
 
 
 ```
--------------- Clean: Release in biosim4 (compiler: GNU GCC Compiler)---------------
+-------------- Build: Release in biosim4 ---------------
+lazbuild -B biosim.lpi
 
-Cleaned "biosim4 - Release"
+TProject.DoLoadStateFile Statefile not found: /sda5/sda5/Tools/Projects/biosim/lib/x86_64-linux/biosim.compiled
+Hint: (11030) Start of reading config file /etc/fpc.cfg
+Hint: (11031) End of reading config file /etc/fpc.cfg
+Free Pascal Compiler version 3.2.0 [2020/07/07] for x86_64
+Copyright (c) 1993-2020 by Florian Klaempfl and others
+(1002) Target OS: Linux for x86-64
+(3104) Compiling biosim.lpr
+(3104) Compiling usimulator.pas
+(3104) Compiling uparams.pas
+(3104) Compiling ugrid.pas
+(3104) Compiling ubasictypes.pas
+(3104) Compiling urandom.pas
+(3104) Compiling uomp.pas
+(3104) Compiling usignals.pas
+(3104) Compiling usimulator.pas
+(3104) Compiling upeeps.pas
+(3104) Compiling uindiv.pas
+(3104) Compiling ugenome.pas
+(3104) Compiling upeeps.pas
+(3104) Compiling uindiv.pas
+(3104) Compiling usensoractions.pas
+(3104) Compiling usimulator.pas
+(3104) Compiling upeeps.pas
+(3104) Compiling usimulator.pas
+(3104) Compiling uimagewriter.pas
+(3104) Compiling usimulator.pas
+(3104) Compiling uspawnnewgeneration.pas
+(3104) Compiling uanalysis.pas
+/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(87,149) Warning: (6018) unreachable code
+/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(118,24) Hint: (5057) Local variable "sensorCounts" does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(119,24) Hint: (5057) Local variable "actionCounts" does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/uspawnnewgeneration.pas(386,68) Hint: (5024) Parameter "generation" not used
+(3104) Compiling uexecuteactions.pas
+/sda5/sda5/Tools/Projects/biosim/uexecuteactions.pas(153,48) Warning: (4110) range check error while evaluating constants (17 must be between 0 and 15)
+(3104) Compiling uendofsimstep.pas
+(3104) Compiling uendofgeneration.pas
+(3104) Compiling uunittests.pas
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(62,52) Hint: (5023) Unit "uUnittests" not used in uSimulator
+/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(41,35) Hint: (5024) Parameter "generation" not used
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1668,8) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3124) Inlining disabled
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3124) Inlining disabled
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(310,21) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(312,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutKeyData(const AKey:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(337,21) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(340,33) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(340,69) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(343,79) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(402,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(405,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(406,23) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(410,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(413,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(420,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(423,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(428,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(431,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(432,23) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(436,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(438,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(440,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(443,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(517,30) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(518,17) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(520,5) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(538,94) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(542,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(557,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(566,63) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(724,24) Hint: (5057) Local variable "actionLevels" does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(727,31) Hint: (5091) Local variable "neuronAccumulators" of a managed type does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/ugenome.pas(464,15) Hint: (5057) Local variable "bs1" does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/ugenome.pas(465,15) Hint: (5057) Local variable "bs2" does not seem to be initialized
+(9022) Compiling resource /sda5/sda5/Tools/Projects/biosim/lib/x86_64-linux/biosim.or
+(9015) Linking /sda5/sda5/Tools/Projects/biosim/biosim
+(1008) 5862 lines compiled, 3.9 sec
+(1021) 2 warning(s) issued
+(1022) 35 hint(s) issued
+(1023) 28 note(s) issued
 
--------------- Build: Release in biosim4 (compiler: GNU GCC Compiler)---------------
-
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/analysis.cpp -o obj/Release/src/analysis.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/basicTypes.cpp -o obj/Release/src/basicTypes.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/createBarrier.cpp -o obj/Release/src/createBarrier.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/endOfGeneration.cpp -o obj/Release/src/endOfGeneration.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/endOfSimStep.cpp -o obj/Release/src/endOfSimStep.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/executeActions.cpp -o obj/Release/src/executeActions.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/feedForward.cpp -o obj/Release/src/feedForward.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/genome-compare.cpp -o obj/Release/src/genome-compare.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/genome.cpp -o obj/Release/src/genome.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/getSensor.cpp -o obj/Release/src/getSensor.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/grid.cpp -o obj/Release/src/grid.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/imageWriter.cpp -o obj/Release/src/imageWriter.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/indiv.cpp -o obj/Release/src/indiv.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/main.cpp -o obj/Release/src/main.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/params.cpp -o obj/Release/src/params.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/peeps.cpp -o obj/Release/src/peeps.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/random.cpp -o obj/Release/src/random.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/signals.cpp -o obj/Release/src/signals.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/simulator.cpp -o obj/Release/src/simulator.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/spawnNewGeneration.cpp -o obj/Release/src/spawnNewGeneration.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/survival-criteria.cpp -o obj/Release/src/survival-criteria.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/unitTestBasicTypes.cpp -o obj/Release/src/unitTestBasicTypes.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/unitTestConnectNeuralNetWiringFromGenome.cpp -o obj/Release/src/unitTestConnectNeuralNetWiringFromGenome.o
-g++ -Wall -fexceptions -fopenmp -O3 -I/usr/include/opencv4 -c /home/dm/sw/biosim4-git/src/unitTestGridVisitNeighborhood.cpp -o obj/Release/src/unitTestGridVisitNeighborhood.o
-g++  -o bin/Release/biosim4 obj/Release/src/analysis.o obj/Release/src/basicTypes.o obj/Release/src/createBarrier.o obj/Release/src/endOfGeneration.o obj/Release/src/endOfSimStep.o obj/Release/src/executeActions.o obj/Release/src/feedForward.o obj/Release/src/genome-compare.o obj/Release/src/genome.o obj/Release/src/getSensor.o obj/Release/src/grid.o obj/Release/src/imageWriter.o obj/Release/src/indiv.o obj/Release/src/main.o obj/Release/src/params.o obj/Release/src/peeps.o obj/Release/src/random.o obj/Release/src/signals.o obj/Release/src/simulator.o obj/Release/src/spawnNewGeneration.o obj/Release/src/survival-criteria.o obj/Release/src/unitTestBasicTypes.o obj/Release/src/unitTestConnectNeuralNetWiringFromGenome.o obj/Release/src/unitTestGridVisitNeighborhood.o  -lX11 -lgomp -pthread -O3 -s  /usr/lib/x86_64-linux-gnu/libopencv_core.so /usr/lib/x86_64-linux-gnu/libopencv_video.so /usr/lib/x86_64-linux-gnu/libopencv_videoio.so
-Output file is bin/Release/biosim4 with size 778.42 KB
-Process terminated with status 0 (0 minute(s), 11 second(s))
-0 error(s), 0 warning(s) (0 minute(s), 11 second(s))
 ```
 
 
