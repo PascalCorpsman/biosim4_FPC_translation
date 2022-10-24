@@ -5,14 +5,17 @@ Unit uImageWriter;
 Interface
 
 Uses
-  Classes, SysUtils, ubasicTypes;
+  Classes, SysUtils, ubasicTypes, ufifo;
 
 {$I c_types.inc}
+{$INTERFACES corba}
 
 // Creates a graphic frame for each simStep, then
 // assembles them into a video at the end of a generation.
 
 Type
+
+  TWritelnCallback = Procedure(Sender: TObject; Line: String) Of Object;
 
   // This holds all data needed to construct one image frame. The data is
   // cached in this structure so that the image writer can work on it in
@@ -26,14 +29,23 @@ Type
     signalLayers: Array Of Array Of Array Of uint8; // [layer][x][y]
   End;
 
+  { IImageWriterInterface }
+
+  IImageWriterInterface = Interface
+
+    Procedure startNewGeneration();
+    Function saveVideoFrameSync(simStep, generation: unsigned): bool;
+    Procedure saveGenerationVideo(generation: unsigned);
+    Procedure Free;
+
+  End;
+
 
   { TImageWriter }
 
-  TImageWriter = Class
+  TImageWriter = Class(IImageWriterInterface)
   private
     data: TImageFrameData;
-    skippedFrames: unsigned;
-
   public
     Constructor Create();
     Procedure startNewGeneration();
@@ -41,11 +53,42 @@ Type
     Procedure saveGenerationVideo(generation: unsigned);
   End;
 
+  tStringQueue = specialize TFifo < String > ;
+
+  TFrameQueue = Specialize TFifo < TImageFrameData > ;
+
+  { TImageWriterThread }
+
+  TImageWriterThread = Class(TThread, IImageWriterInterface)
+  private
+    fImageWriter: TImageWriter;
+    fWritelnCallback: TWritelnCallback;
+    fstringFivo: tStringQueue;
+    fFrameQueue: TFrameQueue;
+    // Alles ab hier wird im Kontext des Mainthreads ausgeführt.
+    Procedure WritelnEvent;
+
+    // Alles ab hier wird im Kontext des Threads ausgeführt.
+    Procedure Setup;
+    Procedure TearDown;
+    Procedure Writeln(Value: String);
+  public
+    Procedure Execute(); override;
+    Constructor Create(CreateSuspended: Boolean; WritelnCallback: TWritelnCallback;
+      Const StackSize: SizeUInt = DefaultStackSize);
+
+    Procedure startNewGeneration();
+    Function saveVideoFrameSync(simStep, generation: unsigned): bool;
+    Procedure saveGenerationVideo(generation: unsigned);
+    Procedure Free;
+  End;
+
 Implementation
 
-Uses uparams, uindiv, uSimulator, ugenome, Graphics;
+Uses uparams, uindiv, uSimulator, ugenome, Graphics, crt;
 
 // Pushes a new image frame onto .imageList.
+
 Procedure saveOneFrameImmed(Const data: TImageFrameData);
 Const
   maxColorVal = $B0;
@@ -129,6 +172,148 @@ Begin
     Or ((genome[high(genome)].sourceNum And 1) Shl 7));
 End;
 
+{ TImageWriterThread }
+
+Procedure TImageWriterThread.WritelnEvent;
+Var
+  s: String;
+Begin
+  While fstringFivo.Count <> 0 Do Begin
+    s := fstringFivo.Pop;
+    If assigned(fWritelnCallback) Then Begin
+      fWritelnCallback(self, s);
+    End;
+  End;
+End;
+
+Procedure TImageWriterThread.Setup;
+Begin
+  fstringFivo := tStringQueue.create;
+  fImageWriter := TImageWriter.Create();
+  fFrameQueue := TFrameQueue.create;
+
+End;
+
+Procedure TImageWriterThread.TearDown;
+Begin
+  fstringFivo.free;
+  fstringFivo := Nil;
+  fImageWriter.free;
+  fImageWriter := Nil;
+  // Das darf im Teardown nicht freigegeben werden da es sonst im Herunterfahren nicht mehr ausgewertet werden kann !
+  //fFrameQueue.free;
+  //fFrameQueue := Nil;
+End;
+
+Procedure TImageWriterThread.Writeln(Value: String);
+Begin
+  fstringFivo.Push(value);
+End;
+
+Procedure TImageWriterThread.Execute;
+Begin
+  Setup();
+  While Not Terminated Do Begin
+    If fstringFivo.Count <> 0 Then Begin
+      Synchronize(@WritelnEvent);
+    End;
+    If fFrameQueue.Count = 0 Then Begin
+      sleep(1);
+    End
+    Else Begin
+      saveOneFrameImmed(fFrameQueue.Pop);
+    End;
+  End;
+  Teardown;
+End;
+
+Constructor TImageWriterThread.Create(CreateSuspended: Boolean;
+  WritelnCallback: TWritelnCallback; Const StackSize: SizeUInt);
+Begin
+  Inherited Create(CreateSuspended, StackSize);
+  fWritelnCallback := WritelnCallback;
+  FreeOnTerminate := false;
+  Start;
+End;
+
+Procedure TImageWriterThread.startNewGeneration;
+Begin
+  // ??
+End;
+
+Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned
+  ): bool;
+Var
+  Indiv: Pindiv;
+  index, i: Integer;
+  barrierLocs: TCoordArray;
+  data: TImageFrameData;
+Begin
+  // We cache a local copy of data from params, grid, and peeps because
+  // those objects will change by the main thread at the same time our
+  // saveFrameThread() is using it to output a video frame.
+  data.simStep := simStep;
+  data.generation := generation;
+  setlength(data.indivLocs, 0);
+  setlength(data.indivColors, 0);
+  setlength(data.barrierLocs, 0);
+  setlength(data.signalLayers, 0, 0, 0);
+  //todo!!!
+  For index := 0 To p.population Do Begin
+    indiv := peeps[index];
+    If (indiv^.alive) Then Begin
+      setlength(data.indivLocs, high(data.indivLocs) + 2);
+      data.indivLocs[high(data.indivLocs)] := indiv^.loc;
+      setlength(data.indivColors, high(data.indivColors) + 2);
+      data.indivColors[high(data.indivColors)] := makeGeneticColor(indiv^.genome);
+    End;
+
+    barrierLocs := grid.getBarrierLocations();
+    setlength(data.barrierLocs, length(barrierLocs));
+    For i := 0 To high(barrierLocs) Do Begin
+      data.barrierLocs[i] := barrierLocs[i];
+    End;
+  End;
+  fFrameQueue.Push(data);
+  result := true;
+End;
+
+Procedure TImageWriterThread.saveGenerationVideo(generation: unsigned);
+Begin
+  // TODO: was auch immer hier geschieht ..
+End;
+
+Procedure TImageWriterThread.Free;
+Var
+  key: Char;
+Begin
+  Terminate;
+  While Not Finished Do Begin
+    CheckSynchronize(1);
+  End;
+  (*
+   * Sollten noch Bilder in der Writequeue sein (in der Regen die von der letzten Generation)
+   * dann lassen wir dem User die Wahl diese auf zu heben oder "weg zu werfen".
+   *)
+  If assigned(fWritelnCallback) Then Begin
+    While fFrameQueue.Count <> 0 Do Begin
+      fWritelnCallback(self, ' ' + inttostr(fFrameQueue.Count) + ' images in write queue, press q to abort writing.');
+      saveOneFrameImmed(fFrameQueue.Pop);
+      If KeyPressed Then Begin
+        key := ReadKey;
+        If (key = 'q') Or (key = 'Q') Then Begin
+          fWritelnCallback(self, 'Abort missing ' + inttostr(fFrameQueue.Count) + ' images, going down.');
+          fFrameQueue.Clear;
+        End;
+      End;
+    End;
+  End;
+  fFrameQueue.Clear;
+  fFrameQueue.Free;
+  fFrameQueue := Nil;
+  Inherited free;
+End;
+
 { TImageWriter }
 
 Constructor TImageWriter.Create;
@@ -138,8 +323,7 @@ End;
 
 Procedure TImageWriter.startNewGeneration;
 Begin
-  //    imageList.clear();
-  skippedFrames := 0;
+  // ??
 End;
 
 // Synchronous version, always returns true
