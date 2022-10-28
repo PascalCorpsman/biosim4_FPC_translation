@@ -565,7 +565,7 @@ Begin
     parentGenomes[parent] := peeps.Individual[parents[parent].first]^.genome;
   End;
 
-  writeln('Gen ' + inttostr(generation) + ', ' + inttostr(length(parentGenomes)) + ' survivors');
+  writeln('Gen ' + inttostr(generation) + ', ' + inttostr(length(parentGenomes)) + ' survivors = ' + format('%0.2d%%', [round((length(parentGenomes) * 100) / p.population)]));
   appendEpochLog(generation, length(parentGenomes), murderCount);
   // displaySignalUse(); // for debugging only
 
