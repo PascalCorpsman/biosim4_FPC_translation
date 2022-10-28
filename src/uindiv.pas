@@ -287,8 +287,8 @@ Begin
   visitNeighborhood(loc, p.signalSensorRadius, @CountSensorRadius);
 
   maxSumMag := 6.0 * p.signalSensorRadius * SIGNAL_MAX;
-  assert((sumi64 >= -maxSumMag) And (sumi64 <= maxSumMag));
-  sensorVal := sumi64 / maxSumMag; // convert to -1.0..1.0
+  assert((sum >= -maxSumMag) And (sum <= maxSumMag));
+  sensorVal := sum / maxSumMag; // convert to -1.0..1.0
   sensorVal := (sensorVal + 1.0) / 2.0; // convert to 0.0..1.0
 
   result := sensorVal;
@@ -894,8 +894,6 @@ Begin
         // 0..100% to sensor range
         countLocs := 0;
         countOccupied := 0;
-        center := loc;
-
         visitNeighborhood(center, p.populationSensorRadius, @CountPopulation);
         sensorVal := countOccupied / countLocs;
       End;

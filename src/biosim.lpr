@@ -12,11 +12,12 @@ Uses
 
 Var
   Simulator: TSimulator;
-
+  Crashed: Boolean;
 Begin
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen
   Simulator := TSimulator.Create();
+  Crashed := false;
   Try
     Try
       If ParamCount >= 1 Then Begin
@@ -27,10 +28,14 @@ Begin
       End;
     Except
       On av: exception Do Begin
+        Crashed := true;
         writeln('Simulator crashed: ' + av.Message);
       End;
     End;
   Finally
+    If Crashed Then Begin
+      Simulator.Crashed := true;
+    End;
     Simulator.Free;
   End;
   Simulator := Nil;

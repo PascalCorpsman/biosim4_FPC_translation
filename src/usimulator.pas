@@ -45,7 +45,9 @@ Type
     Procedure PrintHelp;
 
     Procedure OnWritelnCallback(Sender: TObject; Line: String);
+    Procedure SetCrashed(AValue: Boolean);
   public
+    Property Crashed: Boolean write SetCrashed;
     Constructor Create();
     Destructor Destroy(); override;
 
@@ -119,6 +121,13 @@ End;
 Procedure TSimulator.OnWritelnCallback(Sender: TObject; Line: String);
 Begin
   writeln(Line);
+End;
+
+Procedure TSimulator.SetCrashed(AValue: Boolean);
+Begin
+  If assigned(ImageWriter) Then Begin
+    ImageWriter.SetCrashed(AValue);
+  End;
 End;
 
 Constructor TSimulator.Create;

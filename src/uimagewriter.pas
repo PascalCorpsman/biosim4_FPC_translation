@@ -33,7 +33,7 @@ Type
   { IImageWriterInterface }
 
   IImageWriterInterface = Interface
-
+    Procedure SetCrashed(Value: Boolean); // Dem Imagewriter Mitteilen dass die Anwendung abgeraucht ist
     Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
@@ -58,6 +58,7 @@ Type
     Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
+    Procedure SetCrashed(Value: Boolean);
   End;
 
   tStringQueue = specialize TFifo < String > ;
@@ -79,6 +80,7 @@ Type
     fWritelnCallback: TWritelnCallback;
     fstringFivo: tStringQueue;
     fJobQueue: TJobQueue;
+    fcrashed: Boolean;
     // Alles ab hier wird im Kontext des Mainthreads ausgeführt.
     Procedure WritelnEvent;
 
@@ -95,6 +97,7 @@ Type
     Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
+    Procedure SetCrashed(Value: Boolean);
     Procedure Free;
   End;
 
@@ -192,6 +195,11 @@ Begin
   End;
 End;
 
+Procedure TImageWriter.SetCrashed(Value: Boolean);
+Begin
+  // Nichts im Synchronen Modus ist uns das Egal
+End;
+
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
 Begin
   result := ((length(genome) And 1)
@@ -220,11 +228,11 @@ End;
 
 Procedure TImageWriterThread.Setup;
 Begin
+  fcrashed := false;
   fstringFivo := tStringQueue.create;
   fImageWriter := TImageWriter.Create();
   fImageWriter.fWritelnEvent := @self.Writeln;
   fJobQueue := TJobQueue.create;
-
 End;
 
 Procedure TImageWriterThread.TearDown;
@@ -335,6 +343,11 @@ Begin
   fJobQueue.Push(j);
 End;
 
+Procedure TImageWriterThread.SetCrashed(Value: Boolean);
+Begin
+  fcrashed := Value;
+End;
+
 Procedure TImageWriterThread.Free;
 Var
   key: Char;
@@ -347,7 +360,7 @@ Begin
    * Sollten noch Bilder in der Writequeue sein (in der Regen die von der letzten Generation)
    * dann lassen wir dem User die Wahl diese auf zu heben oder "weg zu werfen".
    *)
-  If assigned(fWritelnCallback) Then Begin
+  If assigned(fWritelnCallback) And (Not fcrashed) Then Begin
     fImageWriter.fWritelnEvent := Nil; // Der Rest läuft im Kontext des Main Threads -> also die Fifo wieder deaktivieren !
     While fJobQueue.Count <> 0 Do Begin
       fWritelnCallback(self, ' ' + inttostr(fJobQueue.Count) + ' jobs in write queue, press q to abort writing.');
