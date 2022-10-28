@@ -348,6 +348,7 @@ Begin
    * dann lassen wir dem User die Wahl diese auf zu heben oder "weg zu werfen".
    *)
   If assigned(fWritelnCallback) Then Begin
+    fImageWriter.fWritelnEvent := Nil; // Der Rest läuft im Kontext des Main Threads -> also die Fifo wieder deaktivieren !
     While fJobQueue.Count <> 0 Do Begin
       fWritelnCallback(self, ' ' + inttostr(fJobQueue.Count) + ' jobs in write queue, press q to abort writing.');
       HandleJob(fJobQueue.Pop);
