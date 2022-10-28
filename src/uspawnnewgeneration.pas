@@ -73,17 +73,12 @@ Begin
   Case (challenge) Of
     // Survivors are those inside the circular area defined by
     // safeCenter and radius
-    CHALLENGE_CIRCLE: Begin // TODO: Klären warum diese Challange so nicht geschafft wird :-(
-        (*
-         * In der Mitte des Feldes, Radius 25% der Feldbreite
-         *)
-        safeCenter := Coord(trunc(p.sizeX / 2.0), trunc(p.sizeY / 2.0));
+    CHALLENGE_CIRCLE: Begin
+        safeCenter := Coord(trunc(p.sizeX / 4.0), trunc(p.sizeY / 4.0));
         radius := p.sizeX / 4.0;
 
         offset := safeCenter - indiv^.loc;
         distance := offset.length();
-        assert(distance >= 0);
-        assert(radius >= 0);
         If distance <= radius Then Begin
           result := pair(true, (radius - distance) / radius);
         End;
@@ -164,7 +159,6 @@ Begin
         distance := offset.length();
         If (distance <= outerRadius) Then Begin
           occupiedCount := 0;
-
           visitNeighborhood(indiv^.loc, innerRadius, @VisitOccupied);
           If (occupiedCount >= minNeighbors_CHALLENGE_CENTER_SPARSE) And (occupiedCount <= maxNeighbors_CHALLENGE_CENTER_SPARSE) Then Begin
             result := pair(true, 1.0);
