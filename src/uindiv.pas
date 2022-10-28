@@ -894,7 +894,7 @@ Begin
         // 0..100% to sensor range
         countLocs := 0;
         countOccupied := 0;
-        visitNeighborhood(center, p.populationSensorRadius, @CountPopulation);
+        visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation);
         sensorVal := countOccupied / countLocs;
       End;
     TSensor.POPULATION_FWD: Begin
