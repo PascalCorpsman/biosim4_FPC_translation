@@ -20,12 +20,12 @@ Uses uparams, uSimulator, uImageWriter;
 
 Procedure endOfGeneration(generation: unsigned);
 Begin
-
-  If (p.saveVideo And
-    (((generation Mod p.videoStride) = 0)
+  If (p.saveVideo And (
+    ((generation Mod p.videoStride) = 0)
     Or (generation <= p.videoSaveFirstFrames)
-    Or ((generation >= p.parameterChangeGenerationNumber)
-    And (generation <= p.parameterChangeGenerationNumber + p.videoSaveFirstFrames)))) Then Begin
+    Or ((generation >= p.parameterChangeGenerationNumber) And (generation <= p.parameterChangeGenerationNumber + p.videoSaveFirstFrames))
+    Or (generation = p.maxGenerations - 1) // Shure save the last simulated generation ;)
+    )) Then Begin
     imageWriter.saveGenerationVideo(generation);
   End;
   If (p.updateGraphLog And ((generation = 1) Or ((generation Mod p.updateGraphLogStride) = 0))) Then Begin

@@ -111,6 +111,23 @@
         <Filename Value="..\Sample\DatenSteuerung\ufifo.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="..\Sample\DatenSteuerung\ugwavi.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="usimulator.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uSimulator"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uparams.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ubasictypes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -129,11 +146,6 @@
         <IncludeAssertionCode Value="True"/>
       </SyntaxOptions>
     </Parsing>
-    <Linking>
-      <Debugging>
-        <UseHeaptrc Value="True"/>
-      </Debugging>
-    </Linking>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

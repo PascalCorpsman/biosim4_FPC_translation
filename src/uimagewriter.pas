@@ -5,7 +5,7 @@ Unit uImageWriter;
 Interface
 
 Uses
-  Classes, SysUtils, ubasicTypes, ufifo;
+  Graphics, Classes, SysUtils, ubasicTypes, ufifo, ugwavi;
 
 {$I c_types.inc}
 {$INTERFACES corba}
@@ -15,6 +15,7 @@ Uses
 
 Type
 
+  TWritelnEvent = Procedure(Value: String) Of Object;
   TWritelnCallback = Procedure(Sender: TObject; Line: String) Of Object;
 
   // This holds all data needed to construct one image frame. The data is
@@ -45,9 +46,15 @@ Type
 
   TImageWriter = Class(IImageWriterInterface)
   private
+    fimagelist: Array Of TJPEGImage;
     data: TImageFrameData;
+    fAVI: tgwavi;
+    fWritelnEvent: TWritelnEvent;
+    Procedure saveOneFrameImmed(Const adata: TImageFrameData);
+    Procedure Writeln(Value: String);
   public
-    Constructor Create();
+    Constructor Create(); virtual;
+    Destructor Destroy(); override;
     Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
@@ -55,7 +62,14 @@ Type
 
   tStringQueue = specialize TFifo < String > ;
 
-  TFrameQueue = Specialize TFifo < TImageFrameData > ;
+  TJobKind = (jkFrame, jkStartNewGeneration, jksaveGenerationVideo);
+
+  TJob = Record
+    Kind: TJobKind;
+    Data: TImageFrameData;
+  End;
+
+  TJobQueue = Specialize TFifo < TJob > ;
 
   { TImageWriterThread }
 
@@ -64,7 +78,7 @@ Type
     fImageWriter: TImageWriter;
     fWritelnCallback: TWritelnCallback;
     fstringFivo: tStringQueue;
-    fFrameQueue: TFrameQueue;
+    fJobQueue: TJobQueue;
     // Alles ab hier wird im Kontext des Mainthreads ausgeführt.
     Procedure WritelnEvent;
 
@@ -72,6 +86,7 @@ Type
     Procedure Setup;
     Procedure TearDown;
     Procedure Writeln(Value: String);
+    Procedure HandleJob(Const Job: TJob);
   public
     Procedure Execute(); override;
     Constructor Create(CreateSuspended: Boolean; WritelnCallback: TWritelnCallback;
@@ -85,11 +100,11 @@ Type
 
 Implementation
 
-Uses uparams, uindiv, uSimulator, ugenome, Graphics, crt;
+Uses uparams, uindiv, uSimulator, ugenome, crt;
 
 // Pushes a new image frame onto .imageList.
 
-Procedure saveOneFrameImmed(Const data: TImageFrameData);
+Procedure TImageWriter.saveOneFrameImmed(Const adata: TImageFrameData);
 Const
   maxColorVal = $B0;
   maxLumaVal = $B0;
@@ -99,10 +114,10 @@ Const
     result := (r + r + r + b + g + g + g + g) Div 8;
   End;
 
-
 Var
   image: TBitmap;
-  png: TPortableNetworkGraphic;
+  //png: TPortableNetworkGraphic; // -- Zum Abspeichern der Einzelbilder
+  jp: TJPEGImage;
   imageFilename: String;
   color: TColor;
   x, y, d, r, g, b, c, i: Integer;
@@ -113,21 +128,21 @@ Begin
   image.height := trunc(p.sizeY * p.displayScale * 1.0);
   image.canvas.brush.color := clwhite;
   image.canvas.rectangle(-1, -1, image.Width + 1, image.Height + 1);
-  imageFilename := IncludeTrailingPathDelimiter(p.imageDir) + format('frame-%0.6d-%0.6d.png', [data.generation, data.simStep]);
+  imageFilename := IncludeTrailingPathDelimiter(p.imageDir) + format('frame-%0.6d-%0.6d.png', [adata.generation, adata.simStep]);
 
   // Draw barrier locations
   Color := $00888888;
-  For i := 0 To high(data.barrierLocs) Do Begin
+  For i := 0 To high(adata.barrierLocs) Do Begin
     image.Canvas.pen.Color := color;
     image.Canvas.Brush.Color := color;
     image.Canvas.Rectangle(
-      data.barrierLocs[i].x * p.displayScale - (p.displayScale Div 2), ((p.sizeY - data.barrierLocs[i].y) - 1) * p.displayScale - (p.displayScale Div 2),
-      (data.barrierLocs[i].x + 1) * p.displayScale, ((p.sizeY - (data.barrierLocs[i].y - 0))) * p.displayScale);
+      adata.barrierLocs[i].x * p.displayScale - (p.displayScale Div 2), ((p.sizeY - adata.barrierLocs[i].y) - 1) * p.displayScale - (p.displayScale Div 2),
+      (adata.barrierLocs[i].x + 1) * p.displayScale, ((p.sizeY - (adata.barrierLocs[i].y - 0))) * p.displayScale);
   End;
 
   // Draw agents
-  For i := 0 To high(data.indivLocs) Do Begin
-    c := data.indivColors[i];
+  For i := 0 To high(adata.indivLocs) Do Begin
+    c := adata.indivColors[i];
     r := (c); // R: 0..255
     g := ((c And $1F) Shl 3); // G: 0..255
     b := ((c And 7) Shl 5); // B: 0..255
@@ -141,23 +156,40 @@ Begin
     color := (b Shl 16) Or (g Shl 8) Or r;
     image.Canvas.pen.Color := color;
     image.Canvas.Brush.Color := color;
-    x := data.indivLocs[i].x * p.displayScale;
-    y := ((p.sizeY - data.indivLocs[i].y) - 1) * p.displayScale;
+    x := adata.indivLocs[i].x * p.displayScale;
+    y := ((p.sizeY - adata.indivLocs[i].y) - 1) * p.displayScale;
     d := trunc(p.agentSize);
     image.Canvas.Ellipse(x - d, y - d, x + d, y + d);
   End;
 
-  If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin
-    png := TPortableNetworkGraphic.Create;
-    png.Assign(image);
-    png.SaveToFile(imageFilename);
-    png.free;
+  If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin // Das ForceDir bleibt drin, damit die Filme ein Verzeichnis zum Ablegen haben !
+    // Der Orig Code speichert auch keine Einzelbilder, da er ja die Videos Speichert
+    // Sollten doch einzelbilder gespeichert werden, dann muss dieser Code hier wieder mit rein !
+    //png := TPortableNetworkGraphic.Create;
+    //png.Assign(image);
+    //png.SaveToFile(imageFilename);
+    //png.free;
   End
   Else Begin
     writeln('Error, could not store: ' + imageFilename);
   End;
+  If p.saveVideo Then Begin
+    jp := TJPEGImage.Create;
+    jp.Assign(image);
+    setlength(fimagelist, high(fimagelist) + 2);
+    fimagelist[high(fimagelist)] := jp;
+  End;
   image.free;
-  //  imageList.push_back(image); //-- Wäre dazu da aus den einzelbildern einen .avi zu machen, mal sehen ob wir das mittels FPC hin kriegen ;)
+End;
+
+Procedure TImageWriter.Writeln(Value: String);
+Begin
+  If assigned(fWritelnEvent) Then Begin
+    fWritelnEvent(Value);
+  End
+  Else Begin
+    system.Writeln(Value);
+  End;
 End;
 
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
@@ -190,7 +222,8 @@ Procedure TImageWriterThread.Setup;
 Begin
   fstringFivo := tStringQueue.create;
   fImageWriter := TImageWriter.Create();
-  fFrameQueue := TFrameQueue.create;
+  fImageWriter.fWritelnEvent := @self.Writeln;
+  fJobQueue := TJobQueue.create;
 
 End;
 
@@ -198,16 +231,25 @@ Procedure TImageWriterThread.TearDown;
 Begin
   fstringFivo.free;
   fstringFivo := Nil;
-  fImageWriter.free;
-  fImageWriter := Nil;
   // Das darf im Teardown nicht freigegeben werden da es sonst im Herunterfahren nicht mehr ausgewertet werden kann !
-  //fFrameQueue.free;
-  //fFrameQueue := Nil;
+  //fImageWriter.free;
+  //fImageWriter := Nil;
+  //fJobQueue.free;
+  //fJobQueue := Nil;
 End;
 
 Procedure TImageWriterThread.Writeln(Value: String);
 Begin
   fstringFivo.Push(value);
+End;
+
+Procedure TImageWriterThread.HandleJob(Const Job: TJob);
+Begin
+  Case Job.Kind Of
+    jkFrame: fImageWriter.saveOneFrameImmed(Job.Data);
+    jksaveGenerationVideo: fImageWriter.saveGenerationVideo(Job.data.generation);
+    jkStartNewGeneration: fImageWriter.startNewGeneration();
+  End;
 End;
 
 Procedure TImageWriterThread.Execute;
@@ -217,11 +259,11 @@ Begin
     If fstringFivo.Count <> 0 Then Begin
       Synchronize(@WritelnEvent);
     End;
-    If fFrameQueue.Count = 0 Then Begin
+    If fJobQueue.Count = 0 Then Begin
       sleep(1);
     End
     Else Begin
-      saveOneFrameImmed(fFrameQueue.Pop);
+      HandleJob(fJobQueue.Pop);
     End;
   End;
   Teardown;
@@ -237,8 +279,11 @@ Begin
 End;
 
 Procedure TImageWriterThread.startNewGeneration;
+Var
+  j: TJob;
 Begin
-  // ??
+  j.Kind := jkStartNewGeneration;
+  fJobQueue.Push(j);
 End;
 
 Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned
@@ -248,6 +293,7 @@ Var
   index, i: Integer;
   barrierLocs: TCoordArray;
   data: TImageFrameData;
+  j: TJob;
 Begin
   // We cache a local copy of data from params, grid, and peeps because
   // those objects will change by the main thread at the same time our
@@ -274,13 +320,19 @@ Begin
       data.barrierLocs[i] := barrierLocs[i];
     End;
   End;
-  fFrameQueue.Push(data);
+  j.Kind := jkFrame;
+  j.Data := data;
+  fJobQueue.Push(j);
   result := true;
 End;
 
 Procedure TImageWriterThread.saveGenerationVideo(generation: unsigned);
+Var
+  j: TJob;
 Begin
-  // TODO: was auch immer hier geschieht ..
+  j.Kind := jksaveGenerationVideo;
+  j.Data.generation := generation;
+  fJobQueue.Push(j);
 End;
 
 Procedure TImageWriterThread.Free;
@@ -296,21 +348,23 @@ Begin
    * dann lassen wir dem User die Wahl diese auf zu heben oder "weg zu werfen".
    *)
   If assigned(fWritelnCallback) Then Begin
-    While fFrameQueue.Count <> 0 Do Begin
-      fWritelnCallback(self, ' ' + inttostr(fFrameQueue.Count) + ' images in write queue, press q to abort writing.');
-      saveOneFrameImmed(fFrameQueue.Pop);
+    While fJobQueue.Count <> 0 Do Begin
+      fWritelnCallback(self, ' ' + inttostr(fJobQueue.Count) + ' jobs in write queue, press q to abort writing.');
+      HandleJob(fJobQueue.Pop);
       If KeyPressed Then Begin
         key := ReadKey;
         If (key = 'q') Or (key = 'Q') Then Begin
-          fWritelnCallback(self, 'Abort missing ' + inttostr(fFrameQueue.Count) + ' images, going down.');
-          fFrameQueue.Clear;
+          fWritelnCallback(self, 'Abort missing ' + inttostr(fJobQueue.Count) + ' jobs, going down.');
+          fJobQueue.Clear;
         End;
       End;
     End;
   End;
-  fFrameQueue.Clear;
-  fFrameQueue.Free;
-  fFrameQueue := Nil;
+  fImageWriter.free;
+  fImageWriter := Nil;
+  fJobQueue.Clear;
+  fJobQueue.Free;
+  fJobQueue := Nil;
   Inherited free;
 End;
 
@@ -318,12 +372,26 @@ End;
 
 Constructor TImageWriter.Create;
 Begin
+  fWritelnEvent := Nil;
+  fAVI := tgwavi.Create();
+  fimagelist := Nil;
   startNewGeneration();
 End;
 
-Procedure TImageWriter.startNewGeneration;
+Destructor TImageWriter.Destroy;
 Begin
-  // ??
+  fAVI.Free;
+  startNewGeneration(); // Das gibt dann alles frei ;)
+End;
+
+Procedure TImageWriter.startNewGeneration;
+Var
+  i: Integer;
+Begin
+  For i := 0 To high(fimagelist) Do Begin
+    fimagelist[i].Free;
+  End;
+  setlength(fimagelist, 0);
 End;
 
 // Synchronous version, always returns true
@@ -368,21 +436,41 @@ End;
 // ToDo: put save_video() in its own thread
 
 Procedure TImageWriter.saveGenerationVideo(generation: unsigned);
+Var
+  videoFilename: String;
+  m: TMemoryStream;
+  i: Integer;
 Begin
   // TODO: Hier die Imagelist welche via "imageList.push_back" erstellt wird als .avi speichern (siehe lazarusforum thread  https://lazarusforum.de/viewtopic.php?f=18&t=14483 )
-  //    if (imageList.size() > 0) {
-  //        std::stringstream videoFilename;
-  //        videoFilename << p.imageDir.c_str() << "/gen-"
-  //                      << std::setfill('0') << std::setw(6) << generation
-  //                      << ".avi";
-  //        cv::setNumThreads(2);
-  //        imageList.save_video(videoFilename.str().c_str(),
-  //                             25,
-  //                             "H264");
-  //        if (skippedFrames > 0) {
-  //            std::cout << "Video skipped " << skippedFrames << " frames" << std::endl;
-  //        }
-  //    }
+  If assigned(fimageList) Then Begin
+    videoFilename := p.imageDir + PathDelim +
+      'gen-' + format('%0.6d', [generation]) +
+      '.avi';
+    fAVI.Open(videoFilename,
+      trunc(p.sizeX * p.displayScale * 1.0),
+      trunc(p.sizeY * p.displayScale * 1.0),
+      'MJPG',
+      25 // Warum sind das nicht 30 ?
+      , Nil
+      );
+    //        cv::setNumThreads(2);
+    //        imageList.save_video(videoFilename.str().c_str(),
+    //                             25,
+    //                             "H264");
+    For i := 0 To high(fimagelist) Do Begin
+      m := TMemoryStream.Create;
+      fimagelist[i].SaveToStream(m);
+      m.Position := 0;
+      fAVI.Add_Frame(m);
+      m.free;
+    End;
+    fAVI.Close();
+    //        if (skippedFrames > 0) {
+    //            std::cout << "Video skipped " << skippedFrames << " frames" << std::endl;
+    //        }
+    Writeln(extractfilename(videoFilename) + ' writen.');
+
+  End;
   startNewGeneration();
 End;
 

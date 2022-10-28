@@ -115,6 +115,8 @@ Var
   sensorCounts: Array[0..integer(NUM_SENSES)] Of unsigned;
   actionCounts: Array[0..integer(NUM_ACTIONS)] Of unsigned;
 Begin
+  sensorCounts[0] := 0; // This is rubish, but kills the Compiler warning ;)
+  actionCounts[0] := 0; // This is rubish, but kills the Compiler warning ;)
   FillChar(sensorCounts, sizeof(sensorCounts), 0);
   FillChar(actionCounts, sizeof(actionCounts), 0);
 

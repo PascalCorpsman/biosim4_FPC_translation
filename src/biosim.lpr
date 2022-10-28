@@ -14,9 +14,6 @@ Var
   Simulator: TSimulator;
 
 Begin
-
-  //Video ca. bei 14:00 bis 15:00 die auswertung !
-
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen
   Simulator := TSimulator.Create();

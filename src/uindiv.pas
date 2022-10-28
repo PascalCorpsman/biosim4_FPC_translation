@@ -720,10 +720,11 @@ Begin
   // contains one value per action neuron, which is the sum of all its weighted
   // input connections. The sum has an arbitrary range. Return by value assumes compiler
   // return value optimization.
-
+  actionLevels[0] := 0; // This is rubish, but kills the Compiler warning ;)
   FillChar(actionLevels, sizeof(actionLevels), 0); // undriven actions default to value 0.0
 
   // Weighted inputs to each neuron are summed in neuronAccumulators[]
+  neuronAccumulators := nil;
   setlength(neuronAccumulators, length(nnet.neurons));
   For i := 0 To High(neuronAccumulators) Do Begin
     neuronAccumulators[i] := 0.0;

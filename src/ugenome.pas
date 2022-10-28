@@ -461,6 +461,8 @@ Var
 Begin
   l1 := min(maxNumGenesToCompare, length(genome1));
   l2 := min(maxNumGenesToCompare, length(genome2));
+  bs1[1] := false; // This is rubish, but kills the Compiler warning ;)
+  bs2[1] := false; // This is rubish, but kills the Compiler warning ;)
   fillchar(bs1, sizeof(bs1), 0); //set booleans to false
   fillchar(bs2, sizeof(bs2), 0);
   If l1 = 0 Then
