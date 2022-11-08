@@ -193,7 +193,7 @@ Begin
     // Survivors are those within the specified radius of any corner. The score
     // is linearly weighted by distance from the corner point.
     CHALLENGE_CORNER_WEIGHTED: Begin
-        assert(p.sizeX = p.sizeY);
+        assert(p.sizeX = p.sizeY, 'Width needs to be equal to height.');
         radius := p.sizeX / 4.0;
 
         distance := (Coord(0, 0) - indiv^.loc).length();
@@ -249,7 +249,7 @@ Begin
 
     // Survivors are all those on the left or right eighths of the arena
     CHALLENGE_EAST_WEST_EIGHTHS: Begin
-        If (indiv^.loc.x < p.sizeX / 8) Or (indiv^.loc.x >= (p.sizeX - p.sizeX / 8)) Then Begin
+        If (indiv^.loc.x < p.sizeX Div 8) Or (indiv^.loc.x >= (p.sizeX - (p.sizeX Div 8))) Then Begin
           result := pair(true, 1.0);
         End;
       End;
@@ -574,6 +574,10 @@ Begin
     // from scratch with randomly-generated genomes
     initializeGeneration0();
   End;
+  If generation = p.maxGenerations - 1 Then Begin
+    TSimulator.SaveSim(generation, parentGenomes);
+  End;
+
   result := length(parentGenomes);
 End;
 

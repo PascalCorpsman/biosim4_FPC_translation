@@ -446,9 +446,6 @@ End;
 Function TDir.asInt: uint8;
 Begin
   result := uint8(dir9);
-  If result > 8 Then Begin
-    nop();
-  End;
   assert(result <= 8);
 End;
 

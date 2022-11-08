@@ -13,7 +13,11 @@ Uses
 Var
   Simulator: TSimulator;
   Crashed: Boolean;
+
 Begin
+// Challange 13 Im Video 30:28
+//   https://www.youtube.com/watch?v=N3tRFayqVtk&t=1s
+
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen
   Simulator := TSimulator.Create();

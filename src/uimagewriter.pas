@@ -38,7 +38,6 @@ Type
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure Free;
-
   End;
 
 
@@ -139,7 +138,7 @@ Begin
     image.Canvas.pen.Color := color;
     image.Canvas.Brush.Color := color;
     image.Canvas.Rectangle(
-      adata.barrierLocs[i].x * p.displayScale - (p.displayScale Div 2), ((p.sizeY - adata.barrierLocs[i].y) - 1) * p.displayScale - (p.displayScale Div 2),
+      adata.barrierLocs[i].x * p.displayScale, ((p.sizeY - adata.barrierLocs[i].y) - 1) * p.displayScale,
       (adata.barrierLocs[i].x + 1) * p.displayScale, ((p.sizeY - (adata.barrierLocs[i].y - 0))) * p.displayScale);
   End;
 
@@ -162,7 +161,7 @@ Begin
     x := adata.indivLocs[i].x * p.displayScale;
     y := ((p.sizeY - adata.indivLocs[i].y) - 1) * p.displayScale;
     d := trunc(p.agentSize);
-    image.Canvas.Ellipse(x - d, y - d, x + d, y + d);
+    image.Canvas.Ellipse(x, y, x + 2 * d, y + 2 * d); // Shift nach Rechts unten, um 0.5 displayScale damit es "ordentlich" aussieht.
   End;
 
   If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin // Das ForceDir bleibt drin, damit die Filme ein Verzeichnis zum Ablegen haben !

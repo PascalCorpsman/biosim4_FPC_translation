@@ -55,9 +55,14 @@ Begin
       If (indiv^.alive) Then Begin
         distanceFromRadioactiveWall := abs(indiv^.loc.x - radioactiveX);
         If (distanceFromRadioactiveWall < p.sizeX / 2) Then Begin
-          chanceOfDeath := 1.0 / distanceFromRadioactiveWall;
-          If ((randomUint.Rnd() / RANDOM_UINT_MAX) < chanceOfDeath) Then Begin
+          If distanceFromRadioactiveWall = 0 Then Begin // Das Objekt berührt die Radioaktive Wand -> instant death
             peeps.queueForDeath(indiv);
+          End
+          Else Begin
+            chanceOfDeath := 1.0 / distanceFromRadioactiveWall;
+            If ((randomUint.Rnd() / RANDOM_UINT_MAX) < chanceOfDeath) Then Begin
+              peeps.queueForDeath(indiv);
+            End;
           End;
         End;
       End;

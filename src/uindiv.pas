@@ -724,7 +724,7 @@ Begin
   FillChar(actionLevels, sizeof(actionLevels), 0); // undriven actions default to value 0.0
 
   // Weighted inputs to each neuron are summed in neuronAccumulators[]
-  neuronAccumulators := nil;
+  neuronAccumulators := Nil;
   setlength(neuronAccumulators, length(nnet.neurons));
   For i := 0 To High(neuronAccumulators) Do Begin
     neuronAccumulators[i] := 0.0;

@@ -127,6 +127,7 @@
       <Unit>
         <Filename Value="ubasictypes.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="ubasicTypes"/>
       </Unit>
     </Units>
   </ProjectOptions>

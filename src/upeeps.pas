@@ -143,6 +143,7 @@ Begin
     If (indiv^.alive) Then Begin
       newLoc := moveQueue[moveRecord].Loc;
       moveDir := (newLoc - indiv^.loc).asDir();
+      assert(moveDir.asInt()  <> integer(CENTER));
       If (grid.isEmptyAt(newLoc)) Then Begin
         grid.Set_(indiv^.loc, 0);
         grid.Set_(newLoc, indiv^.index);

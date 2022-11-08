@@ -5,7 +5,7 @@ Unit uSimulator;
 Interface
 
 Uses
-  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter;
+  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome;
 
 {$I c_types.inc}
 {$INTERFACES corba}
@@ -40,18 +40,20 @@ Type
 
   TSimulator = Class
   private
-
     fParamManager: TParamManager; // manages simulator params from the config file plus more
     Procedure PrintHelp;
 
     Procedure OnWritelnCallback(Sender: TObject; Line: String);
     Procedure SetCrashed(AValue: Boolean);
+
+    Function LoadSim(Const Filename: String): String;
   public
     Property Crashed: Boolean write SetCrashed;
     Constructor Create();
     Destructor Destroy(); override;
+    Class Procedure SaveSim(Generation: integer; Const parentGenomes: TGenomeArray); // This container will hold the genomes of the survivors
 
-    Procedure Simulator(Const Filename: String); // Init Procedure
+    Procedure Simulator(Filename: String); // Init Procedure
   End;
 
 Var
@@ -65,40 +67,43 @@ Implementation
 Uses usensoractions, urandom, uspawnNewGeneration, uindiv, uexecuteActions,
   uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests;
 
-// This file contains simulator(), the top-level entry point of the simulator.
-// simulator() is called from main.cpp with a copy of argc and argv.
-// If there is no command line argument, the simulator will read the default
-// config file ("biosim4.ini" in the current directory) to get the simulation
-// parameters for this run. If there are one or more command line args, then
-// argv[1] must contain the name of the config file which will be read instead
-// of biosim4.ini. Any args after that are ignored. The simulator code is
-// in namespace BS (for "biosim").
+Var
+  fFilename: String = '';
+
+  // This file contains simulator(), the top-level entry point of the simulator.
+  // simulator() is called from main.cpp with a copy of argc and argv.
+  // If there is no command line argument, the simulator will read the default
+  // config file ("biosim4.ini" in the current directory) to get the simulation
+  // parameters for this run. If there are one or more command line args, then
+  // argv[1] must contain the name of the config file which will be read instead
+  // of biosim4.ini. Any args after that are ignored. The simulator code is
+  // in namespace BS (for "biosim").
 
 
-(**********************************************************************************************
-Execute one simStep for one individual.
+  (**********************************************************************************************
+  Execute one simStep for one individual.
 
-This executes in its own thread, invoked from the main simulator thread. First we execute
-indiv.feedForward() which computes action values to be executed here. Some actions such as
-signal emission(s) (pheromones), agent movement, or deaths will have been queued for
-later execution at the end of the generation in single-threaded mode (the deferred queues
-allow the main data structures (e.g., grid, signals) to be freely accessed read-only in all threads).
+  This executes in its own thread, invoked from the main simulator thread. First we execute
+  indiv.feedForward() which computes action values to be executed here. Some actions such as
+  signal emission(s) (pheromones), agent movement, or deaths will have been queued for
+  later execution at the end of the generation in single-threaded mode (the deferred queues
+  allow the main data structures (e.g., grid, signals) to be freely accessed read-only in all threads).
 
-In order to be thread-safe, the main simulator-wide data structures and their
-accessibility are:
+  In order to be thread-safe, the main simulator-wide data structures and their
+  accessibility are:
 
-    grid - read-only
-    signals - (pheromones) read-write for the location where our agent lives
-        using signals.increment(), read-only for other locations
-    peeps - for other individuals, we can only read their index and genome.
-        We have read-write access to our individual through the indiv argument.
+      grid - read-only
+      signals - (pheromones) read-write for the location where our agent lives
+          using signals.increment(), read-only for other locations
+      peeps - for other individuals, we can only read their index and genome.
+          We have read-write access to our individual through the indiv argument.
 
-The other important variables are:
+  The other important variables are:
 
-    simStep - the current age of our agent, reset to 0 at the start of each generation.
-         For many simulation scenarios, this matches our indiv.age member.
-    randomUint - global random number generator, a private instance is given to each thread
-**********************************************************************************************)
+      simStep - the current age of our agent, reset to 0 at the start of each generation.
+           For many simulation scenarios, this matches our indiv.age member.
+      randomUint - global random number generator, a private instance is given to each thread
+  **********************************************************************************************)
 
 Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned);
 Var
@@ -128,6 +133,40 @@ Begin
   If assigned(ImageWriter) Then Begin
     ImageWriter.SetCrashed(AValue);
   End;
+End;
+
+Class Procedure TSimulator.SaveSim(Generation: integer;
+  Const parentGenomes: TGenomeArray);
+Var
+  s: String; // Ziel Dateiname !
+  sl: TStringList;
+  i: Integer;
+Begin
+  If trim(fFilename) = '' Then Begin
+    writeln('Error, could not store simulation.');
+    exit; // Fehler
+  End;
+  s := ExtractFileName(fFilename);
+  s := Copy(s, 1, length(s) - length(ExtractFileExt(s))) + '.sim';
+  sl := TStringList.Create;
+  sl.add(fFilename); // 1. Die Biosim.ini merken
+  sl.add(inttostr(Generation)); // Die Aktuelle Generation
+  sl.Add(inttostr(length(parentGenomes)));
+  For i := 0 To high(parentGenomes) Do Begin
+      // Pro Zeile 1 Gen und Gut ;)
+  End;
+  (*
+   * Speichert alles was notwendig ist um ggf bei einem Späteren Neustart davon aus weiter rechnen zu können
+   *)
+  writeln('Store simulation data to: ' + ExtractFileName(s));
+  sl.SaveToFile(s);
+  sl.free;
+End;
+
+Function TSimulator.LoadSim(Const Filename: String): String;
+Begin
+  result := '';
+  // TODO: Implementieren
 End;
 
 Constructor TSimulator.Create;
@@ -182,7 +221,7 @@ The threads are:
         due to unresolved bugs when threaded)
 ********************************************************************************)
 
-Procedure TSimulator.Simulator(Const Filename: String);
+Procedure TSimulator.Simulator(Filename: String);
 Var
   murderCount, generation: unsigned;
   SimStep, indivIndex: Integer;
@@ -190,9 +229,13 @@ Var
   numberSurvivors: unsigned;
   key: Char;
   lastRound: Boolean;
+  s: String;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
+  If LowerCase(ExtractFileExt(Filename)) = '.sim' Then Begin
+    Filename := LoadSim(Filename);
+  End;
 
   // Simulator parameters are available read-only through the global
   // variable p after paramManager is initialized.
@@ -291,6 +334,7 @@ Begin
     End;
     //            } -- Ende Pragma
   End;
+
   //    } -- Ende Pragma
 
   displaySampleGenomes(3); // final report, for debugging
