@@ -138,9 +138,9 @@ End;
 Class Procedure TSimulator.SaveSim(Generation: integer;
   Const parentGenomes: TGenomeArray);
 Var
-  s: String; // Ziel Dateiname !
+  s, t: String; // Ziel Dateiname !
   sl: TStringList;
-  i: Integer;
+  i, j: Integer;
 Begin
   If trim(fFilename) = '' Then Begin
     writeln('Error, could not store simulation.');
@@ -153,7 +153,12 @@ Begin
   sl.add(inttostr(Generation)); // Die Aktuelle Generation
   sl.Add(inttostr(length(parentGenomes)));
   For i := 0 To high(parentGenomes) Do Begin
-      // Pro Zeile 1 Gen und Gut ;)
+    t := inttostr(length(parentGenomes[i])) + ' ';
+    For j := 0 To high(parentGenomes[i]) Do Begin
+      t := t + format('%0.8X ', [GetCompressedGene(parentGenomes[i][j])]);
+    End;
+    // Pro Zeile 1 Gen und Gut ;)
+    sl.add(t);
   End;
   (*
    * Speichert alles was notwendig ist um ggf bei einem Späteren Neustart davon aus weiter rechnen zu können
@@ -235,6 +240,7 @@ Begin
   If LowerCase(ExtractFileExt(Filename)) = '.sim' Then Begin
     Filename := LoadSim(Filename);
   End;
+  fFilename := Filename; // For das SaveSim
 
   // Simulator parameters are available read-only through the global
   // variable p after paramManager is initialized.
