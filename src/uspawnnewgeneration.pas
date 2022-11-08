@@ -574,6 +574,7 @@ Begin
     // from scratch with randomly-generated genomes
     initializeGeneration0();
   End;
+  (* Store Simulation settings for continueing on a later time :-) *)
   If generation = p.maxGenerations - 1 Then Begin
     TSimulator.SaveSim(generation, parentGenomes);
   End;

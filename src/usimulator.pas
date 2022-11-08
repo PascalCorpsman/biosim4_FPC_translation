@@ -68,7 +68,7 @@ Uses usensoractions, urandom, uspawnNewGeneration, uindiv, uexecuteActions,
   uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests;
 
 Var
-  fFilename: String = '';
+  fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
 
   // This file contains simulator(), the top-level entry point of the simulator.
   // simulator() is called from main.cpp with a copy of argc and argv.
@@ -229,7 +229,6 @@ Var
   numberSurvivors: unsigned;
   key: Char;
   lastRound: Boolean;
-  s: String;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -334,7 +333,6 @@ Begin
     End;
     //            } -- Ende Pragma
   End;
-
   //    } -- Ende Pragma
 
   displaySampleGenomes(3); // final report, for debugging
