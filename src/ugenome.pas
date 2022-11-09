@@ -97,6 +97,7 @@ Function geneticDiversity(): float;
 
 Function genomeSimilarity(Const g1, g2: TGenome): Float;
 Function GetCompressedGene(Const gene: TGene): uint32_t; // Komprimiert die TGene Datenstruktur in 32-Bit (damit die dann "Packed" ist).
+Function GetGeneFromUInt(value: uint32_t): TGene; // Umkehrfunktion zu GetCompressedGene
 
 Implementation
 
@@ -105,6 +106,9 @@ Uses uparams, urandom, Math, upeeps, uSimulator;
 Function GetCompressedGene(Const gene: TGene): uint32_t;
 Var
   t, n: uint32_t;
+  sot, son, sit, sin, w: uint32_t;
+  wsi: int16;
+  wi: uint16 absolute wsi;
 Begin
   (*
    * Die Datenstruktur von TGene ist im Prinzip 32-Bit Groß
@@ -112,16 +116,29 @@ Begin
    * <1:sourceType> <7:sourceNum> <1:sinkType> <7:sinkNum> <16:weight>
    * weight ist dabei eine Fließkommazahl in [-4 .. 4]
    *)
-  n := (gene.sourceType And $0001);
-  n := n Shl 31;
-  t := gene.sourceNum And $007F;
-  n := n Or (t Shl 24);
-  t := gene.sinkType And $0001;
-  n := n Or (t Shl 23);
-  t := gene.sinkNum And $007F;
-  n := n Or (t Shl 16);
-  n := n Or gene.weight;
-  result := n;
+  sot := gene.sourceType And $0001;
+  son := gene.sourceNum And $007F;
+  sit := gene.sinkType And $0001;
+  sin := gene.sinkNum And $007F;
+  wsi := gene.weight;
+
+  sot := sot Shl 31;
+  son := son Shl 24;
+  sit := sit Shl 23;
+  sin := sin Shl 16;
+  w := wi;
+
+  result := sot + son + sit + sin + w;
+End;
+
+Function GetGeneFromUInt(value: uint32_t): TGene; // Umkehrfunktion zu GetCompressedGene
+Begin
+  result.sourceType := (value Shr 31) And $0001;
+  result.sourceNum := (value Shr 24) And $007F;
+  result.sinkType := (value Shr 23) And $0001;
+  result.sinkNum := (value Shr 16) And $007F;
+  result.weight := (value Shr 0) And $FFFF;
+  assert(value = GetCompressedGene(result));
 End;
 
 (*
@@ -150,7 +167,6 @@ Function makeRandomGene(): TGene;
 Var
   Gene: Tgene;
 Begin
-
   gene.sourceType := randomUint.Rnd() And 1;
   gene.sourceNum := randomUint.RndRange(0, $7FFF);
   gene.sinkType := randomUint.rnd() And 1;
@@ -316,8 +332,6 @@ Begin
     End;
   End;
 End;
-
-
 
 // This generates a child genome from one or two parent genomes.
 // If the parameter p.sexualReproduction is true, two parents contribute

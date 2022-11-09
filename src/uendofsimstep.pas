@@ -105,12 +105,12 @@ Begin
   signals.fade(0); // takes layerNum  todo!!!
 
   // saveVideoFrameSync() is the synchronous version of saveVideFrame()
-  If (p.saveVideo And
+  If ((p.saveVideo And
     (((generation Mod p.videoStride) = 0)
     Or (generation <= p.videoSaveFirstFrames)
     Or ((generation >= p.parameterChangeGenerationNumber) And (generation <= p.parameterChangeGenerationNumber + p.videoSaveFirstFrames))
     Or (generation = p.maxGenerations - 1) // Shure save the last simulated generation ;)
-    )) Then Begin
+    ))) or AdditionalVideoFrame Then Begin
     If (Not imageWriter.saveVideoFrameSync(simStep, generation)) Then
       writeln('imageWriter busy');
   End;

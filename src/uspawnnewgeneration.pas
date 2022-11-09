@@ -5,7 +5,7 @@ Unit uspawnNewGeneration;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, SysUtils, ugenome;
 
 {$I c_types.inc}
 
@@ -13,6 +13,7 @@ Uses
 // This will erase the grid and signal layers, then create a new population in
 // the peeps container at random locations with random genomes.
 Procedure initializeGeneration0();
+Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray; generation: unsigned);
 
 // At this point, the deferred death queue and move queue have been processed
 // and we are left with zero or more individuals who will repopulate the
@@ -28,7 +29,7 @@ Function spawnNewGeneration(generation, murderCount: unsigned): unsigned;
 
 Implementation
 
-Uses uSimulator, uparams, ugenome, uindiv, uanalysis, ubasicTypes, math, urandom;
+Uses uSimulator, uparams, uindiv, uanalysis, ubasicTypes, math, urandom;
 
 Type
   TBoolPair = Record
@@ -362,11 +363,10 @@ Procedure initializeGeneration0();
 Var
   index: Integer;
 Begin
-  // The grid has already been allocated, just clear and reuse it
+  // The grid, signals, and peeps containers have already been allocated, just
+  // clear them if needed and reuse the elements
   grid.zeroFill();
   grid.createBarrier(p.barrierType);
-
-  // The signal layers have already been allocated, so just reuse them
   signals.zeroFill();
 
   // Spawn the population. The peeps container has already been allocated,
@@ -455,7 +455,7 @@ Var
   survivingKin: TParents;
   possibleParent: TParentElement;
   g2, g1: TGenome;
-  similarity: ugenome.float;
+  similarity, gendiversity: ugenome.float;
 Begin
   sacrificesIndexes := Nil;
   sacrificedCount := 0; // for the altruism challenge
@@ -472,7 +472,7 @@ Begin
       // possibly do a move here instead of copy, although it's doubtful that
       // the optimization would be noticeable.
       If (passed.first And assigned(peeps[index]^.nnet.connections)) Then Begin
-        setlength(parents, high(parents) + 2);
+        setlength(parents, high(parents) + 2);  // TODO: das hier effizienter machen
         parents[high(parents)].first := index;
         parents[high(parents)].Second := passed.second;
       End;
@@ -559,8 +559,11 @@ Begin
     parentGenomes[parent] := peeps.Individual[parents[parent].first]^.genome;
   End;
 
-  writeln('Gen ' + inttostr(generation) + ', ' + inttostr(length(parentGenomes)) + ' survivors = ' + format('%0.2d%%', [round((length(parentGenomes) * 100) / p.population)]));
-  appendEpochLog(generation, length(parentGenomes), murderCount);
+  gendiversity := geneticDiversity();
+  writeln('Gen ' + inttostr(generation) + ', ' +
+    inttostr(length(parentGenomes)) + ' survivors = ' + format('%0.2d%%', [round((length(parentGenomes) * 100) / p.population)]) +
+    ' genetic diversity = ' + format('%d%', [round(gendiversity * 100)]));
+  appendEpochLog(generation, length(parentGenomes), murderCount, gendiversity);
   // displaySignalUse(); // for debugging only
 
   // Now we have a container of zero or more parents' genomes

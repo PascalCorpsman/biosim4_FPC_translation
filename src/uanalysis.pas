@@ -11,7 +11,7 @@ Uses
 
 Procedure displaySignalUse();
 Procedure displaySampleGenomes(count: unsigned);
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned);
+Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity:Float);
 
 Implementation
 
@@ -55,7 +55,7 @@ End;
 // fed to graphlog.gp to produce a chart of the simulation progress.
 // ToDo: remove hardcoded filename.
 
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned);
+Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity:Float);
 Var
   sl: TStringlist;
 Begin
@@ -65,8 +65,10 @@ Begin
   End
   Else Begin
     sl.clear;
+    // Beschriftung der Spalten ;)
+    sl.add('Generation;Number of survivors;genetic diversity;average genome length;murder count');
   End;
-  sl.add(inttostr(generation) + ' ' + inttostr(numberSurvivors) + ' ' + floattostr(geneticDiversity()) + ' ' + floattostr(averageGenomeLength()) + ' ' + inttostr(murderCount));
+  sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength()) + ';' + inttostr(murderCount));
   If Not ForceDirectories(ExcludeTrailingPathDelimiter(p.logDir)) Then Begin
     sl.free;
     Raise exception.create('Error, unable to write into folder:' + p.logDir);

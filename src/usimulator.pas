@@ -36,10 +36,22 @@ Const
 
 Type
 
+  TLoadSim = Record
+    parentGenomes: TGenomeArray;
+    Generation: Integer;
+  End;
+
   { TSimulator }
 
   TSimulator = Class
   private
+    (*
+     * Variablen welche von LoadSim initialisiert werden damit
+     *)
+    fLoadSim: TLoadSim;
+    (*
+     * Rest
+     *)
     fParamManager: TParamManager; // manages simulator params from the config file plus more
     Procedure PrintHelp;
 
@@ -61,6 +73,7 @@ Var
   signals: TSignals = Nil; // A 2D array of pheromones that overlay the world grid
   peeps: TPeeps = Nil; // The container of all the individuals in the population
   ImageWriter: IImageWriterInterface = Nil; // This is for generating the movies
+  AdditionalVideoFrame: Boolean = false; // If true, the next generation will definitly write a video
 
 Implementation
 
@@ -121,6 +134,7 @@ Begin
   // TODO: Bessere Meldungen einbauen..
   writeln('biosim, ported by corpsman to lazarus /fpc');
   writeln('press ESC to end simulation after next full generation.');
+  writeln('press V to force video rendering on the next generation simulation.');
 End;
 
 Procedure TSimulator.OnWritelnCallback(Sender: TObject; Line: String);
@@ -141,11 +155,16 @@ Var
   s, t: String; // Ziel Dateiname !
   sl: TStringList;
   i, j: Integer;
+  u32: uint32_t;
+  g: TGene;
 Begin
   If trim(fFilename) = '' Then Begin
     writeln('Error, could not store simulation.');
     exit; // Fehler
   End;
+  (*
+   * Speichert alles was notwendig ist um ggf bei einem Späteren Neustart davon aus weiter rechnen zu können
+   *)
   s := ExtractFileName(fFilename);
   s := Copy(s, 1, length(s) - length(ExtractFileExt(s))) + '.sim';
   sl := TStringList.Create;
@@ -155,23 +174,76 @@ Begin
   For i := 0 To high(parentGenomes) Do Begin
     t := inttostr(length(parentGenomes[i])) + ' ';
     For j := 0 To high(parentGenomes[i]) Do Begin
-      t := t + format('%0.8X ', [GetCompressedGene(parentGenomes[i][j])]);
+      g := parentGenomes[i][j];
+      u32 := GetCompressedGene(g);
+      t := t + format('%0.8X ', [u32]);
     End;
     // Pro Zeile 1 Gen und Gut ;)
     sl.add(t);
   End;
-  (*
-   * Speichert alles was notwendig ist um ggf bei einem Späteren Neustart davon aus weiter rechnen zu können
-   *)
   writeln('Store simulation data to: ' + ExtractFileName(s));
   sl.SaveToFile(s);
   sl.free;
 End;
 
 Function TSimulator.LoadSim(Const Filename: String): String;
+
+  Function StrToGene(Value: String): TGene;
+  Var
+    u32: uint32_t;
+    dummy: integer;
+  Begin
+    val('$' + Value, u32, dummy);
+    If dummy <> 0 Then Begin
+      u32 := 0;
+      writeln('Error could not convert ' + value + ' to a gene.');
+    End;
+    result := GetGeneFromUInt(u32);
+  End;
+
+  Function StrToGenom(Value: String): TGenome;
+  Var
+    Elements: TStringArray;
+    i: Integer;
+  Begin
+    result := Nil;
+    Elements := trim(value).Split(' ');
+    If length(Elements) < 2 Then exit;
+    If high(Elements) <> strtointdef(Elements[0], -2) Then exit;
+    setlength(result, strtoint(Elements[0]));
+    For i := 0 To high(result) Do Begin
+      result[i] := StrToGene(Elements[i + 1]);
+    End;
+  End;
+
+Var
+  sl: TStringList;
+  GeneCount, i: integer;
 Begin
   result := '';
-  // TODO: Implementieren
+  fLoadSim.Generation := -1;
+  If Not FileExists(Filename) Then exit;
+  sl := TStringList.Create;
+  sl.LoadFromFile(Filename);
+  If sl.count < 3 Then Begin // Da kann was nicht Stimmen,
+    sl.free;
+    exit;
+  End;
+  Result := sl[0];
+  fLoadSim.Generation := StrToIntDef(sl[1], 0);
+  GeneCount := StrToIntDef(sl[2], 0);
+  setlength(fLoadSim.parentGenomes, GeneCount);
+  For i := 0 To GeneCount - 1 Do Begin
+    fLoadSim.parentGenomes[i] := StrToGenom(sl[3 + i]);
+    If Not assigned(fLoadSim.parentGenomes[i]) Then Begin
+      sl.free;
+      result := '';
+      fLoadSim.Generation := -1;
+      exit;
+    End;
+  End;
+  sl.free;
+  writeln('Successfully loaded: ' + Filename);
 End;
 
 Constructor TSimulator.Create;
@@ -180,6 +252,7 @@ Begin
   grid := TGrid.Create();
   signals := TSignals.Create();
   peeps := TPeeps.Create();
+  ImageWriter := Nil;
 End;
 
 Destructor TSimulator.Destroy;
@@ -191,7 +264,7 @@ Begin
   grid.Free;
   signals.Free;
   peeps.free;
-  ImageWriter.free;
+  If assigned(ImageWriter) Then ImageWriter.free;
   writeln('Simulator exit.');
 End;
 
@@ -237,8 +310,16 @@ Var
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
+  fLoadSim.parentGenomes := Nil;
+  fLoadSim.Generation := -1;
   If LowerCase(ExtractFileExt(Filename)) = '.sim' Then Begin
     Filename := LoadSim(Filename);
+  End;
+  If (trim(Filename) = '') Or (Not FileExists(Filename)) Then Begin
+    writeln('Error during loading:');
+    WriteLn('  "' + Filename + '"');
+    writeln('does not exist, is not loadable. Simulation will close now.');
+    exit;
   End;
   fFilename := Filename; // For das SaveSim
 
@@ -273,10 +354,23 @@ Begin
   //unitTestConnectNeuralNetWiringFromGenome();
   //unitTestGridVisitNeighborhood();
 
-  generation := 0;
-  initializeGeneration0(); // starting population
+  If fLoadSim.Generation <> -1 Then Begin
+    writeln('Restart simulation from generation: ' + inttostr(fLoadSim.Generation));
+    generation := fLoadSim.Generation + 1;
+    If length(fLoadSim.parentGenomes) = 0 Then Begin
+      writeln('No survivors, -> restart simulation.');
+      initializeGeneration0(); // starting population
+      generation := 0;
+    End
+    Else Begin
+      initializeNewGeneration(fLoadSim.parentGenomes, generation);
+    End;
+  End
+  Else Begin
+    generation := 0;
+    initializeGeneration0(); // starting population
+  End;
   runMode := rmRUN;
-
 
   // Inside the parallel region, be sure that shared data is not modified. Do the
   // modifications in the single-thread regions.
@@ -319,19 +413,27 @@ Begin
       displaySampleGenomes(p.displaySampleGenomes);
     End;
     If (numberSurvivors = 0) Then Begin
+      writeln('No survivors, -> restart simulation.');
       generation := 0; // start over
     End
     Else Begin
       inc(generation);
     End;
+    AdditionalVideoFrame := false;
     While KeyPressed Do Begin
       key := ReadKey;
-      If key = #27 Then Begin
-        If Not lastRound Then Begin
-          lastRound := true;
-          writeln('--- Abort by user, will simulate one last generation with images (if enabled), then close. ---');
-          p.maxGenerations := generation + 1;
-        End;
+      Case key Of
+        #27: Begin
+            If Not lastRound Then Begin
+              lastRound := true;
+              writeln('--- Abort by user, will simulate one last generation with images (if enabled), then close. ---');
+              p.maxGenerations := generation + 1;
+            End;
+          End;
+        'V', 'v': Begin // Nächste generation soll ein Videostride gerendert werden.
+            writeln('--- next generation a video generation will be forced. ---');
+            AdditionalVideoFrame := true;
+          End;
       End;
     End;
     If p.numThreads <> 0 Then Begin

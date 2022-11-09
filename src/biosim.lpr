@@ -28,7 +28,7 @@ Begin
         Simulator.Simulator(ParamStr(1));
       End
       Else Begin
-        Simulator.Simulator('biosim4.ini');
+        Simulator.Simulator('');
       End;
     Except
       On av: exception Do Begin

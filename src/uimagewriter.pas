@@ -125,9 +125,9 @@ Var
   x, y, d, r, g, b, c, i: Integer;
 Begin
   image := Tbitmap.create();
-  // Das * 1.0 ist weil unter Windows sonst nicht bestimmt werden kann welche trunc version verwendet werden soll..
-  image.Width := trunc(p.sizeX * p.displayScale * 1.0);
-  image.height := trunc(p.sizeY * p.displayScale * 1.0);
+
+  image.Width := p.sizeX * p.displayScale;
+  image.height := p.sizeY * p.displayScale;
   image.canvas.brush.color := clwhite;
   image.canvas.rectangle(-1, -1, image.Width + 1, image.Height + 1);
   imageFilename := IncludeTrailingPathDelimiter(p.imageDir) + format('frame-%0.6d-%0.6d.png', [adata.generation, adata.simStep]);
@@ -175,7 +175,7 @@ Begin
   Else Begin
     writeln('Error, could not store: ' + imageFilename);
   End;
-  If p.saveVideo Then Begin
+  If p.saveVideo Or AdditionalVideoFrame Then Begin
     jp := TJPEGImage.Create;
     jp.Assign(image);
     setlength(fimagelist, high(fimagelist) + 2);
@@ -201,6 +201,7 @@ End;
 
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
 Begin
+  // TODO: Prüfen ob das den gleichen Bug hat wie GetCompressedGene
   result := ((length(genome) And 1)
     Or ((genome[0].sourceType) Shl 1)
     Or ((genome[high(genome)].sourceType) Shl 2)
