@@ -13,7 +13,7 @@ Uses
 // This will erase the grid and signal layers, then create a new population in
 // the peeps container at random locations with random genomes.
 Procedure initializeGeneration0();
-Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray; generation: unsigned);
+Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
 
 // At this point, the deferred death queue and move queue have been processed
 // and we are left with zero or more individuals who will repopulate the
@@ -36,6 +36,43 @@ Type
     first: Boolean;
     second: Float;
   End;
+
+Function prettyTime(TimeInMs: int64): String; // Code entliehen aus CCM
+Var
+  suffix: String;
+  rest: int64;
+  Time_In_Seconds: int64;
+Begin
+  Time_In_Seconds := TimeInMs Div 1000;
+  suffix := 's';
+  rest := 0;
+  If Time_In_Seconds > 60 Then Begin
+    suffix := 'min';
+    rest := Time_In_Seconds Mod 60;
+    Time_In_Seconds := Time_In_Seconds Div 60;
+  End;
+  If Time_In_Seconds > 60 Then Begin
+    suffix := 'h';
+    rest := Time_In_Seconds Mod 60;
+    Time_In_Seconds := Time_In_Seconds Div 60;
+  End;
+  If (Time_In_Seconds > 24) And (suffix = 'h') Then Begin
+    suffix := 'd';
+    rest := Time_In_Seconds Mod 24;
+    Time_In_Seconds := Time_In_Seconds Div 24;
+  End;
+  If suffix <> 's' Then Begin
+    If rest < 10 Then Begin
+      result := inttostr(Time_In_Seconds) + ':0' + inttostr(rest) + suffix;
+    End
+    Else Begin
+      result := inttostr(Time_In_Seconds) + ':' + inttostr(rest) + suffix;
+    End;
+  End
+  Else Begin
+    result := inttostr(Time_In_Seconds) + suffix;
+  End;
+End;
 
 Var
   occupiedCount: integer;
@@ -382,7 +419,7 @@ End;
 // layers, then create a new population in the peeps container with random
 // locations and genomes derived from the container of parent genomes.
 
-Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray; generation: unsigned);
+Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
 Var
   index: Integer;
 Begin
@@ -435,6 +472,9 @@ Begin
   End;
 End;
 
+Var
+  LastSpawnTime: uint64 = 0;
+
 Function spawnNewGeneration(generation, murderCount: unsigned): unsigned;
 Const
   altruismFactor = 10; // the saved:sacrificed ratio
@@ -456,6 +496,8 @@ Var
   possibleParent: TParentElement;
   g2, g1: TGenome;
   similarity, gendiversity: ugenome.float;
+  at: UInt64;
+  tmp: String;
 Begin
   sacrificesIndexes := Nil;
   sacrificedCount := 0; // for the altruism challenge
@@ -472,7 +514,7 @@ Begin
       // possibly do a move here instead of copy, although it's doubtful that
       // the optimization would be noticeable.
       If (passed.first And assigned(peeps[index]^.nnet.connections)) Then Begin
-        setlength(parents, high(parents) + 2);  // TODO: das hier effizienter machen
+        setlength(parents, high(parents) + 2); // TODO: das hier effizienter machen
         parents[high(parents)].first := index;
         parents[high(parents)].Second := passed.second;
       End;
@@ -559,10 +601,19 @@ Begin
     parentGenomes[parent] := peeps.Individual[parents[parent].first]^.genome;
   End;
 
+  at := GetTickCount64;
+  tmp := '';
+  If LastSpawnTime <> 0 Then Begin
+    tmp := ', time to calculate = ' + PrettyTime(at - LastSpawnTime);
+  End;
+  LastSpawnTime := at;
+
   gendiversity := geneticDiversity();
   writeln('Gen ' + inttostr(generation) + ', ' +
     inttostr(length(parentGenomes)) + ' survivors = ' + format('%0.2d%%', [round((length(parentGenomes) * 100) / p.population)]) +
-    ' genetic diversity = ' + format('%d%', [round(gendiversity * 100)]));
+    ', genetic diversity = ' + format('%d%', [round(gendiversity * 100)]) +
+    tmp
+    );
   appendEpochLog(generation, length(parentGenomes), murderCount, gendiversity);
   // displaySignalUse(); // for debugging only
 
@@ -570,7 +621,7 @@ Begin
 
   If assigned(parentGenomes) Then Begin
     // Spawn a new generation
-    initializeNewGeneration(parentGenomes, generation + 1);
+    initializeNewGeneration(parentGenomes);
   End
   Else Begin
     // Special case: there are no surviving parents: start the simulation over

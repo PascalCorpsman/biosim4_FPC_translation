@@ -105,7 +105,6 @@ Uses uparams, urandom, Math, upeeps, uSimulator;
 
 Function GetCompressedGene(Const gene: TGene): uint32_t;
 Var
-  t, n: uint32_t;
   sot, son, sit, sin, w: uint32_t;
   wsi: int16;
   wi: uint16 absolute wsi;
@@ -324,6 +323,7 @@ Var
   numberOfGenes: unsigned;
   i: Integer;
 Begin
+  If p.pointMutationRate = 0 Then exit; // wenn es eh keine Mutationen gibt sparen wir uns die Rechenzeit ;)
   numberOfGenes := length(genome);
   For i := 0 To numberOfGenes - 1 Do Begin
     //while (numberOfGenes-- > 0) {

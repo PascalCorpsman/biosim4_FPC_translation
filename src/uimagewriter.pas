@@ -201,7 +201,7 @@ End;
 
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
 Begin
-  // TODO: Prüfen ob das den gleichen Bug hat wie GetCompressedGene
+  // TODO: Prüfen ob das den gleichen Bug hat wie er in GetCompressedGene war
   result := ((length(genome) And 1)
     Or ((genome[0].sourceType) Shl 1)
     Or ((genome[high(genome)].sourceType) Shl 2)

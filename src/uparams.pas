@@ -108,6 +108,8 @@ Var
 
 Implementation
 
+Uses uSimulator;
+
 Function checkIfUint(s: String): Bool;
 Var
   i: Integer;
@@ -133,6 +135,7 @@ End;
 Function checkIfFloat(s: String): Boolean;
 Begin
   Try
+    FormatSettings.DecimalSeparator := '.';
     strtofloat(s);
     result := true;
   Except
@@ -170,6 +173,7 @@ Begin
   End;
   isFloat := checkIfFloat(aval);
   If isFloat Then Begin
+    FormatSettings.DecimalSeparator := '.';
     dval := StrToFloat(aval);
   End
   Else Begin
@@ -462,6 +466,9 @@ Var
   isUint: Boolean;
   activeFromGeneration: unsigned;
 Begin
+  If ReloadConfigini Then Begin
+    registerConfigFile(configFilename);
+  End;
   For i := 0 To configFileContent.Count - 1 Do Begin
     line := trim(configFileContent[i]);
     If (line = '') Or (line[1] = '#') Then Continue;

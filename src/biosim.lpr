@@ -15,6 +15,13 @@ Var
   Crashed: Boolean;
 
 Begin
+  (*
+   * Known Bugs:
+   *           - Wenn man zum ersten mal die Simulation Beendet und dann eine .sim Datei lädt, dann macht die Survivers Rate einen deutlichen Sprung nach unten, warum ?
+   *             \-> Bei widerhohltem neustarten passiert das aber nicht 8-\
+   *)
+
+// Gesehen bis 34:14
 // Challange 13 Im Video 30:28
 //   https://www.youtube.com/watch?v=N3tRFayqVtk&t=1s
 

@@ -74,6 +74,7 @@ Var
   peeps: TPeeps = Nil; // The container of all the individuals in the population
   ImageWriter: IImageWriterInterface = Nil; // This is for generating the movies
   AdditionalVideoFrame: Boolean = false; // If true, the next generation will definitly write a video
+  ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
 Implementation
 
@@ -132,9 +133,12 @@ End;
 Procedure TSimulator.PrintHelp;
 Begin
   // TODO: Bessere Meldungen einbauen..
+  //       12345678901234567890123456789012345678901234567890123456789012345678901234567890
   writeln('biosim, ported by corpsman to lazarus /fpc');
   writeln('press ESC to end simulation after next full generation.');
   writeln('press V to force video rendering on the next generation simulation.');
+  writeln('press R to force reloading .ini file from disk on the next generation simulation');
+  writeln('press P to pause the simulation until Return is pressed.');
 End;
 
 Procedure TSimulator.OnWritelnCallback(Sender: TObject; Line: String);
@@ -152,7 +156,7 @@ End;
 Class Procedure TSimulator.SaveSim(Generation: integer;
   Const parentGenomes: TGenomeArray);
 Var
-  s, t: String; // Ziel Dateiname !
+  SimFilename, t: String; // Ziel Dateiname !
   sl: TStringList;
   i, j: Integer;
   u32: uint32_t;
@@ -165,8 +169,8 @@ Begin
   (*
    * Speichert alles was notwendig ist um ggf bei einem Späteren Neustart davon aus weiter rechnen zu können
    *)
-  s := ExtractFileName(fFilename);
-  s := Copy(s, 1, length(s) - length(ExtractFileExt(s))) + '.sim';
+  SimFilename := ExtractFileName(fFilename);
+  SimFilename := Copy(SimFilename, 1, length(SimFilename) - length(ExtractFileExt(SimFilename))) + '.sim';
   sl := TStringList.Create;
   sl.add(fFilename); // 1. Die Biosim.ini merken
   sl.add(inttostr(Generation)); // Die Aktuelle Generation
@@ -181,8 +185,18 @@ Begin
     // Pro Zeile 1 Gen und Gut ;)
     sl.add(t);
   End;
-  writeln('Store simulation data to: ' + ExtractFileName(s));
-  sl.SaveToFile(s);
+  If FileExists(SimFilename) Then Begin
+    If Not DeleteFile(SimFilename) Then Begin
+      writeln('Error no write access to: ' + SimFilename);
+      sl.free;
+      exit;
+    End;
+  End;
+  writeln('Store simulation data to: ' + ExtractFileName(SimFilename));
+  sl.SaveToFile(SimFilename);
+  If Not FileExists(SimFilename) Then Begin
+    writeln('Error no write access to: ' + SimFilename);
+  End;
   sl.free;
 End;
 
@@ -306,7 +320,7 @@ Var
   //indiv: TIndiv;
   numberSurvivors: unsigned;
   key: Char;
-  lastRound: Boolean;
+  inPause, lastRound: Boolean;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -363,7 +377,7 @@ Begin
       generation := 0;
     End
     Else Begin
-      initializeNewGeneration(fLoadSim.parentGenomes, generation);
+      initializeNewGeneration(fLoadSim.parentGenomes);
     End;
   End
   Else Begin
@@ -420,19 +434,54 @@ Begin
       inc(generation);
     End;
     AdditionalVideoFrame := false;
+    ReloadConfigini := false;
     While KeyPressed Do Begin
       key := ReadKey;
       Case key Of
         #27: Begin
             If Not lastRound Then Begin
+              If Not lastRound Then Begin
+                writeln('--- Abort by user, will simulate one last generation with images (if enabled), then close. ---');
+              End;
               lastRound := true;
-              writeln('--- Abort by user, will simulate one last generation with images (if enabled), then close. ---');
               p.maxGenerations := generation + 1;
             End;
           End;
         'V', 'v': Begin // Nächste generation soll ein Videostride gerendert werden.
-            writeln('--- next generation a video generation will be forced. ---');
+            If Not AdditionalVideoFrame Then Begin
+              writeln('--- next generation a video generation will be forced. ---');
+            End;
             AdditionalVideoFrame := true;
+          End;
+        'R', 'r': Begin // In der Nächsten Iterration das .ini File neu von der Platte einlesen
+            If Not ReloadConfigini Then Begin
+              writeln('--- next generation ' + ExtractFileName(fFilename) + ' will be reloaded from disk. ---');
+            End;
+            ReloadConfigini := true;
+          End;
+        'P', 'p': Begin
+            writeln('--- Entering pause mode, to exit pause mode press return ---');
+            writeln('--- Imagewriter thread will not paused! ---');
+            inPause := true;
+            While KeyPressed Do Begin // Sollte der User mehrfach p gedrückt haben, dann lesen wir diese "P" weg damit da nicht zig mal steht "p, ignoriert"
+              key := ReadKey;
+            End;
+            While inPause Do Begin
+              While KeyPressed Do Begin
+                key := ReadKey;
+                If (key = #13) Or (key = #10) Then Begin
+                  writeln('--- Leaving Pause mode. ---');
+                  inPause := false;
+                End
+                Else Begin
+                  writeln('--- Key "' + key + '" will be ignored. ---');
+                End;
+              End;
+              If p.numThreads <> 0 Then Begin
+                CheckSynchronize(1);
+              End;
+              sleep(1);
+            End;
           End;
       End;
     End;

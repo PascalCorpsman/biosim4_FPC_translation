@@ -11,7 +11,7 @@ Uses
 
 Procedure displaySignalUse();
 Procedure displaySampleGenomes(count: unsigned);
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity:Float);
+Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
 
 Implementation
 
@@ -55,7 +55,7 @@ End;
 // fed to graphlog.gp to produce a chart of the simulation progress.
 // ToDo: remove hardcoded filename.
 
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity:Float);
+Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
 Var
   sl: TStringlist;
 Begin
@@ -68,6 +68,7 @@ Begin
     // Beschriftung der Spalten ;)
     sl.add('Generation;Number of survivors;genetic diversity;average genome length;murder count');
   End;
+  FormatSettings.DecimalSeparator := '.';
   sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength()) + ';' + inttostr(murderCount));
   If Not ForceDirectories(ExcludeTrailingPathDelimiter(p.logDir)) Then Begin
     sl.free;
@@ -102,6 +103,7 @@ Begin
       End;
     End;
   End;
+  FormatSettings.DecimalSeparator := '.';
   writeln('Signal spread ' + format('%0.2f', [count / (p.sizeX * p.sizeY)]) + '%, average ' + format('%f', [sum / (p.sizeX * p.sizeY)]));
 End;
 
@@ -138,7 +140,7 @@ Begin
       End;
     End;
   End;
-
+  // TODO: die Sensoren und Actions absteigend sortieren, so dass man immer gleich sehen kann welches die "Meist" genutzten sine !
   writeln('Sensors in use:');
   For i := 0 To length(sensorCounts) - 1 Do Begin
     If (sensorCounts[i] > 0) Then Begin

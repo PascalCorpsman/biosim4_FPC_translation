@@ -63,6 +63,7 @@ Begin
     Else
       s := s + 'NEURON';
     s := s + ' ';
+    FormatSettings.DecimalSeparator := '.';
     s := s + IntToStr(indiv.nnet.connections[conn].sinkNum) + ' at ' +
       FloatToStr(indiv.nnet.connections[conn].weightAsFloat());
     writeln(s);

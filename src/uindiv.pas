@@ -596,6 +596,7 @@ Begin
         Else Begin
           Writeln('   Neuron ' + inttostr(nnet.connections[conn].sourceNum Mod length(nnet.neurons)));
         End;
+        FormatSettings.DecimalSeparator := '.';
         writeln(' ' + floattostr(nnet.connections[conn].weightAsFloat()));
       End;
     End;
@@ -616,6 +617,7 @@ Begin
         Else Begin
           Writeln('   Neuron ' + inttostr((nnet.connections[conn].sourceNum)));
         End;
+        FormatSettings.DecimalSeparator := '.';
         writeln(' ' + floattostr(nnet.connections[conn].weightAsFloat()));
       End;
     End;
@@ -794,7 +796,7 @@ Var
   lastY, lastX, minDistX, minDistY,
     maxPossible, distY, distX, closest: integer;
   phase, factor: Single;
-  loc2, center: TCoord;
+  loc2: TCoord;
   indiv2: PIndiv;
 Begin
   sensorVal := 0.0;
