@@ -21,6 +21,8 @@ As you can see in both simulations the individuals do not take long to "learn" t
 In generation 5000 the interesting thing happens (suddenly there are barriers created) and the individuums now need to adjust to the new situations. As you can see in the simulation with mutations allowed, the surviver rate starts again to raise (this is due to the fact of the mutations). On the other hand the individuums without mutations are not able to learn anything new and therefore the rate of survivers stays as low as direktly after generation 5000 (this is due to the fact that the diversity is so low and the individuums are not able to get new "knowledge" through recombining their genes).
 
 
-## Timestamp xx:xx - xx:xx ??
+## Timestamp 35:54 - xx:xx ??
+
+## Timestamp 52:15 - xx:xx ??
 
 ### Steps to reproduce:
