@@ -89,6 +89,7 @@ Type
     configFilename: String;
     configFileContent: TStringlist;
     FirstRun: Boolean;
+    Function FixPathDelimeter(Path: String): String;
     //   lastModTime:    time_t ; // when config file was last read
     Procedure ingestParameter(aname, aval: String);
 
@@ -155,6 +156,19 @@ End;
 
 { TParamManager }
 
+Function TParamManager.FixPathDelimeter(Path: String): String;
+var
+  i: Integer;
+Begin
+  // No matter which pathdelim the user enteres (Linux or Windows style) the correct will be choosen.
+  result := Path;
+  For i := 1 To length(result) Do Begin
+    If result[i] In AllowDirectorySeparators Then Begin
+      result[i] := PathDelim;
+    End;
+  End;
+End;
+
 Procedure TParamManager.ingestParameter(aname, aval: String);
 Var
   isUint, isFloat, isBool, bVal: Boolean;
@@ -208,8 +222,8 @@ Begin
           privParams.genomeInitialLengthMax := uVal;
         End;
       End;
-    'logdir': privParams.logDir := aval;
-    'imagedir': privParams.imageDir := aval;
+    'logdir': privParams.logDir := FixPathDelimeter(aval);
+    'imagedir': privParams.imageDir := FixPathDelimeter(aval);
     'population': Begin
         If (isUint) And (uVal > 0) And (uVal < high(uint32) - 1) Then Begin
           privParams.population := uVal;
