@@ -7,7 +7,8 @@ At the starting this fork was a 1:1 crosscompilation from the origin C++ version
 this for the purpose of learning C++ Code and beeing able to adjust the simulation for my own 
 needs in my most favourite programming language.
 
-I realised this as fork as i truly want to point out who the real inventor of this program is.
+Even if the complete codebase is writen by me I realised this as fork as i truly want to point 
+out who the real inventor of this program is.
 
 
 ## What is this?
