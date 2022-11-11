@@ -104,7 +104,6 @@ Begin
   peeps.drainMoveQueue();
   signals.fade(0); // takes layerNum  todo!!!
 
-  // saveVideoFrameSync() is the synchronous version of saveVideFrame()
   If ((p.saveVideo And
     (((generation Mod p.videoStride) = 0)
     Or (generation <= p.videoSaveFirstFrames)

@@ -27,14 +27,12 @@ Type
     indivLocs: Array Of TCoord;
     indivColors: Array Of uint8_t;
     barrierLocs: Array Of TCoord;
-    signalLayers: Array Of Array Of Array Of uint8; // [layer][x][y]
   End;
 
   { IImageWriterInterface }
 
   IImageWriterInterface = Interface
     Procedure SetCrashed(Value: Boolean); // Dem Imagewriter Mitteilen dass die Anwendung abgeraucht ist
-    Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure Free;
@@ -62,7 +60,7 @@ Type
 
   tStringQueue = specialize TFifo < String > ;
 
-  TJobKind = (jkFrame, jkStartNewGeneration, jksaveGenerationVideo);
+  TJobKind = (jkFrame, jksaveGenerationVideo);
 
   TJob = Record
     Kind: TJobKind;
@@ -93,7 +91,6 @@ Type
     Constructor Create(CreateSuspended: Boolean; WritelnCallback: TWritelnCallback;
       Const StackSize: SizeUInt = DefaultStackSize);
 
-    Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure SetCrashed(Value: Boolean);
@@ -175,12 +172,18 @@ Begin
   Else Begin
     writeln('Error, could not store: ' + imageFilename);
   End;
-  If p.saveVideo Or AdditionalVideoFrame Then Begin
-    jp := TJPEGImage.Create;
-    jp.Assign(image);
-    setlength(fimagelist, high(fimagelist) + 2);
-    fimagelist[high(fimagelist)] := jp;
-  End;
+  (*
+   * Dieser Code wird aus einem Thread Context heraus aufgerufen.
+   * Sämtliche Prüfungen wurden da schon gemacht
+   * -> hier nicht mehr prüfen, wäre auch falsch weil durch das Asynchrone die
+   *    Bedingungen nicht mehr aktuell sein könnten !
+   *)
+  //If p.saveVideo Or AdditionalVideoFrame Then Begin
+  jp := TJPEGImage.Create;
+  jp.Assign(image);
+  setlength(fimagelist, high(fimagelist) + 2);
+  fimagelist[high(fimagelist)] := jp;
+  //End;
   image.free;
 End;
 
@@ -256,7 +259,6 @@ Begin
   Case Job.Kind Of
     jkFrame: fImageWriter.saveOneFrameImmed(Job.Data);
     jksaveGenerationVideo: fImageWriter.saveGenerationVideo(Job.data.generation);
-    jkStartNewGeneration: fImageWriter.startNewGeneration();
   End;
 End;
 
@@ -286,14 +288,6 @@ Begin
   Start;
 End;
 
-Procedure TImageWriterThread.startNewGeneration;
-Var
-  j: TJob;
-Begin
-  j.Kind := jkStartNewGeneration;
-  fJobQueue.Push(j);
-End;
-
 Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned
   ): bool;
 Var
@@ -311,26 +305,27 @@ Begin
   setlength(data.indivLocs, 0);
   setlength(data.indivColors, 0);
   setlength(data.barrierLocs, 0);
-  setlength(data.signalLayers, 0, 0, 0);
-  //todo!!!
+
   For index := 0 To p.population Do Begin
     indiv := peeps[index];
     If (indiv^.alive) Then Begin
-      setlength(data.indivLocs, high(data.indivLocs) + 2);
+      setlength(data.indivLocs, high(data.indivLocs) + 2); // TODO: Speed Optimieren !
       data.indivLocs[high(data.indivLocs)] := indiv^.loc;
-      setlength(data.indivColors, high(data.indivColors) + 2);
+      setlength(data.indivColors, high(data.indivColors) + 2); // TODO: Speed Optimieren !
       data.indivColors[high(data.indivColors)] := makeGeneticColor(indiv^.genome);
     End;
-
-    barrierLocs := grid.getBarrierLocations();
-    setlength(data.barrierLocs, length(barrierLocs));
-    For i := 0 To high(barrierLocs) Do Begin
-      data.barrierLocs[i] := barrierLocs[i];
-    End;
   End;
+
+  barrierLocs := grid.getBarrierLocations();
+  setlength(data.barrierLocs, length(barrierLocs));
+  For i := 0 To high(barrierLocs) Do Begin
+    data.barrierLocs[i] := barrierLocs[i];
+  End;
+
   j.Kind := jkFrame;
   j.Data := data;
   fJobQueue.Push(j);
+
   result := true;
 End;
 
@@ -424,30 +419,27 @@ Begin
   setlength(data.indivLocs, 0);
   setlength(data.indivColors, 0);
   setlength(data.barrierLocs, 0);
-  setlength(data.signalLayers, 0, 0, 0);
-  //todo!!!
+
   For index := 0 To p.population Do Begin
     indiv := peeps[index];
     If (indiv^.alive) Then Begin
-      //            data.indivLocs.push_back(indiv.loc);
-      setlength(data.indivLocs, high(data.indivLocs) + 2);
+      setlength(data.indivLocs, high(data.indivLocs) + 2); // TODO: Speed Optimieren !
       data.indivLocs[high(data.indivLocs)] := indiv^.loc;
-      setlength(data.indivColors, high(data.indivColors) + 2);
+      setlength(data.indivColors, high(data.indivColors) + 2); // TODO: Speed Optimieren !
       data.indivColors[high(data.indivColors)] := makeGeneticColor(indiv^.genome);
     End;
-
-    barrierLocs := grid.getBarrierLocations();
-    setlength(data.barrierLocs, length(barrierLocs));
-    For i := 0 To high(barrierLocs) Do Begin
-      data.barrierLocs[i] := barrierLocs[i];
-    End;
   End;
-  //
+
+  barrierLocs := grid.getBarrierLocations();
+  setlength(data.barrierLocs, length(barrierLocs));
+  For i := 0 To high(barrierLocs) Do Begin
+    data.barrierLocs[i] := barrierLocs[i];
+  End;
+
   saveOneFrameImmed(data);
+
   result := true;
 End;
-
-// ToDo: put save_video() in its own thread
 
 Procedure TImageWriter.saveGenerationVideo(generation: unsigned);
 Var
@@ -467,10 +459,7 @@ Begin
       25 // Warum sind das nicht 30 ?
       , Nil
       );
-    //        cv::setNumThreads(2);
-    //        imageList.save_video(videoFilename.str().c_str(),
-    //                             25,
-    //                             "H264");
+    assert(length(fimagelist) = p.stepsPerGeneration, 'fimagelist hat die falsche Länge ist ' + inttostr(length(fimagelist)) + ' soll ' + inttostr(p.stepsPerGeneration));
     For i := 0 To high(fimagelist) Do Begin
       m := TMemoryStream.Create;
       fimagelist[i].SaveToStream(m);
@@ -479,111 +468,10 @@ Begin
       m.free;
     End;
     fAVI.Close();
-    //        if (skippedFrames > 0) {
-    //            std::cout << "Video skipped " << skippedFrames << " frames" << std::endl;
-    //        }
     Writeln(extractfilename(videoFilename) + ' writen.');
-
   End;
   startNewGeneration();
 End;
-
-//void ImageWriter::abort()
-//{
-//    busy =true;
-//    abortRequested = true;
-//    {
-//        std::lock_guard<std::mutex> lck(mutex_);
-//        dataReady = true;
-//    }
-//    condVar.notify_one();
-//}
-
-// Runs in a thread; wakes up when there's a video frame to generate.
-// When this wakes up, local copies of Params and Peeps will have been
-// cached for us to use.
-//void ImageWriter::saveFrameThread()
-//{
-//    busy = false; // we're ready for business
-//    std::cout << "Imagewriter thread started." << std::endl;
-//
-//    while (true) {
-//        // wait for job on queue
-//        std::unique_lock<std::mutex> lck(mutex_);
-//        condVar.wait(lck, [&]{ return dataReady && busy; });
-//        // save frame
-//        dataReady = false;
-//        busy = false;
-//
-//        if (abortRequested) {
-//            break;
-//        }
-//
-//        // save image frame
-//        saveOneFrameImmed(imageWriter.data);
-//
-//        //std::cout << "Image writer thread waiting..." << std::endl;
-//        //std::this_thread::sleep_for(std::chrono::seconds(2));
-//
-//    }
-//    std::cout << "Image writer thread exiting." << std::endl;
-//}
-
-
-// This is a synchronous gate for giving a job to saveFrameThread().
-// Called from the same thread as the main simulator loop thread during
-// single-thread mode.
-// Returns true if the image writer accepts the job; returns false
-// if the image writer is busy. Always called from a single thread
-// and communicates with a single saveFrameThread(), so no need to make
-// a critical section to safeguard the busy flag. When this function
-// sets the busy flag, the caller will immediate see it, so the caller
-// won't call again until busy is clear. When the thread clears the busy
-// flag, it doesn't matter if it's not immediately visible to this
-// function: there's no consequence other than a harmless frame-drop.
-// The condition variable allows the saveFrameThread() to wait until
-// there's a job to do.
-//bool ImageWriter::saveVideoFrame(unsigned simStep, unsigned generation)
-//{
-//    if (!busy) {
-//        busy = true;
-//        // queue job for saveFrameThread()
-//        // We cache a local copy of data from params, grid, and peeps because
-//        // those objects will change by the main thread at the same time our
-//        // saveFrameThread() is using it to output a video frame.
-//        data.simStep = simStep;
-//        data.generation = generation;
-//        data.indivLocs.clear();
-//        data.indivColors.clear();
-//        data.barrierLocs.clear();
-//        data.signalLayers.clear();
-//        //todo!!!
-//        for (uint16_t index = 1; index <= p.population; ++index) {
-//            const Indiv &indiv = peeps[index];
-//            if (indiv.alive) {
-//                data.indivLocs.push_back(indiv.loc);
-//                data.indivColors.push_back(makeGeneticColor(indiv.genome));
-//            }
-//        }
-//
-//        auto const &barrierLocs = grid.getBarrierLocations();
-//        for (Coord loc : barrierLocs) {
-//            data.barrierLocs.push_back(loc);
-//        }
-//
-//        // tell thread there's a job to do
-//        {
-//            std::lock_guard<std::mutex> lck(mutex_);
-//            dataReady = true;
-//        }
-//        condVar.notify_one();
-//        return true;
-//    } else {
-//        // image saver thread is busy, drop a frame
-//        ++droppedFrameCount;
-//        return false;
-//    }
-//}
 
 End.
 

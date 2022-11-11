@@ -84,40 +84,45 @@ Uses usensoractions, urandom, uspawnNewGeneration, uindiv, uexecuteActions,
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
 
-  // This file contains simulator(), the top-level entry point of the simulator.
-  // simulator() is called from main.cpp with a copy of argc and argv.
-  // If there is no command line argument, the simulator will read the default
-  // config file ("biosim4.ini" in the current directory) to get the simulation
-  // parameters for this run. If there are one or more command line args, then
-  // argv[1] must contain the name of the config file which will be read instead
-  // of biosim4.ini. Any args after that are ignored. The simulator code is
-  // in namespace BS (for "biosim").
+Procedure Nop();
+Begin
+
+End;
+
+// This file contains simulator(), the top-level entry point of the simulator.
+// simulator() is called from main.cpp with a copy of argc and argv.
+// If there is no command line argument, the simulator will read the default
+// config file ("biosim4.ini" in the current directory) to get the simulation
+// parameters for this run. If there are one or more command line args, then
+// argv[1] must contain the name of the config file which will be read instead
+// of biosim4.ini. Any args after that are ignored. The simulator code is
+// in namespace BS (for "biosim").
 
 
-  (**********************************************************************************************
-  Execute one simStep for one individual.
+(**********************************************************************************************
+Execute one simStep for one individual.
 
-  This executes in its own thread, invoked from the main simulator thread. First we execute
-  indiv.feedForward() which computes action values to be executed here. Some actions such as
-  signal emission(s) (pheromones), agent movement, or deaths will have been queued for
-  later execution at the end of the generation in single-threaded mode (the deferred queues
-  allow the main data structures (e.g., grid, signals) to be freely accessed read-only in all threads).
+This executes in its own thread, invoked from the main simulator thread. First we execute
+indiv.feedForward() which computes action values to be executed here. Some actions such as
+signal emission(s) (pheromones), agent movement, or deaths will have been queued for
+later execution at the end of the generation in single-threaded mode (the deferred queues
+allow the main data structures (e.g., grid, signals) to be freely accessed read-only in all threads).
 
-  In order to be thread-safe, the main simulator-wide data structures and their
-  accessibility are:
+In order to be thread-safe, the main simulator-wide data structures and their
+accessibility are:
 
-      grid - read-only
-      signals - (pheromones) read-write for the location where our agent lives
-          using signals.increment(), read-only for other locations
-      peeps - for other individuals, we can only read their index and genome.
-          We have read-write access to our individual through the indiv argument.
+    grid - read-only
+    signals - (pheromones) read-write for the location where our agent lives
+        using signals.increment(), read-only for other locations
+    peeps - for other individuals, we can only read their index and genome.
+        We have read-write access to our individual through the indiv argument.
 
-  The other important variables are:
+The other important variables are:
 
-      simStep - the current age of our agent, reset to 0 at the start of each generation.
-           For many simulation scenarios, this matches our indiv.age member.
-      randomUint - global random number generator, a private instance is given to each thread
-  **********************************************************************************************)
+    simStep - the current age of our agent, reset to 0 at the start of each generation.
+         For many simulation scenarios, this matches our indiv.age member.
+    randomUint - global random number generator, a private instance is given to each thread
+**********************************************************************************************)
 
 Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned);
 Var
@@ -395,7 +400,7 @@ Begin
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
     //            #pragma omp single
     murderCount := 0; // for reporting purposes
-
+    nop();
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
 
       // multithreaded loop: index 0 is reserved, start at 1
@@ -414,6 +419,7 @@ Begin
       endOfSimStep(simStep, generation);
       //                }
     End;
+    nop();
 
     //            #pragma omp single
     //            {
@@ -434,6 +440,10 @@ Begin
       inc(generation);
     End;
     AdditionalVideoFrame := false;
+    //If Not p.saveVideo Then Begin
+      //ResetSaveVideoFlag := true;
+      //p.saveVideo := true;
+    //End;
     ReloadConfigini := false;
     While KeyPressed Do Begin
       key := ReadKey;
@@ -451,6 +461,7 @@ Begin
             If Not AdditionalVideoFrame Then Begin
               writeln('--- next generation a video generation will be forced. ---');
             End;
+            p.saveVideo := true; // Sicherstellen, dass dieses Flag auf jeden Fall auch aktiv ist, da die
             AdditionalVideoFrame := true;
           End;
         'R', 'r': Begin // In der Nächsten Iterration das .ini File neu von der Platte einlesen

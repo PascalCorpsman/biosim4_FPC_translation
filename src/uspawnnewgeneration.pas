@@ -44,6 +44,10 @@ Var
   Time_In_Seconds: int64;
 Begin
   Time_In_Seconds := TimeInMs Div 1000;
+  If Time_in_Seconds = 0 Then Begin
+    result := inttostr(TimeInMs) + 'ms';
+    exit;
+  End;
   suffix := 's';
   rest := 0;
   If Time_In_Seconds > 60 Then Begin
