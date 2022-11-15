@@ -7,7 +7,7 @@ Uses
   cthreads,
 {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Classes, SysUtils, uSimulator, crt
+  Classes, SysUtils, uSimulator, crt, uThreadIndiv
   ;
 
 Var
@@ -16,10 +16,8 @@ Var
 
 Begin
   (*
-   * Known Bugs:
-   *           - Wenn man zum ersten mal die Simulation Beendet und dann eine .sim Datei lädt, dann macht die Survivers Rate einen deutlichen Sprung nach unten, warum ?
-   *             \-> Bei widerhohltem neustarten passiert das aber nicht 8-\
-   *             \-> Das Problem tritt auch nicht immer auf, bei Challange 1 scheint das nicht der fall zu sein ...
+   * Known Bugs: - keine
+   *
    *)
 
 // Gesehen bis 34:14

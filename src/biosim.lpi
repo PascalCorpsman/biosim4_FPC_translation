@@ -129,6 +129,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="ubasicTypes"/>
       </Unit>
+      <Unit>
+        <Filename Value="uthreadindiv.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="uThreadIndiv"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

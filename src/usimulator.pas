@@ -472,6 +472,7 @@ Begin
                 If (key = #13) Or (key = #10) Then Begin
                   writeln('--- Leaving Pause mode. ---');
                   inPause := false;
+                  LastSpawnTime := GetTickCount64; // Die Zeit der letzten Berechnung anpassen, sonst sieht der User hier nur die Zeit der Pause
                 End
                 Else Begin
                   writeln('--- Key "' + key + '" will be ignored. ---');

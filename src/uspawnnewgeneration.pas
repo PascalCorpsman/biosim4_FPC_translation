@@ -9,9 +9,12 @@ Uses
 
 {$I c_types.inc}
 
-// Requires that the grid, signals, and peeps containers have been allocated.
-// This will erase the grid and signal layers, then create a new population in
-// the peeps container at random locations with random genomes.
+Var
+  LastSpawnTime: uint64 = 0; // Zum Aussmessen der Dauer der Berechnung einer Generation
+
+  // Requires that the grid, signals, and peeps containers have been allocated.
+  // This will erase the grid and signal layers, then create a new population in
+  // the peeps container at random locations with random genomes.
 Procedure initializeGeneration0();
 Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
 
@@ -475,9 +478,6 @@ Begin
     Sort(Parents, l, re);
   End;
 End;
-
-Var
-  LastSpawnTime: uint64 = 0;
 
 Function spawnNewGeneration(generation, murderCount: unsigned): unsigned;
 Const

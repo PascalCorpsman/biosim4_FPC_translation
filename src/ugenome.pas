@@ -99,9 +99,21 @@ Function genomeSimilarity(Const g1, g2: TGenome): Float;
 Function GetCompressedGene(Const gene: TGene): uint32_t; // Komprimiert die TGene Datenstruktur in 32-Bit (damit die dann "Packed" ist).
 Function GetGeneFromUInt(value: uint32_t): TGene; // Umkehrfunktion zu GetCompressedGene
 
+Operator = (g1, g2: TGene): Boolean; // True if genes are identical
+
 Implementation
 
 Uses uparams, urandom, Math, upeeps, uSimulator;
+
+Operator = (g1, g2: TGene): Boolean;
+Begin
+  result :=
+    (g1.sourceType = g2.sourceType) And
+    (g1.sourceNum = g2.sourceNum) And
+    (g1.sinkType = g2.sinkType) And
+    (g1.sinkNum = g2.sinkNum) And
+    (g1.weight = g2.weight);
+End;
 
 Function GetCompressedGene(Const gene: TGene): uint32_t;
 Var
@@ -167,9 +179,9 @@ Var
   Gene: Tgene;
 Begin
   gene.sourceType := randomUint.Rnd() And 1;
-  gene.sourceNum := randomUint.RndRange(0, $7FFF);
+  gene.sourceNum := randomUint.RndRange(0, $7F); // Beschränken auf die 7-Bit die wir im Gen haben - Sonst geht das Laden / Speichern Schief weil dort ja definitiv auf 7-Bit gekürzt wird!
   gene.sinkType := randomUint.rnd() And 1;
-  gene.sinkNum := randomUint.RndRange(0, $7FFF);
+  gene.sinkNum := randomUint.RndRange(0, $7F); // Beschränken auf die 7-Bit die wir im Gen haben - Sonst geht das Laden / Speichern Schief weil dort ja definitiv auf 7-Bit gekürzt wird!
   gene.weight := Gene.makeRandomWeight();
 
   result := gene;
