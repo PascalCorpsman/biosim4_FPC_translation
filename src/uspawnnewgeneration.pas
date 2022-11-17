@@ -81,12 +81,13 @@ Begin
   End;
 End;
 
-Var
-  occupiedCount: integer;
 
-Procedure VisitOccupied(Coord: TCoord);
+Procedure VisitOccupied(Coord: TCoord; UserData: Pointer);
+Var
+  occupiedCount: Pinteger;
 Begin
-  If (grid.isOccupiedAt(Coord)) Then inc(occupiedCount);
+  occupiedCount := UserData;
+  If (grid.isOccupiedAt(Coord)) Then inc(occupiedCount^);
 End;
 
 Function passedSurvivalCriterion(indiv: PIndiv; challenge: unsigned): TBoolPair;
@@ -108,7 +109,7 @@ Var
   barrierCenters: TCoordArray;
   minDistance: Single;
   onEdge: Boolean;
-  x, y, x1, y1: integer;
+  occupiedCount, x, y, x1, y1: integer;
 Begin
   result := Pair(false, 0.0);
   If (Not indiv^.alive) Then Begin
@@ -160,7 +161,7 @@ Begin
         End;
 
         occupiedCount := 0;
-        visitNeighborhood(indiv^.loc, radius, @VisitOccupied);
+        visitNeighborhood(indiv^.loc, radius, @VisitOccupied, @occupiedCount);
         If (occupiedCount >= minNeighbors_CHALLENGE_STRING) And (occupiedCount <= maxNeighbors_CHALLENGE_STRING) Then Begin
           result := Pair(true, 1);
         End;
@@ -204,7 +205,7 @@ Begin
         distance := offset.length();
         If (distance <= outerRadius) Then Begin
           occupiedCount := 0;
-          visitNeighborhood(indiv^.loc, innerRadius, @VisitOccupied);
+          visitNeighborhood(indiv^.loc, innerRadius, @VisitOccupied, @occupiedCount);
           If (occupiedCount >= minNeighbors_CHALLENGE_CENTER_SPARSE) And (occupiedCount <= maxNeighbors_CHALLENGE_CENTER_SPARSE) Then Begin
             result := pair(true, 1.0);
           End;

@@ -120,20 +120,25 @@ Begin
   End;
 End;
 
-Var
-  dirVecX, dirVecY, sum: Double;
-  popcountloc: TCoord;
+Type
+  TCountPopulationDensity = Record
+    dirVecX, dirVecY, sum: Double;
+    popcountloc: TCoord;
+  End;
+  pCountPopulationDensity = ^TCountPopulationDensity;
 
-Procedure CountPopulationDensity(Coord: TCoord);
+Procedure CountPopulationDensity(Coord: TCoord; Userdata: Pointer);
 Var
   offset: TCoord;
   contrib, proj: Double;
+  Blub: pCountPopulationDensity;
 Begin
-  If (Coord <> popcountloc) And grid.isOccupiedAt(Coord) Then Begin
-    offset := Coord - popcountloc;
-    proj := dirVecX * offset.x + dirVecY * offset.y; // Magnitude of projection along dir
+  Blub := pCountPopulationDensity(Userdata);
+  If (Coord <> blub^.popcountloc) And grid.isOccupiedAt(Coord) Then Begin
+    offset := Coord - blub^.popcountloc;
+    proj := blub^.dirVecX * offset.x + blub^.dirVecY * offset.y; // Magnitude of projection along dir
     contrib := proj / (offset.x * offset.x + offset.y * offset.y);
-    sum := sum + contrib;
+    blub^.sum := blub^.sum + contrib;
   End;
 End;
 
@@ -141,6 +146,7 @@ Function getPopulationDensityAlongAxis(loc: TCoord; Dir: Tdir): float;
 Var
   maxSumMag, len, sensorVal: Double;
   dirVec: TCoord;
+  Data: TCountPopulationDensity;
 Begin
   // Converts the population along the specified axis to the sensor range. The
   // locations of neighbors are scaled by the inverse of their distance times
@@ -154,20 +160,20 @@ Begin
 
   assert(dir <> CENTER); // require a defined axis
 
-  sum := 0.0;
+  Data.sum := 0.0;
   dirVec := asNormalizedCoord(dir);
   len := sqrt(dirVec.x * dirVec.x + dirVec.y * dirVec.y);
-  dirVecX := dirVec.x / len;
-  dirVecY := dirVec.y / len; // Unit vector components along dir
+  Data.dirVecX := dirVec.x / len;
+  Data.dirVecY := dirVec.y / len; // Unit vector components along dir
 
-  popcountloc := loc;
+  Data.popcountloc := loc;
 
-  visitNeighborhood(loc, p.populationSensorRadius, @CountPopulationDensity);
+  visitNeighborhood(loc, p.populationSensorRadius, @CountPopulationDensity, @Data);
 
   maxSumMag := 6.0 * p.populationSensorRadius;
-  assert((sum >= -maxSumMag) And (sum <= maxSumMag));
+  assert((Data.sum >= -maxSumMag) And (Data.sum <= maxSumMag));
 
-  sensorVal := sum / maxSumMag; // convert to -1.0..1.0
+  sensorVal := Data.sum / maxSumMag; // convert to -1.0..1.0
   sensorVal := (sensorVal + 1.0) / 2.0; // convert to 0.0..1.0
 
   result := sensorVal;
@@ -215,49 +221,66 @@ Begin
   result := sensorVal;
 End;
 
-Var
-  CountLocs: unsigned;
-  sumi64: uInt64;
-  alayerNum: unsigned;
+Type
+  TCountSignalDensity = Record
+    CountLocs: unsigned;
+    sumi64: uInt64;
+    alayerNum: unsigned;
+  End;
+  PCountSignalDensity = ^TCountSignalDensity;
 
-Procedure CountSignalDensity(Coord: TCoord);
+Procedure CountSignalDensity(Coord: TCoord; Userdata: Pointer);
+Var
+  Data: PCountSignalDensity;
 Begin
-  countLocs := countLocs + 1;
-  sumi64 := sumi64 + signals.getMagnitude(alayerNum, Coord);
+  Data := PCountSignalDensity(Userdata);
+  Data^.countLocs := Data^.countLocs + 1;
+  Data^.sumi64 := Data^.sumi64 + signals.getMagnitude(Data^.alayerNum, Coord);
 End;
 
 Function getSignalDensity(layerNum: unsigned; loc: TCoord): float;
 Var
   Center: TCoord;
   maxSum, sensorVal: Double;
+  Data: TCountSignalDensity;
 Begin
   // returns magnitude of the specified signal layer in a neighborhood, with
   // 0.0..maxSignalSum converted to the sensor range.
 
-  countLocs := 0;
-  sumi64 := 0;
+  Data.countLocs := 0;
+  Data.sumi64 := 0;
   center := loc;
 
-  alayerNum := layerNum;
+  Data.alayerNum := layerNum;
 
-  visitNeighborhood(center, p.signalSensorRadius, @CountSignalDensity);
-  maxSum := countLocs * SIGNAL_MAX;
-  sensorVal := sumi64 / maxSum; // convert to 0.0..1.0
+  visitNeighborhood(center, p.signalSensorRadius, @CountSignalDensity, @Data);
+  maxSum := Data.countLocs * SIGNAL_MAX;
+  sensorVal := Data.sumi64 / maxSum; // convert to 0.0..1.0
 
   result := sensorVal;
 End;
 
-Procedure CountSensorRadius(Coord: TCoord);
+Type
+  TCountSensorRadius = Record
+    dirVecX, dirVecY, sum: Double;
+    alayerNum: unsigned;
+    popcountloc: TCoord;
+  End;
+  PCountSensorRadius = ^TCountSensorRadius;
+
+Procedure CountSensorRadius(Coord: TCoord; Userdata: Pointer);
 Var
   offset: TCoord;
   proj, contrib: Double;
+  data: PCountSensorRadius;
 Begin
-  If (Coord <> popcountloc) Then Begin
-    offset := Coord - popcountloc;
-    proj := (dirVecX * offset.x + dirVecY * offset.y); // Magnitude of projection along dir
-    contrib := (proj * signals.getMagnitude(alayerNum, Coord)) /
+  data := PCountSensorRadius(Userdata);
+  If (Coord <> data^.popcountloc) Then Begin
+    offset := Coord - data^.popcountloc;
+    proj := (data^.dirVecX * offset.x + data^.dirVecY * offset.y); // Magnitude of projection along dir
+    contrib := (proj * signals.getMagnitude(data^.alayerNum, Coord)) /
       (offset.x * offset.x + offset.y * offset.y);
-    sum := sum + (contrib);
+    data^.sum := data^.sum + (contrib);
   End;
 End;
 
@@ -265,6 +288,7 @@ Function getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: Tdir): 
 Var
   dirVec: TCoord;
   sensorVal, maxSumMag, len: Double;
+  data: TCountSensorRadius;
 Begin
   // Converts the signal density along the specified axis to sensor range. The
   // values of cell signal levels are scaled by the inverse of their distance times
@@ -276,19 +300,19 @@ Begin
 
   assert(dir <> TCompass.CENTER); // require a defined axis
 
-  sum := 0.0;
+  data.sum := 0.0;
   dirVec := asNormalizedCoord(dir);
   len := sqrt(dirVec.x * dirVec.x + dirVec.y * dirVec.y);
-  dirVecX := dirVec.x / len;
-  dirVecY := dirVec.y / len; // Unit vector components along dir
+  data.dirVecX := dirVec.x / len;
+  data.dirVecY := dirVec.y / len; // Unit vector components along dir
 
-  popcountloc := loc;
-  alayerNum := layerNum;
-  visitNeighborhood(loc, p.signalSensorRadius, @CountSensorRadius);
+  data.popcountloc := loc;
+  data.alayerNum := layerNum;
+  visitNeighborhood(loc, p.signalSensorRadius, @CountSensorRadius, @data);
 
   maxSumMag := 6.0 * p.signalSensorRadius * SIGNAL_MAX;
-  assert((sum >= -maxSumMag) And (sum <= maxSumMag));
-  sensorVal := sum / maxSumMag; // convert to -1.0..1.0
+  assert((data.sum >= -maxSumMag) And (data.sum <= maxSumMag));
+  sensorVal := data.sum / maxSumMag; // convert to -1.0..1.0
   sensorVal := (sensorVal + 1.0) / 2.0; // convert to 0.0..1.0
 
   result := sensorVal;
@@ -777,14 +801,21 @@ Begin
   result := actionLevels;
 End;
 
-Var
-  countOccupied: Unsigned;
+Type
+  TCountPopulation = Record
+    countLocs: unsigned;
+    countOccupied: Unsigned;
+  End;
+  PCountPopulation = ^TCountPopulation;
 
-Procedure CountPopulation(Coord: TCoord);
+Procedure CountPopulation(Coord: TCoord; Userdata: Pointer);
+Var
+  Data: PCountPopulation;
 Begin
-  countLocs := countLocs + 1;
+  data := PCountPopulation(Userdata);
+  data^.countLocs := data^.countLocs + 1;
   If grid.isOccupiedAt(Coord) Then Begin
-    countOccupied := countOccupied + 1;
+    data^.countOccupied := data^.countOccupied + 1;
   End;
 End;
 
@@ -798,6 +829,7 @@ Var
   phase, factor: Single;
   loc2: TCoord;
   indiv2: PIndiv;
+  FCountPopulation: TCountPopulation;
 Begin
   sensorVal := 0.0;
   Case Tsensor(sensorNum) Of
@@ -894,10 +926,10 @@ Begin
     TSensor.POPULATION: Begin
         // Returns population density in neighborhood converted linearly from
         // 0..100% to sensor range
-        countLocs := 0;
-        countOccupied := 0;
-        visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation);
-        sensorVal := countOccupied / countLocs;
+        FCountPopulation.countLocs := 0;
+        FCountPopulation.countOccupied := 0;
+        visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation, @FCountPopulation);
+        sensorVal := FCountPopulation.countOccupied / FCountPopulation.countLocs;
       End;
     TSensor.POPULATION_FWD: Begin
         // Sense population density along axis of last movement direction, mapped

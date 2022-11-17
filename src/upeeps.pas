@@ -56,7 +56,7 @@ Type
 
 Implementation
 
-Uses usimulator;
+Uses usimulator, uomp;
 
 Function TPeeps.getIndividual(index: uint16_t): PIndiv;
 Begin
@@ -90,8 +90,13 @@ Begin
   assert(indiv^.alive);
   //    #pragma omp critical
   //    {
-  setlength(deathQueue, high(deathQueue) + 2);
-  deathQueue[high(deathQueue)] := indiv^.index;
+  EnterCodePoint(cpqueueForDeath);
+  Try
+    setlength(deathQueue, high(deathQueue) + 2);
+    deathQueue[high(deathQueue)] := indiv^.index;
+  Finally
+    LeaveCodePoint(cpqueueForDeath);
+  End;
   //    }
 End;
 
@@ -119,9 +124,15 @@ Begin
   assert(indiv^.alive);
   //    #pragma omp critical
   //    {
-  setlength(moveQueue, high(moveQueue) + 2);
-  moveQueue[high(moveQueue)].index := Indiv^.index;
-  moveQueue[high(moveQueue)].Loc := newLoc;
+  EnterCodePoint(cpqueueForMove);
+  Try
+    setlength(moveQueue, high(moveQueue) + 2);
+    moveQueue[high(moveQueue)].index := Indiv^.index;
+    moveQueue[high(moveQueue)].Loc := newLoc;
+    assert(newLoc <> indiv^.loc);
+  Finally
+    LeaveCodePoint(cpqueueForMove);
+  End;
   //    }
 End;
 
@@ -143,7 +154,7 @@ Begin
     If (indiv^.alive) Then Begin
       newLoc := moveQueue[moveRecord].Loc;
       moveDir := (newLoc - indiv^.loc).asDir();
-      assert(moveDir.asInt()  <> integer(CENTER));
+      assert(moveDir.asInt() <> integer(CENTER));
       If (grid.isEmptyAt(newLoc)) Then Begin
         grid.Set_(indiv^.loc, 0);
         grid.Set_(newLoc, indiv^.index);

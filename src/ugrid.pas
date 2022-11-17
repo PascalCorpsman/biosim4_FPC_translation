@@ -148,11 +148,12 @@ Begin
     randomUint.RndRange(margin, p.sizeY - margin));
 End;
 
+
+Procedure SetBarierCoord(Coord: TCoord; UserData: Pointer);
 Var
   BarrierCoordTmp: TCoordArray;
-
-Procedure SetBarierCoord(Coord: TCoord);
 Begin
+  BarrierCoordTmp := TCoordArray(UserData);
   setlength(BarrierCoordTmp, high(BarrierCoordTmp) + 2);
   BarrierCoordTmp[high(BarrierCoordTmp)] := Coord;
 End;
@@ -165,6 +166,9 @@ End;
 // the main simulator thread after Grid::init() or Grid::zeroFill().
 
 Procedure TGrid.createBarrier(barrierType: unsigned);
+Var
+  BarrierCoordTmp: TCoordArray;
+
   Procedure drawBox(minX, minY, maxX, maxY: int16_t);
   Var
     x, y: integer;
@@ -315,7 +319,7 @@ Begin
         //barrierLocations[high(barrierLocations)] := center2;
 
         BarrierCoordTmp := Nil;
-        visitNeighborhood(center0, radius, @SetBarierCoord);
+        visitNeighborhood(center0, radius, @SetBarierCoord, @BarrierCoordTmp);
         //visitNeighborhood(center1, radius, @SetBarierCoord);
         //visitNeighborhood(center2, radius, @SetBarierCoord);
 
@@ -332,7 +336,7 @@ Begin
         BarrierCoordTmp := Nil;
         For x := 1 To numberOfLocations Do Begin
           loc := coord((p.sizeX Div 2), (x * verticalSliceSize));
-          visitNeighborhood(loc, radius, @SetBarierCoord);
+          visitNeighborhood(loc, radius, @SetBarierCoord, @BarrierCoordTmp);
         End;
         SetBarrierCoordTmp();
       End;

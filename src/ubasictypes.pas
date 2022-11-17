@@ -147,13 +147,13 @@ Type
   //
   //#endif // BASICTYPES_H_INCLUDED
 
-  TCoordProcedure = Procedure(Coord: TCoord);
+  TCoordProcedure = Procedure(Coord: TCoord; UserData: Pointer);
 
 Function asNormalizedCoord(Const Dir: TDir): TCoord; // (-1, -0, 1, -1, 0, 1)
 
 Procedure Nop();
 
-Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure);
+Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 
 Function Coord(x, y: integer): TCoord;
 
@@ -233,7 +233,7 @@ End;
 // some location. This function feeds each valid (in-bounds) location in the specified
 // neighborhood to the specified function. Locations include self (center of the neighborhood).
 
-Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure);
+Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 Var
   dy, y, extentY, dx, x: Integer;
 Begin
@@ -244,13 +244,13 @@ Begin
     For dy := -round(min(extentY, loc.y)) To round(min(extentY, (p.sizeY - loc.y) - 1)) Do Begin
       y := loc.y + dy;
       assert((y >= 0) And (y < p.sizeY));
-      f(Coord(x, y));
+      f(Coord(x, y), UserData);
     End;
   End;
 End;
 
 // TODO: Wenn alles mal läuft, ersetzen wir die Routine oben durch eine die "echte" Kreise macht und auf die Wurzel verzichtet
-//Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure);
+//Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 //Var
 //  i, j, x, y: integer;
 //Begin
@@ -260,7 +260,7 @@ End;
 //        x := loc.x + i;
 //        y := loc.y + j;
 //        If (x >= 0) And (x < p.sizeX) And (y >= 0) And (y < p.sizeY) Then Begin
-//          f(coord(x, y));
+//          f(coord(x, y), UserData);
 //        End;
 //      End;
 //    End;

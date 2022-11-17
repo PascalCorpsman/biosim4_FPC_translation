@@ -5,7 +5,7 @@ Unit uSimulator;
 Interface
 
 Uses
-  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome;
+  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, uThreadIndiv, uindiv;
 
 {$I c_types.inc}
 {$INTERFACES corba}
@@ -49,6 +49,7 @@ Type
      * Variablen welche von LoadSim initialisiert werden damit
      *)
     fLoadSim: TLoadSim;
+    fIndivThreads: Array Of TThreadIndivs; // Im Multithread Modus sind das die weiteren Threads
     (*
      * Rest
      *)
@@ -76,10 +77,12 @@ Var
   AdditionalVideoFrame: Boolean = false; // If true, the next generation will definitly write a video
   ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
+Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
+
 Implementation
 
-Uses usensoractions, urandom, uspawnNewGeneration, uindiv, uexecuteActions,
-  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests;
+Uses usensoractions, urandom, uspawnNewGeneration, uexecuteActions,
+  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp;
 
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
@@ -267,18 +270,26 @@ Begin
   signals := TSignals.Create();
   peeps := TPeeps.Create();
   ImageWriter := Nil;
+  fIndivThreads := Nil;
+  InitCriticalSections();
 End;
 
 Destructor TSimulator.Destroy;
+Var
+  i: Integer;
 Begin
   If p.numThreads > 1 Then Begin
     writeln('Waiting for threads to shut down.');
+  End;
+  For i := 0 To high(fIndivThreads) Do Begin
+    fIndivThreads[i].Terminate;
   End;
   fParamManager.free;
   grid.Free;
   signals.Free;
   peeps.free;
   If assigned(ImageWriter) Then ImageWriter.free;
+  FreeCriticalSections();
   writeln('Simulator exit.');
 End;
 
@@ -320,7 +331,9 @@ Var
   //indiv: TIndiv;
   numberSurvivors: unsigned;
   key: Char;
-  inPause, lastRound: Boolean;
+  inPause, lastRound, b1: Boolean;
+  IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
+  i: integer;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -345,8 +358,30 @@ Begin
   fparamManager.updateFromConfigFile(0);
   fparamManager.checkParameters(); // check and report any problems
 
+  IndivCalcDelta := p.population;
+
+{$IFDEF Windows}
+  If p.numThreads > 2 Then Begin
+    //  Warum ruiniiert das einschalten der Threads die Performance, unter Windows ??
+    p.numThreads := 2; // Debugg to be removed
+    writeln('Attention under windows more then 2 threads seem to be broken.');
+    writeln('The simulator resets the the thread cound back to 2.');
+    writeln('If you want full throttle, use the linux version.');
+    writeln('');
+    writeln('Press return to start simulation.');
+    ReadLn;
+  End;
+{$ENDIF}
+
   If p.numThreads <> 0 Then Begin
     ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
+    If p.numThreads > 2 Then Begin
+      setlength(fIndivThreads, p.numThreads - 2);
+      For i := 0 To high(fIndivThreads) Do Begin
+        fIndivThreads[i] := TThreadIndivs.Create();
+      End;
+      IndivCalcDelta := ceil(p.population / (p.numThreads - 1)); // Nur -1 weil der Hauptthread natürlich auch rechnet !
+    End;
   End
   Else Begin
     ImageWriter := TimageWriter.create();
@@ -400,9 +435,28 @@ Begin
 
       // multithreaded loop: index 0 is reserved, start at 1
 //                #pragma omp for schedule(auto)
-      For indivIndex := 1 To p.population Do Begin
+      // 1. die ganzen Threads mit den "Teilaufgaben" starten
+      i := IndivCalcDelta + 1;
+      For indivIndex := 0 To high(fIndivThreads) Do Begin
+        assert(fIndivThreads[indivIndex].IsStateIdle());
+        fIndivThreads[indivIndex].StartWork(i, min(i + IndivCalcDelta, p.population), SimStep);
+        i := i + IndivCalcDelta + 1;
+      End;
+      // 2. Der Main Thread übernimmt natürlich auch einen Teil der muss ja eh warten auf die anderen Threads
+      For indivIndex := 1 To IndivCalcDelta Do Begin
         If (peeps[indivIndex]^.alive) Then Begin
           simStepOneIndiv(peeps[indivIndex], simStep);
+        End;
+      End;
+      // Warten darauf, dass alle threads "fertig" sind
+      b1 := true;
+      While b1 Do Begin
+        b1 := false;
+        For i := 0 To high(fIndivThreads) Do Begin
+          If Not fIndivThreads[i].IsStateIdle() Then Begin
+            CheckSynchronize(1);
+            b1 := true;
+          End;
         End;
       End;
 

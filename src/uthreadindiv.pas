@@ -9,31 +9,70 @@ Uses
 
 Type
 
+  TThreadIndivState = (isIdle, isRunning);
 
+  { TThreadIndivs }
 
-  { TThreadIndic }
-
-  TThreadIndic = Class(TThread)
+  TThreadIndivs = Class(TThread)
   private
+    FFirstindex, FLastIndex, fsimStep: Integer;
+    fState: TThreadIndivState;
   public
     Procedure Execute(); override;
     Constructor Create(); reintroduce;
+    Function IsStateIdle(): Boolean;
+    Function StartWork(FirstIndex, LastIndex, simStep: integer): Boolean;
   End;
 
 Implementation
 
+Uses upeeps, uSimulator;
+
 { TThreadIndic }
 
-Constructor TThreadIndic.Create;
+Constructor TThreadIndivs.Create;
 Begin
-  Inherited Create(false);
-
+  Inherited Create(true);
+  FreeOnTerminate := true;
+  fState := isIdle;
+  Start;
 End;
 
-Procedure TThreadIndic.Execute;
+Function TThreadIndivs.IsStateIdle: Boolean;
+Begin
+  result := fState = IsIdle;
+End;
+
+Function TThreadIndivs.StartWork(FirstIndex, LastIndex, simStep: integer
+  ): Boolean;
+Begin
+  result := IsStateIdle();
+  If Not Result Then exit;
+  FFirstindex := FirstIndex;
+  FLastIndex := LastIndex;
+  fsimStep := simStep;
+  fState := isRunning;
+End;
+
+Procedure TThreadIndivs.Execute;
+Var
+  indivIndex: Integer;
 Begin
   While Not Terminated Do Begin
-    sleep(1);
+    Case fState Of
+      isIdle: Begin
+          sleep(1);
+        End;
+      isRunning: Begin
+          // Mache die Arbeit
+          For indivIndex := FFirstindex To FLastIndex Do Begin
+            If (peeps[indivIndex]^.alive) Then Begin
+              simStepOneIndiv(peeps[indivIndex], fsimStep);
+            End;
+          End;
+          fState := isIdle; // Arbeit getan, dann wieder zurück in Idle
+        End;
+    End;
   End;
 End;
 

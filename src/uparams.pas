@@ -480,6 +480,7 @@ Var
   isUint: Boolean;
   activeFromGeneration: unsigned;
 Begin
+  // TODO: Hier sollten je nach Generation (0 = alle, sonst nur die "Updatefähigen")
   If ReloadConfigini Then Begin
     registerConfigFile(configFilename);
   End;

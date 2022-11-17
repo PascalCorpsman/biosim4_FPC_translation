@@ -70,7 +70,7 @@ Begin
   End;
 End;
 
-Procedure printLoc(Coord: TCoord);
+Procedure printLoc(Coord: TCoord; UserData: Pointer);
 Begin
   writeln(inttostr(Coord.x) + ', ' + inttostr(Coord.y));
 End;
@@ -78,25 +78,25 @@ End;
 Procedure unitTestGridVisitNeighborhood();
 Begin
   Writeln('Test loc 10,10 radius 1');
-  visitNeighborhood(Coord(10, 10), 1.0, @printLoc);
+  visitNeighborhood(Coord(10, 10), 1.0, @printLoc, Nil);
 
   Writeln('Test loc 0,0 radius 1');
-  visitNeighborhood(Coord(0, 0), 1.0, @printLoc);
+  visitNeighborhood(Coord(0, 0), 1.0, @printLoc, Nil);
 
   Writeln('Test loc 10,10 radius 1.4');
-  visitNeighborhood(Coord(10, 10), 1.4, @printLoc);
+  visitNeighborhood(Coord(10, 10), 1.4, @printLoc, Nil);
 
   Writeln('Test loc 10,10 radius 1.5');
-  visitNeighborhood(Coord(10, 10), 1.5, @printLoc);
+  visitNeighborhood(Coord(10, 10), 1.5, @printLoc, Nil);
   //
   Writeln('Test loc 1,1 radius 1.4');
-  visitNeighborhood(Coord(1, 1), 1.4, @printLoc);
+  visitNeighborhood(Coord(1, 1), 1.4, @printLoc, Nil);
 
   Writeln('Test loc 10,10 radius 2.0');
-  visitNeighborhood(Coord(10, 10), 2.0, @printLoc);
+  visitNeighborhood(Coord(10, 10), 2.0, @printLoc, Nil);
 
   Writeln('Test loc p.sizeX-1, p.sizeY-1 radius 2.0');
-  visitNeighborhood(Coord((p.sizeX - 1), (p.sizeY - 1)), 2.0, @printLoc);
+  visitNeighborhood(Coord((p.sizeX - 1), (p.sizeY - 1)), 2.0, @printLoc, Nil);
 End;
 
 

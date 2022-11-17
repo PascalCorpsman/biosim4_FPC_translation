@@ -35,13 +35,12 @@ Type
     //    const Layer& operator[](uint16_t layerNum) const { return data[layerNum]; }
     Function getMagnitude(layernum: uint16_t; loc: TCoord): uint8_t;
     Procedure increment(layerNum: int16_t; loc: TCoord);
-    //    void zeroFill() { for (Layer &layer : data) { layer.zeroFill(); } }
     Procedure fade(layerNum: unsigned);
   End;
 
 Implementation
 
-Uses uparams, uSimulator, Math;
+Uses uparams, uSimulator, Math, uomp;
 
 { TSignals }
 
@@ -100,42 +99,46 @@ Begin
   End;
 End;
 
-Var
-  DummyLayer: Integer;
-
 Const
   centerIncreaseAmount = 2;
   neighborIncreaseAmount = 1;
 
-Procedure visitNeighborhoodCallback(loc: TCoord);
+Procedure visitNeighborhoodCallback(loc: TCoord; UserData: Pointer);
+Var
+  DummyLayer: PInteger;
 Begin
-  If (signals.fdata[DummyLayer][loc.x][loc.y] < SIGNAL_MAX) Then Begin
-    signals.fdata[DummyLayer][loc.x][loc.y] :=
-      min(SIGNAL_MAX,
-      signals.fdata[DummyLayer][loc.x][loc.y] + neighborIncreaseAmount);
+  DummyLayer := Pinteger(UserData);
+  If (signals.fdata[DummyLayer^][loc.x][loc.y] < SIGNAL_MAX) Then Begin
+    signals.fdata[DummyLayer^][loc.x][loc.y] := min(SIGNAL_MAX, signals.fdata[DummyLayer^][loc.x][loc.y] + neighborIncreaseAmount);
   End;
 End;
 
 // Increases the specified location by centerIncreaseAmount,
 // and increases the neighboring cells by neighborIncreaseAmount
 
-// Is it ok that multiple readers are reading this container while
-// this single thread is writing to it?  todo!!!
+// TODO: Is it ok that multiple readers are reading this container while this single thread is writing to it?  todo!!!
 
 Procedure TSignals.increment(layerNum: int16_t; loc: TCoord);
 Const
   radius = 1.5;
+Var
+  DummyLayer: Integer;
 Begin
   DummyLayer := layerNum;
 
   //#pragma omp critical
   //    {
-  visitNeighborhood(loc, radius, @visitNeighborhoodCallback);
+  EnterCodePoint(cpSignals_increment);
+  Try
+    visitNeighborhood(loc, radius, @visitNeighborhoodCallback, @DummyLayer);
 
-  If (signals.fdata[layerNum][loc.x][loc.y] < SIGNAL_MAX) Then Begin
-    signals.fdata[layerNum][loc.x][loc.y] :=
-      min(SIGNAL_MAX,
-      signals.fdata[layerNum][loc.x][loc.y] + centerIncreaseAmount);
+    If (signals.fdata[layerNum][loc.x][loc.y] < SIGNAL_MAX) Then Begin
+      signals.fdata[layerNum][loc.x][loc.y] :=
+        min(SIGNAL_MAX,
+        signals.fdata[layerNum][loc.x][loc.y] + centerIncreaseAmount);
+    End;
+  Finally
+    LeaveCodePoint(cpSignals_increment);
   End;
   //    }
 End;
