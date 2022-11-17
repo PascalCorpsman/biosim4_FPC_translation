@@ -360,19 +360,6 @@ Begin
 
   IndivCalcDelta := p.population;
 
-{$IFDEF Windows}
-  If p.numThreads > 2 Then Begin
-    //  Warum ruiniiert das einschalten der Threads die Performance, unter Windows ??
-    p.numThreads := 2; // Debugg to be removed
-    writeln('Attention under windows more then 2 threads seem to be broken.');
-    writeln('The simulator resets the the thread cound back to 2.');
-    writeln('If you want full throttle, use the linux version.');
-    writeln('');
-    writeln('Press return to start simulation.');
-    ReadLn;
-  End;
-{$ENDIF}
-
   If p.numThreads <> 0 Then Begin
     ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
     If p.numThreads > 2 Then Begin
