@@ -8,7 +8,7 @@ Uses
   Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, uThreadIndiv, uindiv;
 
 {$I c_types.inc}
-{$INTERFACES corba}
+{$INTERFACES corba} // Für TImageWriter, so kann man Interfaces ohne den .net Gruscht nutzen
 Const
   // Some of the survival challenges to try. Some are interesting, some
   // not so much. Fine-tune the challenges by tweaking the corresponding code
@@ -404,9 +404,6 @@ Begin
 
   peeps.init(p.population); // the peeps themselves
 
-  // If imageWriter is to be run in its own thread, start it here:
-//    //std::thread t(&ImageWriter::saveFrameThread, &imageWriter);
-
   // Unit tests:
   //unitTestConnectNeuralNetWiringFromGenome();
   //unitTestGridVisitNeighborhood();
@@ -431,8 +428,6 @@ Begin
 
   // Inside the parallel region, be sure that shared data is not modified. Do the
   // modifications in the single-thread regions.
-//    #pragma omp parallel num_threads(p.numThreads) default(shared)
-//    {
 
   lastRound := false;
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
@@ -442,7 +437,6 @@ Begin
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
 
       // multithreaded loop: index 0 is reserved, start at 1
-//                #pragma omp for schedule(auto)
       // 1. die ganzen Threads mit den "Teilaufgaben" starten
       i := IndivCalcDelta + 1;
       For indivIndex := 0 To high(fIndivThreads) Do Begin
@@ -456,6 +450,7 @@ Begin
           simStepOneIndiv(peeps[indivIndex], simStep);
         End;
       End;
+
       // Warten darauf, dass alle threads "fertig" sind
       b1 := true;
       While b1 Do Begin
@@ -470,15 +465,10 @@ Begin
 
       // In single-thread mode: this executes deferred, queued deaths and movements,
       // updates signal layers (pheromone), etc.
-//                #pragma omp single
-//                {
       murderCount := murderCount + peeps.deathQueueSize();
       endOfSimStep(simStep, generation);
-      //                }
     End;
 
-    //            #pragma omp single
-    //            {
     endOfGeneration(generation);
     fparamManager.updateFromConfigFile(generation + 1);
     If lastRound Then Begin
@@ -551,14 +541,10 @@ Begin
     If p.numThreads <> 0 Then Begin
       CheckSynchronize(1);
     End;
-    //            } -- Ende Pragma
   End;
-  //    } -- Ende Pragma
 
   displaySampleGenomes(3); // final report, for debugging
 
-  // If imageWriter is in its own thread, stop it and wait for it here:
-  //imageWriter.abort();
 End;
 
 End.

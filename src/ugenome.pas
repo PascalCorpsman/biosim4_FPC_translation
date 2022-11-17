@@ -36,9 +36,6 @@ Type
     sinkType: uint16_t; // NEURON or ACTION 1-Bit
     sinkNum: uint16_t; // 7-Bit
     weight: int16_t;
-    //Const f1 = 8.0;
-    //Const f2 = 64.0;
-    //float weightAsFloat() { return std::pow(weight / f1, 3.0) / f2; }
     Function weightAsFloat(): Float;
     Function makeRandomWeight(): int16_t;
   End;
@@ -172,7 +169,6 @@ End;
 
 // Returns by value a single gene with random members.
 // See genome.h for the width of the members.
-// ToDo: don't assume the width of the members in gene.
 
 Function makeRandomGene(): TGene;
 Var
@@ -277,7 +273,6 @@ Begin
       //  Genome[i] := Genome[i - 1];
       //End;
       //Genome[index] := makeRandomGene();
-
       setlength(Genome, high(Genome) + 2);
       Genome[high(Genome)] := makeRandomGene();
     End;
@@ -289,41 +284,27 @@ End;
 
 Procedure randomBitFlip(Var Genome: Tgenome);
 Var
-  method: integer;
-  //byteIndex,
   elementIndex, bitIndex8: unsigned;
   chance: Single;
 Begin
-  method := 1;
-
-  //byteIndex := randomUint.RndRange(0, length(genome) - 1) * sizeof(TGene);
   elementIndex := randomUint.RndRange(0, length(genome) - 1);
   bitIndex8 := 1 Shl randomUint.RndRange(0, 7);
 
-  If (method = 0) Then Begin
-    // TODO: ist eh deaktiviert -> nicht übersetzt
-    //    ((uint8_t *)&genome[0])[byteIndex] ^= bitIndex8;
+  chance := randomUint.Rnd() / RANDOM_UINT_MAX; // 0..1
+  If (chance < 0.2) Then Begin // sourceType
+    genome[elementIndex].sourceType := genome[elementIndex].sourceType Xor 1;
   End
-  Else If (method = 1) Then Begin
-    chance := randomUint.Rnd() / RANDOM_UINT_MAX; // 0..1
-    If (chance < 0.2) Then Begin // sourceType
-      genome[elementIndex].sourceType := genome[elementIndex].sourceType Xor 1;
-    End
-    Else If (chance < 0.4) Then Begin // sinkType
-      genome[elementIndex].sinkType := genome[elementIndex].sinkType Xor 1;
-    End
-    Else If (chance < 0.6) Then Begin // sourceNum
-      genome[elementIndex].sourceNum := genome[elementIndex].sourceNum Xor bitIndex8;
-    End
-    Else If (chance < 0.8) Then Begin // sinkNum
-      genome[elementIndex].sinkNum := genome[elementIndex].sinkNum Xor bitIndex8;
-    End
-    Else Begin // weight
-      genome[elementIndex].weight := genome[elementIndex].weight Xor (1 Shl randomUint.RndRange(1, 15));
-    End;
+  Else If (chance < 0.4) Then Begin // sinkType
+    genome[elementIndex].sinkType := genome[elementIndex].sinkType Xor 1;
   End
-  Else Begin
-    assert(false);
+  Else If (chance < 0.6) Then Begin // sourceNum
+    genome[elementIndex].sourceNum := genome[elementIndex].sourceNum Xor bitIndex8;
+  End
+  Else If (chance < 0.8) Then Begin // sinkNum
+    genome[elementIndex].sinkNum := genome[elementIndex].sinkNum Xor bitIndex8;
+  End
+  Else Begin // weight
+    genome[elementIndex].weight := genome[elementIndex].weight Xor (1 Shl randomUint.RndRange(1, 15));
   End;
 End;
 

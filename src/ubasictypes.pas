@@ -57,15 +57,8 @@ Arithmetic
     Polar = Polar * Polar (dot product)
 *)
 
-//
-//extern bool unitTestBasicTypes();
 Type
   TCompass = (SW = 0, S, SE, W, CENTER, E, NW, N, NE);
-
-
-  //struct Dir;
-  //struct Coord;
-  //struct Polar;
 
   // Supports the eight directions in enum class Compass plus CENTER.
 
@@ -78,49 +71,21 @@ Type
     Function Dir(aDir: TCompass = CENTER): TDir static;
 
     Function random8(): TDir static;
-
-    //    Dir(Compass dir = Compass::CENTER) : dir9{dir} {}
-    //    Dir& operator=(const Compass& d) { dir9 = d; return *this; }
     Function asInt(): uint8;
-    //    Polar asNormalizedPolar() const;
 
-    //    Dir rotate(int n = 0) const;
     Function rotate(n: integer = 0): TDir;
     Function rotate90DegCW(): Tdir;
     Function rotate90DegCCW(): TDir;
-    //    Dir rotate180Deg() const { return rotate(4); }
-
-    //    bool operator==(Compass d) const { return asInt() == (uint8_t)d; }
-    //    bool operator!=(Compass d) const { return asInt() != (uint8_t)d; }
-    //    bool operator==(Dir d) const { return asInt() == d.asInt(); }
-    //    bool operator!=(Dir d) const { return asInt() != d.asInt(); }
-
   End;
 
 
   // Coordinates range anywhere in the range of int16_t. Coordinate arithmetic
   // wraps like int16_t. Can be used, e.g., for a location in the simulator grid, or
   // for the difference between two locations.
-  //struct __attribute__((packed)) Coord {
 
   { TCoord }
 
   TCoord = Packed Object // Umstellen auf Record mit Typehelpern
-    //    Coord(int16_t x0 = 0, int16_t y0 = 0) : x{x0}, y{y0} { }
-    //    bool isNormalized() const { return x >= -1 && x <= 1 && y >= -1 && y <= 1; }
-    //    Coord normalize() const;
-    //    Polar asPolar() const;
-
-    //    bool operator==(Coord c) const { return x == c.x && y == c.y; }
-    //    bool operator!=(Coord c) const { return x != c.x || y != c.y; }
-    //    Coord operator+(Coord c) const { return Coord{(int16_t)(x + c.x), (int16_t)(y + c.y)}; }
-    //    Coord operator-(Coord c) const { return Coord{(int16_t)(x - c.x), (int16_t)(y - c.y)}; }
-    //    Coord operator*(int a) const { return Coord{(int16_t)(x * a), (int16_t)(y * a)}; }
-    //    Coord operator+(Dir d) const { return *this + d.asNormalizedCoord(); }
-    //    Coord operator-(Dir d) const { return *this - d.asNormalizedCoord(); }
-    //
-    //    float raySameness(Coord other) const; // returns -1.0 (opposite) .. 1.0 (same)
-    //    float raySameness(Dir d) const; // returns -1.0 (opposite) .. 1.0 (same)
   public
     x: int16;
     y: int16;
@@ -129,23 +94,6 @@ Type
   End;
 
   TCoordArray = Array Of TCoord;
-
-  //// Polar magnitudes are signed 32-bit integers so that they can extend across any 2D
-  //// area defined by the Coord class.
-  //struct __attribute__((packed)) Polar {
-  //    explicit Polar(int mag0 = 0, Compass dir0 = Compass::CENTER)
-  //         : mag{mag0}, dir{Dir{dir0}} { }
-  //    explicit Polar(int mag0, Dir dir0)
-  //         : mag{mag0}, dir{dir0} { }
-  //    Coord asCoord() const;
-  //public:
-  //    int mag;
-  //    Dir dir;
-  //};
-  //
-  //} // end namespace BS
-  //
-  //#endif // BASICTYPES_H_INCLUDED
 
   TCoordProcedure = Procedure(Coord: TCoord; UserData: Pointer);
 
@@ -170,6 +118,11 @@ Implementation
 
 Uses urandom, Math, uparams;
 
+Procedure Nop();
+Begin
+
+End;
+
 Function FixPathDelimeter(Path: String): String;
 Var
   i: Integer;
@@ -181,11 +134,6 @@ Begin
       result[i] := PathDelim;
     End;
   End;
-End;
-
-Procedure Nop();
-Begin
-
 End;
 
 Const
@@ -247,7 +195,7 @@ End;
 // This is a utility function used when inspecting a local neighborhood around
 // some location. This function feeds each valid (in-bounds) location in the specified
 // neighborhood to the specified function. Locations include self (center of the neighborhood).
-
+(* Das ist der Original Code, brauchts den noch, oder kann das weg ?
 Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 Var
   dy, y, extentY, dx, x: Integer;
@@ -262,35 +210,28 @@ Begin
       f(Coord(x, y), UserData);
     End;
   End;
+End; *)
+
+Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
+Var
+  ii, i, j, x, y: integer;
+Begin
+  For i := -round(radius) To +round(radius) Do Begin
+    ii := sqr(i);
+    For j := -round(radius) To +round(radius) Do Begin
+      If ii + sqr(j) <= sqr(radius) Then Begin
+        x := loc.x + i;
+        y := loc.y + j;
+        If (x >= 0) And (x < p.sizeX) And (y >= 0) And (y < p.sizeY) Then Begin
+          f(coord(x, y), UserData);
+        End;
+      End;
+    End;
+  End;
 End;
 
-// TODO: Wenn alles mal läuft, ersetzen wir die Routine oben durch eine die "echte" Kreise macht und auf die Wurzel verzichtet
-//Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
-//Var
-//  i, j, x, y: integer;
-//Begin
-//  For i := -round(radius) To +round(radius) Do Begin
-//    For j := -round(radius) To +round(radius) Do Begin
-//      If sqr(i) + sqr(j) <= sqr(radius) Then Begin
-//        x := loc.x + i;
-//        y := loc.y + j;
-//        If (x >= 0) And (x < p.sizeX) And (y >= 0) And (y < p.sizeY) Then Begin
-//          f(coord(x, y), UserData);
-//        End;
-//      End;
-//    End;
-//  End;
-//End;
 
-// basicTypes.cpp
-
-//#include <cassert>
-//#include "basicTypes.h"
-//
-//namespace BS {
-
-
-  { TCoord }
+{ TCoord }
 
 Function TCoord.length: integer;
 Begin
@@ -324,126 +265,6 @@ Begin
   // possible.
   result := result.Dir(conversion[ord(yp > 0) * 8 + ord(xp > 0) * 4 + ord(yp > xp) * 2 + ord(yp >= -xp)]);
 End;
-
-//Dir Dir::rotate(int n) const
-//{
-//    return rotations[asInt() * 8 + (n & 7)];
-//}
-//
-//
-///*
-//    A normalized Coord is a Coord with x and y == -1, 0, or 1.
-//    A normalized Coord may be used as an offset to one of the
-//    8-neighbors.
-//
-//    A Dir value maps to a normalized Coord using
-//
-//       Coord { (d%3) - 1, (trunc)(d/3) - 1  }
-//
-//       0 => -1, -1  SW
-//       1 =>  0, -1  S
-//       2 =>  1, -1, SE
-//       3 => -1,  0  W
-//       4 =>  0,  0  CENTER
-//       5 =>  1   0  E
-//       6 => -1,  1  NW
-//       7 =>  0,  1  N
-//       8 =>  1,  1  NE
-//*/
-
-//
-//
-//Coord Dir::asNormalizedCoord() const
-//{
-//    return NormalizedCoords[asInt()];
-//}
-//
-//
-//Polar Dir::asNormalizedPolar() const
-//{
-//    return Polar{1, dir9};
-//}
-//
-//
-///*
-//    A normalized Coord has x and y == -1, 0, or 1.
-//    A normalized Coord may be used as an offset to one of the
-//    8-neighbors.
-//    We'll convert the Coord into a Dir, then convert Dir to normalized Coord.
-//*/
-//Coord Coord::normalize() const
-//{
-//    return asDir().asNormalizedCoord();
-//}
-//
-//
-//Polar Coord::asPolar() const
-//{
-//    return Polar{(int)length(), asDir()};
-//}
-//
-//
-///*
-//    Compass values:
-//
-//        6  7  8
-//        3  4  5
-//        0  1  2
-//*/
-//Coord Polar::asCoord() const
-//{
-//    // (Thanks to @Asa-Hopkins for this optimized function -- drm)
-//
-//    // 3037000500 is 1/sqrt(2) in 32.32 fixed point
-//    constexpr int64_t coordMags[9] = {
-//        3037000500,  // SW
-//        1LL << 32,   // S
-//        3037000500,  // SE
-//        1LL << 32,   // W
-//        0,           // CENTER
-//        1LL << 32,   // E
-//        3037000500,  // NW
-//        1LL << 32,   // N
-//        3037000500   // NE
-//    };
-//
-//    int64_t len = coordMags[dir.asInt()] * mag;
-//
-//    // We need correct rounding, the idea here is to add/sub 1/2 (in fixed point)
-//    // and truncate. We extend the sign of the magnitude with a cast,
-//    // then shift those bits into the lower half, giving 0 for mag >= 0 and
-//    // -1 for mag<0. An XOR with this copies the sign onto 1/2, to be exact
-//    // we'd then also subtract it, but we don't need to be that precise.
-//
-//    int64_t temp = ((int64_t)mag >> 32) ^ ((1LL << 31) - 1);
-//    len = (len + temp) / (1LL << 32); // Divide to make sure we get an arithmetic shift
-//
-//    return NormalizedCoords[dir.asInt()] * len;
-//}
-//
-//
-//// returns -1.0 (opposite directions) .. +1.0 (same direction)
-//// returns 1.0 if either vector is (0,0)
-//float Coord::raySameness(Coord other) const
-//{
-//    int64_t mag = ((int64_t)x * x + y * y) * (other.x * other.x + other.y * other.y);
-//    if (mag == 0) {
-//        return 1.0; // anything is "same" as zero vector
-//    }
-//
-//    return (x * other.x + y * other.y) / std::sqrt(mag);
-//}
-//
-//
-//// returns -1.0 (opposite directions) .. +1.0 (same direction)
-//// returns 1.0 if self is (0,0) or d is CENTER
-//float Coord::raySameness(Dir d) const
-//{
-//    return raySameness(d.asNormalizedCoord());
-//}
-//
-//} // end namespace BS
-
 
 { TDir }
 

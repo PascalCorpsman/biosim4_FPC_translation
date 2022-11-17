@@ -133,21 +133,25 @@ End;
 // Finds a random unoccupied location in the grid
 
 Function TGrid.findEmptyLocation: TCoord;
+Var
+  cnt: integer;
 Begin
-  // TODO: Hier sollte eine Endlos Erkennung rein !
+  cnt := 0;
   While true Do Begin
     result.x := randomUint.RndRange(0, p.sizeX - 1);
     result.y := randomUint.RndRange(0, p.sizeY - 1);
     If isEmptyAt(result) Then exit;
+    inc(cnt);
+    If cnt > p.sizeX * p.sizey Then Begin
+      Raise exception.Create('TGrid.findEmptyLocation: endless detection, overflow, do you have to less space to place all individuals ?');
+    End;
   End;
 End;
 
 Function RandomLoc(margin: integer): tCoord;
 Begin
-  result := Coord(randomUint.RndRange(margin, p.sizeX - margin),
-    randomUint.RndRange(margin, p.sizeY - margin));
+  result := Coord(randomUint.RndRange(margin, p.sizeX - margin), randomUint.RndRange(margin, p.sizeY - margin));
 End;
-
 
 Procedure SetBarierCoord(Coord: TCoord; UserData: Pointer);
 Var

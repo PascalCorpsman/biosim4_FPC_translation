@@ -515,11 +515,8 @@ Begin
     For index := 1 To p.population Do Begin
       passed := passedSurvivalCriterion(peeps[index], p.challenge);
       // Save the parent genome if it results in valid neural connections
-      // ToDo: if the parents no longer need their genome record, we could
-      // possibly do a move here instead of copy, although it's doubtful that
-      // the optimization would be noticeable.
       If (passed.first And assigned(peeps[index]^.nnet.connections)) Then Begin
-        setlength(parents, high(parents) + 2); // TODO: das hier effizienter machen
+        setlength(parents, high(parents) + 2); // TODO: Speedup Implementieren
         parents[high(parents)].first := index;
         parents[high(parents)].Second := passed.second;
       End;
@@ -537,7 +534,7 @@ Begin
       // This the test for the spawning area:
       passed := passedSurvivalCriterion(peeps[index], CHALLENGE_ALTRUISM);
       If (passed.first And assigned(peeps[index]^.nnet.connections)) Then Begin
-        setlength(parents, high(parents) + 2);
+        setlength(parents, high(parents) + 2); // TODO: Speedup Implementieren
         parents[high(parents)].first := index;
         parents[high(parents)].Second := passed.second;
       End
@@ -558,7 +555,6 @@ Begin
 
     If (considerKinship) Then Begin
       If (generation > generationToApplyKinship) Then Begin
-        // Todo: optimize!!!
         threshold := 0.7;
         survivingKin := Nil;
         For Passes := 0 To altruismFactor - 1 Do Begin
@@ -571,7 +567,7 @@ Begin
               g2 := peeps[possibleParent.first]^.genome;
               similarity := genomeSimilarity(g1, g2);
               If (similarity >= threshold) Then Begin
-                setlength(survivingKin, high(survivingKin) + 2);
+                setlength(survivingKin, high(survivingKin) + 2); // TODO: Speedup Implementieren
                 survivingKin[high(survivingKin)] := possibleParent;
                 // mark this one so we don't use it again?
                 break;
@@ -640,7 +636,6 @@ Begin
 
   result := length(parentGenomes);
 End;
-
 
 End.
 

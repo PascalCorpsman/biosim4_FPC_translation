@@ -53,7 +53,6 @@ End;
 
 // The epoch log contains one line per generation in a format that can be
 // fed to graphlog.gp to produce a chart of the simulation progress.
-// ToDo: remove hardcoded filename.
 
 Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
 Var

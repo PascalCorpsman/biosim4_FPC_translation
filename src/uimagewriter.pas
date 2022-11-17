@@ -24,6 +24,7 @@ Type
   TImageFrameData = Record
     simStep: unsigned;
     generation: unsigned;
+    // TODO:  indivLocs und indivColors in ein Record zusammenfassen
     indivLocs: Array Of TCoord;
     indivColors: Array Of uint8_t;
     barrierLocs: Array Of TCoord;
@@ -288,11 +289,10 @@ Begin
   Start;
 End;
 
-Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned
-  ): bool;
+Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned): bool;
 Var
   Indiv: Pindiv;
-  index, i: Integer;
+  index, i, data_indivLocs_cnt, data_indivColors_cnt: Integer;
   barrierLocs: TCoordArray;
   data: TImageFrameData;
   j: TJob;
@@ -302,19 +302,24 @@ Begin
   // saveFrameThread() is using it to output a video frame.
   data.simStep := simStep;
   data.generation := generation;
-  setlength(data.indivLocs, 0);
-  setlength(data.indivColors, 0);
+  setlength(data.indivLocs, p.population + 1);
+  data_indivLocs_cnt := 0;
+  setlength(data.indivColors, p.population + 1);
+  data_indivColors_cnt := 0;
   setlength(data.barrierLocs, 0);
 
-  For index := 0 To p.population Do Begin
+  For index := 0 To p.population Do Begin // TODO: Sollte das nicht bei 1 los gehen ?
     indiv := peeps[index];
     If (indiv^.alive) Then Begin
-      setlength(data.indivLocs, high(data.indivLocs) + 2); // TODO: Speed Optimieren !
-      data.indivLocs[high(data.indivLocs)] := indiv^.loc;
-      setlength(data.indivColors, high(data.indivColors) + 2); // TODO: Speed Optimieren !
-      data.indivColors[high(data.indivColors)] := makeGeneticColor(indiv^.genome);
+      data.indivLocs[data_indivLocs_cnt] := indiv^.loc;
+      inc(data_indivLocs_cnt);
+
+      data.indivColors[data_indivColors_cnt] := makeGeneticColor(indiv^.genome);
+      inc(data_indivColors_cnt);
     End;
   End;
+  setlength(data.indivLocs, data_indivLocs_cnt);
+  setlength(data.indivColors, data_indivColors_cnt);
 
   barrierLocs := grid.getBarrierLocations();
   setlength(data.barrierLocs, length(barrierLocs));
@@ -408,7 +413,7 @@ End;
 Function TImageWriter.saveVideoFrameSync(simStep, generation: unsigned): bool;
 Var
   Indiv: Pindiv;
-  index, i: Integer;
+  index, i, data_indivLocs_cnt, data_indivColors_cnt: Integer;
   barrierLocs: TCoordArray;
 Begin
   // We cache a local copy of data from params, grid, and peeps because
@@ -416,19 +421,25 @@ Begin
   // saveFrameThread() is using it to output a video frame.
   data.simStep := simStep;
   data.generation := generation;
-  setlength(data.indivLocs, 0);
-  setlength(data.indivColors, 0);
+  setlength(data.indivLocs, p.population + 1);
+  data_indivLocs_cnt := 0;
+  setlength(data.indivColors, p.population + 1);
+  data_indivColors_cnt := 0;
   setlength(data.barrierLocs, 0);
 
   For index := 0 To p.population Do Begin
     indiv := peeps[index];
     If (indiv^.alive) Then Begin
-      setlength(data.indivLocs, high(data.indivLocs) + 2); // TODO: Speed Optimieren !
-      data.indivLocs[high(data.indivLocs)] := indiv^.loc;
-      setlength(data.indivColors, high(data.indivColors) + 2); // TODO: Speed Optimieren !
-      data.indivColors[high(data.indivColors)] := makeGeneticColor(indiv^.genome);
+      data.indivLocs[data_indivLocs_cnt] := indiv^.loc;
+      inc(data_indivLocs_cnt);
+
+      data.indivColors[data_indivColors_cnt] := makeGeneticColor(indiv^.genome);
+      inc(data_indivColors_cnt);
     End;
   End;
+  setlength(data.indivLocs, data_indivLocs_cnt);
+  setlength(data.indivColors, data_indivColors_cnt);
+
 
   barrierLocs := grid.getBarrierLocations();
   setlength(data.barrierLocs, length(barrierLocs));
@@ -447,7 +458,6 @@ Var
   m: TMemoryStream;
   i: Integer;
 Begin
-  // TODO: Hier die Imagelist welche via "imageList.push_back" erstellt wird als .avi speichern (siehe lazarusforum thread  https://lazarusforum.de/viewtopic.php?f=18&t=14483 )
   If assigned(fimageList) Then Begin
     videoFilename := p.imageDir + PathDelim +
       'gen-' + format('%0.6d', [generation]) +
@@ -456,10 +466,10 @@ Begin
       trunc(p.sizeX * p.displayScale * 1.0),
       trunc(p.sizeY * p.displayScale * 1.0),
       'MJPG',
-      25 // Warum sind das nicht 30 ?
+      25 // Warum sind das nicht 30, so wie im Youtube Video gesagt ?
       , Nil
       );
-    assert(length(fimagelist) = p.stepsPerGeneration, 'fimagelist hat die falsche Länge ist ' + inttostr(length(fimagelist)) + ' soll ' + inttostr(p.stepsPerGeneration));
+    assert(length(fimagelist) = p.stepsPerGeneration, 'fimagelist has wrong length, is ' + inttostr(length(fimagelist)) + ' should be ' + inttostr(p.stepsPerGeneration));
     For i := 0 To high(fimagelist) Do Begin
       m := TMemoryStream.Create;
       fimagelist[i].SaveToStream(m);

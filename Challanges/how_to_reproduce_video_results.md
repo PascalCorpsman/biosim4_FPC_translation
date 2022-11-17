@@ -5,7 +5,7 @@ the examples shown in the original Youtube video where extracted and reproduced.
 Link to the origin video: https://www.youtube.com/watch?v=N3tRFayqVtk&t=1s
 
 ## Timestamp 7:57 - 14:38 "Challange_1_Right_Half.ini"
-This is the first challange that "proof" the functionality of the simulator in general and how the simulator works. Main goal is to learn to go to the right.
+This is the first challange that "proof" the functionality of the simulator in general and how the simulator works. Main goal is to "learn to go to the right".
 ### Steps to reproduce:
 * run with "Challange_1_Right_Half.ini" and see results.
 

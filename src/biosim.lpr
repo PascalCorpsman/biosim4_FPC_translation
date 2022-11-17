@@ -49,15 +49,10 @@ Begin
     Simulator.Free;
   End;
   Simulator := Nil;
-  // Den Puffer "Leer" lesen, falls der user viel zu Oft ESC oder etwas gedrückt hat ..
+  // Den Puffer "Leer" lesen, falls der user viel zu Oft ESC oder etwas anderes gedrückt hat ..
   While KeyPressed Do Begin
     ReadKey();
   End;
-
-  // TODO: Alles unterhalb "Löschen", nur zum Debuggen
-//  writeln('');
-//  writeln('Debugg, press return to close.');
-//  readln();
 
 End.
 
