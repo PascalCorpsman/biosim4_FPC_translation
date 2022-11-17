@@ -36,7 +36,9 @@ Type
   private
     individuals: Array Of TIndiv; // Index value 0 is reserved
     deathQueue: Array Of uint16_t;
+    deathQueueLen: integer;
     moveQueue: Array Of TMoveQueue;
+    moveQueueLen: integer;
     Function getIndividual(index: uint16_t): PIndiv;
   public
     // Direct access:
@@ -66,17 +68,25 @@ End;
 Constructor TPeeps.Create;
 Begin
   moveQueue := Nil;
+  moveQueueLen := 0;
+  deathQueue := Nil;
+  deathQueueLen := 0;
 End;
 
 Destructor TPeeps.Destroy;
 Begin
-
+  setlengtH(deathQueue, 0);
+  deathQueueLen := 0;
+  setlengtH(moveQueue, 0);
+  moveQueueLen := 0;
 End;
 
 Procedure TPeeps.init(population: unsigned);
 Begin
   // Index 0 is reserved, so add one:
   setlength(individuals, population + 1);
+  setlength(deathQueue, population); // Give enough space for everyone to die
+  setlength(moveQueue, population); // Give enough space for everyone to move
 End;
 
 // Safe to call during multithread mode.
@@ -88,16 +98,13 @@ End;
 Procedure TPeeps.queueForDeath(Indiv: PIndiv);
 Begin
   assert(indiv^.alive);
-  //    #pragma omp critical
-  //    {
   EnterCodePoint(cpqueueForDeath);
   Try
-    setlength(deathQueue, high(deathQueue) + 2);
-    deathQueue[high(deathQueue)] := indiv^.index;
+    deathQueue[deathQueueLen] := indiv^.index;
+    inc(deathQueueLen);
   Finally
     LeaveCodePoint(cpqueueForDeath);
   End;
-  //    }
 End;
 
 // Called in single-thread mode at end of sim step. This executes all the
@@ -107,11 +114,11 @@ Procedure TPeeps.drainDeathQueue;
 Var
   index: Integer;
 Begin
-  For index := 0 To high(deathQueue) Do Begin
+  For index := 0 To deathQueueLen - 1 Do Begin
     grid.set_(individuals[index].loc, 0);
     individuals[index].alive := false;
   End;
-  setlength(deathQueue, 0);
+  deathQueueLen := 0;
 End;
 
 // Safe to call during multithread mode. Indiv won't move until end
@@ -122,18 +129,14 @@ End;
 Procedure TPeeps.queueForMove(Indiv: PIndiv; newLoc: TCoord);
 Begin
   assert(indiv^.alive);
-  //    #pragma omp critical
-  //    {
   EnterCodePoint(cpqueueForMove);
   Try
-    setlength(moveQueue, high(moveQueue) + 2);
-    moveQueue[high(moveQueue)].index := Indiv^.index;
-    moveQueue[high(moveQueue)].Loc := newLoc;
-    assert(newLoc <> indiv^.loc);
+    moveQueue[moveQueueLen].index := Indiv^.index;
+    moveQueue[moveQueueLen].Loc := newLoc;
+    inc(moveQueueLen);
   Finally
     LeaveCodePoint(cpqueueForMove);
   End;
-  //    }
 End;
 
 // Called in single-thread mode at end of sim step. This executes all the
@@ -149,7 +152,7 @@ Var
   newLoc: TCoord;
   moveDir: TDir;
 Begin
-  For moveRecord := 0 To high(moveQueue) Do Begin
+  For moveRecord := 0 To moveQueueLen - 1 Do Begin
     indiv := peeps.getIndividual(moveQueue[moveRecord].index);
     If (indiv^.alive) Then Begin
       newLoc := moveQueue[moveRecord].Loc;
@@ -163,12 +166,12 @@ Begin
       End;
     End;
   End;
-  setlength(moveQueue, 0);
+  moveQueueLen := 0;
 End;
 
 Function TPeeps.deathQueueSize: uint16;
 Begin
-  result := length(deathQueue);
+  result := deathQueueLen;
 End;
 
 Function TPeeps.getIndiv(loc: TCoord): PIndiv;

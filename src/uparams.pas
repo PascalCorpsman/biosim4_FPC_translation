@@ -89,7 +89,6 @@ Type
     configFilename: String;
     configFileContent: TStringlist;
     FirstRun: Boolean;
-    Function FixPathDelimeter(Path: String): String;
     //   lastModTime:    time_t ; // when config file was last read
     Procedure ingestParameter(aname, aval: String);
 
@@ -109,7 +108,7 @@ Var
 
 Implementation
 
-Uses uSimulator;
+Uses uSimulator, ubasicTypes;
 
 Function checkIfUint(s: String): Bool;
 Var
@@ -155,19 +154,6 @@ Begin
 End;
 
 { TParamManager }
-
-Function TParamManager.FixPathDelimeter(Path: String): String;
-var
-  i: Integer;
-Begin
-  // No matter which pathdelim the user enteres (Linux or Windows style) the correct will be choosen.
-  result := Path;
-  For i := 1 To length(result) Do Begin
-    If result[i] In AllowDirectorySeparators Then Begin
-      result[i] := PathDelim;
-    End;
-  End;
-End;
 
 Procedure TParamManager.ingestParameter(aname, aval: String);
 Var

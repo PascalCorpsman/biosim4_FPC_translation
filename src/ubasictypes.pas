@@ -164,9 +164,24 @@ Operator + (a, b: TCoord): TCoord;
 Operator = (a, b: TCoord): Boolean;
 Operator = (a: TDir; b: TCompass): Boolean;
 
+Function FixPathDelimeter(Path: String): String;
+
 Implementation
 
 Uses urandom, Math, uparams;
+
+Function FixPathDelimeter(Path: String): String;
+Var
+  i: Integer;
+Begin
+  // No matter which pathdelim the user enteres (Linux or Windows style) the correct will be choosen.
+  result := Path;
+  For i := 1 To length(result) Do Begin
+    If result[i] In AllowDirectorySeparators Then Begin
+      result[i] := PathDelim;
+    End;
+  End;
+End;
 
 Procedure Nop();
 Begin

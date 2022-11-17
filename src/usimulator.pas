@@ -82,7 +82,7 @@ Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned); // Für die weitere
 Implementation
 
 Uses usensoractions, urandom, uspawnNewGeneration, uexecuteActions,
-  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp;
+  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp, ubasicTypes;
 
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
@@ -246,7 +246,7 @@ Begin
     sl.free;
     exit;
   End;
-  Result := sl[0];
+  Result := FixPathDelimeter(sl[0]);
   fLoadSim.Generation := StrToIntDef(sl[1], 0);
   GeneCount := StrToIntDef(sl[2], 0);
   setlength(fLoadSim.parentGenomes, GeneCount);
@@ -339,6 +339,7 @@ Begin
   printSensorsActions(); // show the agents' capabilities
   fLoadSim.parentGenomes := Nil;
   fLoadSim.Generation := -1;
+  Filename := FixPathDelimeter(Filename);
   If LowerCase(ExtractFileExt(Filename)) = '.sim' Then Begin
     Filename := LoadSim(Filename);
   End;

@@ -116,31 +116,24 @@ End;
 // Increases the specified location by centerIncreaseAmount,
 // and increases the neighboring cells by neighborIncreaseAmount
 
-// TODO: Is it ok that multiple readers are reading this container while this single thread is writing to it?  todo!!!
-
 Procedure TSignals.increment(layerNum: int16_t; loc: TCoord);
 Const
   radius = 1.5;
 Var
   DummyLayer: Integer;
 Begin
+  // TODO: Das ganze hier so umschreiben wie auch bei DeathQueue / MoveQueue -> dadurch werden die Signale dann auch immer erst am Ende eines SimSteps Propagiert !
   DummyLayer := layerNum;
 
-  //#pragma omp critical
-  //    {
   EnterCodePoint(cpSignals_increment);
   Try
     visitNeighborhood(loc, radius, @visitNeighborhoodCallback, @DummyLayer);
-
     If (signals.fdata[layerNum][loc.x][loc.y] < SIGNAL_MAX) Then Begin
-      signals.fdata[layerNum][loc.x][loc.y] :=
-        min(SIGNAL_MAX,
-        signals.fdata[layerNum][loc.x][loc.y] + centerIncreaseAmount);
+      signals.fdata[layerNum][loc.x][loc.y] := min(SIGNAL_MAX, signals.fdata[layerNum][loc.x][loc.y] + centerIncreaseAmount);
     End;
   Finally
     LeaveCodePoint(cpSignals_increment);
   End;
-  //    }
 End;
 
 End.
