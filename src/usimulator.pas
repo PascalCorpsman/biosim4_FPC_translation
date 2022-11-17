@@ -328,12 +328,12 @@ Procedure TSimulator.Simulator(Filename: String);
 Var
   murderCount, generation: unsigned;
   SimStep, indivIndex: Integer;
-  //indiv: TIndiv;
   numberSurvivors: unsigned;
   key: Char;
   inPause, lastRound, b1: Boolean;
   IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
   i: integer;
+  tmps: String;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -342,6 +342,26 @@ Begin
   Filename := FixPathDelimeter(Filename);
   If LowerCase(ExtractFileExt(Filename)) = '.sim' Then Begin
     Filename := LoadSim(Filename);
+  End
+  Else Begin
+    // Schauen ob es zu dieser Challange schon eine .sim datei gibt, wenn ja Warnung
+    For i := length(Filename) Downto 1 Do Begin
+      If Filename[i] = '.' Then Begin
+        tmps := copy(Filename, 1, i - 1) + '.sim';
+        If FileExists(tmps) Then Begin
+          writeln('Warning, there already exists a .sim file. if you continue');
+          writeln('this results will be overwriten.');
+          writeln('If you accidential startet the simulator with the .ini file');
+          writeln('instead of the .sim file as param, this is the time where');
+          writeln('can kill the process and start over.');
+          writeln('');
+          writeln('If you want to overwrite the "old" results hit return and');
+          writeln('start the calculations.');
+          readln();
+        End;
+        break;
+      End;
+    End;
   End;
   If (trim(Filename) = '') Or (Not FileExists(Filename)) Then Begin
     writeln('Error during loading:');
