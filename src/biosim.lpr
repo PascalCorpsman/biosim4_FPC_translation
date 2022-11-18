@@ -24,6 +24,8 @@ Begin
 // Challange 13 Im Video 30:28
 //   https://www.youtube.com/watch?v=N3tRFayqVtk&t=1s
 
+// TODO: Alle Setlength prüfen ob sie Optimiert werden können !
+
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen
   Simulator := TSimulator.Create();

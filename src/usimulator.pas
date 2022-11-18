@@ -333,7 +333,8 @@ Var
   inPause, lastRound, b1: Boolean;
   IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
   i: integer;
-  tmps: String;
+  dbgtimestamp, tmps: String;
+  delta, start: UInt64;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -434,6 +435,12 @@ Begin
     //            #pragma omp single
     murderCount := 0; // for reporting purposes
 
+    // Reset der Timing Counter
+    For i := 0 To high(fIndivThreads) Do Begin
+      fIndivThreads[i].ResetCounter;
+    End;
+    delta := 0;
+
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
 
       // multithreaded loop: index 0 is reserved, start at 1
@@ -445,11 +452,13 @@ Begin
         i := i + IndivCalcDelta + 1;
       End;
       // 2. Der Main Thread übernimmt natürlich auch einen Teil der muss ja eh warten auf die anderen Threads
+      start := GetTickCount64;
       For indivIndex := 1 To IndivCalcDelta Do Begin
         If (peeps[indivIndex]^.alive) Then Begin
           simStepOneIndiv(peeps[indivIndex], simStep);
         End;
       End;
+      delta := delta + (GetTickCount64() - start);
 
       // Warten darauf, dass alle threads "fertig" sind
       b1 := true;
@@ -474,7 +483,17 @@ Begin
     If lastRound Then Begin
       p.maxGenerations := generation + 1;
     End;
-    numberSurvivors := spawnNewGeneration(generation, murderCount);
+
+    // Sammeln der Einzel Thread zeiten ..
+    dbgtimestamp := '';
+    For i := 0 To high(fIndivThreads) Do Begin
+      dbgtimestamp := dbgtimestamp + ' ' + prettyTime(fIndivThreads[i].GetWorkingDelta);
+    End;
+    If dbgtimestamp <> '' Then Begin // Die Einzelzeit des Main-Thread mit hinzu rechnen
+      dbgtimestamp := prettyTime(delta) + dbgtimestamp;
+    End;
+
+    numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
       displaySampleGenomes(p.displaySampleGenomes);
     End;

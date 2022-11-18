@@ -28,7 +28,7 @@ Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
 // nets instead of rebuilding them.
 // Returns number of survivor-reproducers.
 // Must be called in single-thread mode between generations.
-Function spawnNewGeneration(generation, murderCount: unsigned): unsigned;
+Function spawnNewGeneration(generation, murderCount: unsigned; ThreadTimes: String): unsigned;
 
 Implementation
 
@@ -39,48 +39,6 @@ Type
     first: Boolean;
     second: Float;
   End;
-
-Function prettyTime(TimeInMs: int64): String; // Code entliehen aus CCM
-Var
-  suffix: String;
-  rest: int64;
-  Time_In_Seconds: int64;
-Begin
-  Time_In_Seconds := TimeInMs Div 1000;
-  If Time_in_Seconds = 0 Then Begin
-    result := inttostr(TimeInMs) + 'ms';
-    exit;
-  End;
-  suffix := 's';
-  rest := 0;
-  If Time_In_Seconds > 60 Then Begin
-    suffix := 'min';
-    rest := Time_In_Seconds Mod 60;
-    Time_In_Seconds := Time_In_Seconds Div 60;
-  End;
-  If Time_In_Seconds > 60 Then Begin
-    suffix := 'h';
-    rest := Time_In_Seconds Mod 60;
-    Time_In_Seconds := Time_In_Seconds Div 60;
-  End;
-  If (Time_In_Seconds > 24) And (suffix = 'h') Then Begin
-    suffix := 'd';
-    rest := Time_In_Seconds Mod 24;
-    Time_In_Seconds := Time_In_Seconds Div 24;
-  End;
-  If suffix <> 's' Then Begin
-    If rest < 10 Then Begin
-      result := inttostr(Time_In_Seconds) + ':0' + inttostr(rest) + suffix;
-    End
-    Else Begin
-      result := inttostr(Time_In_Seconds) + ':' + inttostr(rest) + suffix;
-    End;
-  End
-  Else Begin
-    result := inttostr(Time_In_Seconds) + suffix;
-  End;
-End;
-
 
 Procedure VisitOccupied(Coord: TCoord; UserData: Pointer);
 Var
@@ -480,7 +438,7 @@ Begin
   End;
 End;
 
-Function spawnNewGeneration(generation, murderCount: unsigned): unsigned;
+Function spawnNewGeneration(generation, murderCount: unsigned; ThreadTimes: String): unsigned;
 Const
   altruismFactor = 10; // the saved:sacrificed ratio
   generationToApplyKinship = 10;
@@ -606,6 +564,9 @@ Begin
   tmp := '';
   If LastSpawnTime <> 0 Then Begin
     tmp := ', time to calculate = ' + PrettyTime(at - LastSpawnTime);
+    If ThreadTimes <> '' Then Begin
+      tmp := tmp + '(' + ThreadTimes + ')';
+    End;
   End;
   LastSpawnTime := at;
 

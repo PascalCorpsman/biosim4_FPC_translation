@@ -17,7 +17,10 @@ Type
   private
     FFirstindex, FLastIndex, fsimStep: Integer;
     fState: TThreadIndivState;
+    fWorkingDelta, fWorkingStartTime: uint64;
   public
+    Property GetWorkingDelta: uint64 read fWorkingDelta;
+    Procedure ResetCounter();
     Procedure Execute(); override;
     Constructor Create(); reintroduce;
     Function IsStateIdle(): Boolean;
@@ -54,6 +57,11 @@ Begin
   fState := isRunning;
 End;
 
+Procedure TThreadIndivs.ResetCounter();
+Begin
+  fWorkingDelta := 0;
+End;
+
 Procedure TThreadIndivs.Execute;
 Var
   indivIndex: Integer;
@@ -64,12 +72,14 @@ Begin
           sleep(1);
         End;
       isRunning: Begin
+          fWorkingStartTime := GetTickCount64;
           // Mache die Arbeit
           For indivIndex := FFirstindex To FLastIndex Do Begin
             If (peeps[indivIndex]^.alive) Then Begin
               simStepOneIndiv(peeps[indivIndex], fsimStep);
             End;
           End;
+          fWorkingDelta := fWorkingDelta + (GetTickCount64() - fWorkingStartTime);
           fState := isIdle; // Arbeit getan, dann wieder zurück in Idle
         End;
     End;
