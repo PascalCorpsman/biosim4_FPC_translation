@@ -325,6 +325,8 @@ The threads are:
 ********************************************************************************)
 
 Procedure TSimulator.Simulator(Filename: String);
+Const
+  DetailTimings = true; // True, dann werden diverse Detailinfos über die Thread laufzeiten aus gegeben
 Var
   murderCount, generation: unsigned;
   SimStep, indivIndex: Integer;
@@ -334,7 +336,7 @@ Var
   IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
   i: integer;
   dbgtimestamp, tmps: String;
-  delta, start: UInt64;
+  waittime, Delta, Start: UInt64;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -349,6 +351,7 @@ Begin
     For i := length(Filename) Downto 1 Do Begin
       If Filename[i] = '.' Then Begin
         tmps := copy(Filename, 1, i - 1) + '.sim';
+        // TODO: da muss der "Pfad" raus, denn der wird beim .sim auch nicht gespeichert ...
         If FileExists(tmps) Then Begin
           writeln('Warning, there already exists a .sim file. if you continue');
           writeln('this results will be overwriten.');
@@ -434,13 +437,12 @@ Begin
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
     //            #pragma omp single
     murderCount := 0; // for reporting purposes
-
     // Reset der Timing Counter
     For i := 0 To high(fIndivThreads) Do Begin
       fIndivThreads[i].ResetCounter;
     End;
-    delta := 0;
-
+    Delta := 0;
+    waittime := 0;
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
 
       // multithreaded loop: index 0 is reserved, start at 1
@@ -452,26 +454,35 @@ Begin
         i := i + IndivCalcDelta + 1;
       End;
       // 2. Der Main Thread übernimmt natürlich auch einen Teil der muss ja eh warten auf die anderen Threads
-      start := GetTickCount64;
+      Start := GetTickCount64;
       For indivIndex := 1 To IndivCalcDelta Do Begin
         If (peeps[indivIndex]^.alive) Then Begin
           simStepOneIndiv(peeps[indivIndex], simStep);
         End;
       End;
-      delta := delta + (GetTickCount64() - start);
+      delta := delta + (GetTickCount64 - Start);
 
-      // Warten darauf, dass alle threads "fertig" sind
+      // Warten darauf, dass alle Threads "fertig" sind
+      (*
+       * Das Doofe unter Windows ist, dass das immer nur
+       * 0ms, 16ms oder 32ms dauert
+       *  -> wenn also die "Berechnung" Single Threaded entsprechend Schnell ist
+       *     kann das in sehr vielen Fällen immer noch deutlich schneller sein
+       * Bei 300 Generationen sind 300 * 0.016 halt auch Knapp 5s :/
+       *)
+      Start := GetTickCount64();
       b1 := true;
       While b1 Do Begin
         b1 := false;
         For i := 0 To high(fIndivThreads) Do Begin
           If Not fIndivThreads[i].IsStateIdle() Then Begin
-            CheckSynchronize(1);
+            CheckSynchronize(0);
             b1 := true;
+            break;
           End;
         End;
       End;
-
+      waittime := waittime + (GetTickCount64 - start);
       // In single-thread mode: this executes deferred, queued deaths and movements,
       // updates signal layers (pheromone), etc.
       murderCount := murderCount + peeps.deathQueueSize();
@@ -486,11 +497,13 @@ Begin
 
     // Sammeln der Einzel Thread zeiten ..
     dbgtimestamp := '';
-    For i := 0 To high(fIndivThreads) Do Begin
-      dbgtimestamp := dbgtimestamp + ' ' + prettyTime(fIndivThreads[i].GetWorkingDelta);
-    End;
-    If dbgtimestamp <> '' Then Begin // Die Einzelzeit des Main-Thread mit hinzu rechnen
-      dbgtimestamp := prettyTime(delta) + dbgtimestamp;
+    If DetailTimings Then Begin
+      For i := 0 To high(fIndivThreads) Do Begin
+        dbgtimestamp := dbgtimestamp + ' ' + prettyTime(fIndivThreads[i].GetWorkingDelta);
+      End;
+      If dbgtimestamp <> '' Then Begin // Die Einzelzeit des Main-Thread mit hinzu rechnen
+        dbgtimestamp := prettyTime(delta) + dbgtimestamp + '[W=' + prettyTime(waittime) + ']';
+      End;
     End;
 
     numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);

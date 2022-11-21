@@ -42,6 +42,7 @@ Type
   TSensor = (
     LOC_X = 0, // I distance from left edge
     LOC_Y, // I distance from bottom
+    // TODO: BLOC_X, BLOC_Y -> Die Position an der das Objekt "geboren" wurde
     BOUNDARY_DIST_X, // I X distance to nearest edge of world
     BOUNDARY_DIST, // I distance to nearest edge of world
     BOUNDARY_DIST_Y, // I Y distance to nearest edge of world
