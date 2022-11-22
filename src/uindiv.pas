@@ -125,6 +125,7 @@ Type
     dirVecX, dirVecY, sum: Double;
     popcountloc: TCoord;
   End;
+
   pCountPopulationDensity = ^TCountPopulationDensity;
 
 Procedure CountPopulationDensity(Coord: TCoord; Userdata: Pointer);
@@ -554,6 +555,7 @@ Begin
   // First, the connections from sensor or neuron to a neuron
   For conn := 0 To high(connectionList) Do Begin
     If (connectionList[conn].sinkType = NEURON) Then Begin
+      // TODO: Kann man das hier noch optimieren ?
       setlength(nnet.connections, high(nnet.connections) + 2);
       newConn := high(nnet.connections);
       nnet.connections[newConn] := connectionList[conn];
@@ -571,6 +573,7 @@ Begin
   // Last, the connections from sensor or neuron to an action
   For conn := 0 To high(connectionList) Do Begin
     If (connectionList[conn].sinkType = ACTION) Then Begin
+      // TODO: Kann man das hier noch optimieren ?
       setlength(nnet.connections, high(nnet.connections) + 2);
       newConn := high(nnet.connections);
       nnet.connections[newConn] := connectionList[conn];
@@ -898,6 +901,14 @@ Begin
     TSensor.LOC_Y: Begin
         // Maps current Y location 0..p.sizeY-1 to sensor range 0.0..1.0
         sensorVal := loc.y / (p.sizeY - 1);
+      End;
+    TSensor.BLOC_X: Begin
+        // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
+        sensorVal := birthLoc.x / (p.sizeX - 1);
+      End;
+    TSensor.BLOC_Y: Begin
+        // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
+        sensorVal := birthLoc.y / (p.sizey - 1);
       End;
     TSensor.OSC1: Begin
         // Maps the oscillator sine wave to sensor range 0.0..1.0;

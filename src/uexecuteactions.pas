@@ -149,7 +149,6 @@ Begin
   // of an attempted murder. Probabilities under the threshold are considered 0.0.
   // If this action neuron is enabled but not driven, the neighbors are safe.
   If (isEnabled(KILL_FORWARD) And p.killEnable) Then Begin
-    // Hier kommt ne Warnung, das ist auch Richtig so, der Code ist aber eh "tot", wenn er lebendig würde = KillEnable dann käme die Warnung auch nicht mehr.
     level := actionLevels[integer(KILL_FORWARD)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;

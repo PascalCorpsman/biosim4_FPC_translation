@@ -42,24 +42,25 @@ Type
   TSensor = (
     LOC_X = 0, // I distance from left edge
     LOC_Y, // I distance from bottom
-    // TODO: BLOC_X, BLOC_Y -> Die Position an der das Objekt "geboren" wurde
+    BLOC_X, // I distance from left edge during birth -- Added by Corpsman
+    BLOC_Y, // I distance from bottom during birth -- Added by Corpsman
     BOUNDARY_DIST_X, // I X distance to nearest edge of world
-    BOUNDARY_DIST, // I distance to nearest edge of world
+    BOUNDARY_DIST = 5, // I distance to nearest edge of world
     BOUNDARY_DIST_Y, // I Y distance to nearest edge of world
     GENETIC_SIM_FWD, // I genetic similarity forward
     LAST_MOVE_DIR_X, // I +- amount of X movement in last movement
     LAST_MOVE_DIR_Y, // I +- amount of Y movement in last movement
-    LONGPROBE_POP_FWD, // W long look for population forward
+    LONGPROBE_POP_FWD = 10, // W long look for population forward
     LONGPROBE_BAR_FWD, // W long look for barriers forward
     POPULATION, // W population density in neighborhood
     POPULATION_FWD, // W population density in the forward-reverse axis
     POPULATION_LR, // W population density in the left-right axis
-    OSC1, // I oscillator +-value
+    OSC1 = 15, // I oscillator +-value
     AGE, // I
     BARRIER_FWD, // W neighborhood barrier distance forward-reverse axis
     BARRIER_LR, // W neighborhood barrier distance left-right axis
     RANDOM, //   random sensor value, uniform distribution
-    SIGNAL0, // W strength of signal0 in neighborhood
+    SIGNAL0 = 20, // W strength of signal0 in neighborhood
     SIGNAL0_FWD, // W strength of signal0 in the forward-reverse axis
     SIGNAL0_LR, // W strength of signal0 in the left-right axis
     NUM_SENSES // <<------------------ END OF ACTIVE SENSES MARKER
@@ -73,24 +74,24 @@ Type
   // I means the action affects the individual internally (Indiv)
   // W means the action also affects the environment (Peeps or Grid)
   TAction = (
-    MOVE_X, // W +- X component of movement
+    MOVE_X = 0, // W +- X component of movement
     MOVE_Y, // W +- Y component of movement
     MOVE_FORWARD, // W continue last direction
     MOVE_RL, // W +- component of movement
     MOVE_RANDOM, // W
-    SET_OSCILLATOR_PERIOD, // I
+    SET_OSCILLATOR_PERIOD = 5, // I
     SET_LONGPROBE_DIST, // I
     SET_RESPONSIVENESS, // I
     EMIT_SIGNAL0, // W
     MOVE_EAST, // W
-    MOVE_WEST, // W
+    MOVE_WEST = 10, // W
     MOVE_NORTH, // W
     MOVE_SOUTH, // W
     MOVE_LEFT, // W
     MOVE_RIGHT, // W
-    MOVE_REVERSE, // W
-    NUM_ACTIONS, // <<----------------- END OF ACTIVE ACTIONS MARKER
-    KILL_FORWARD // W
+    MOVE_REVERSE = 15, // W
+    KILL_FORWARD, // W
+    NUM_ACTIONS // <<----------------- END OF ACTIVE ACTIONS MARKER
     );
 
   TActionArray = Array[0..Integer(NUM_ACTIONS) - 1] Of Float;
@@ -124,6 +125,8 @@ Begin
     LAST_MOVE_DIR_Y: result := 'LMy';
     LOC_X: result := 'Lx';
     LOC_Y: result := 'Ly';
+    BLOC_X: result := 'BLx';
+    BLOC_Y: result := 'BLy';
     LONGPROBE_POP_FWD: result := 'LPf';
     LONGPROBE_BAR_FWD: result := 'LPb';
     BARRIER_FWD: result := 'Bfd';
@@ -138,7 +141,7 @@ Begin
     SIGNAL0_LR: result := 'Slr';
     GENETIC_SIM_FWD: result := 'Gen';
   Else
-    assert(false);
+    Raise exception.create('sensorShortName: Error, missing implementation.');
   End;
 End;
 
@@ -153,6 +156,8 @@ Begin
     LAST_MOVE_DIR_Y: result := 'last move dir Y';
     LOC_X: result := 'loc X';
     LOC_Y: result := 'loc Y';
+    BLOC_X: result := 'birth loc X';
+    BLOC_Y: result := 'birth loc Y';
     LONGPROBE_POP_FWD: result := 'long probe population fwd';
     LONGPROBE_BAR_FWD: result := 'long probe barrier fwd';
     BARRIER_FWD: result := 'short probe barrier fwd - rev';
@@ -167,7 +172,7 @@ Begin
     SIGNAL0_LR: result := 'signal 0 LR';
     GENETIC_SIM_FWD: result := 'genetic similarity fwd';
   Else Begin
-      assert(false);
+      Raise exception.create('sensorName: Error, missing implementation.');
     End;
   End;
 End;

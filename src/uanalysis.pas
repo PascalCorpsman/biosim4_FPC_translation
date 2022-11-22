@@ -106,23 +106,64 @@ Begin
   writeln('Signal spread ' + format('%0.2f', [count / (p.sizeX * p.sizeY)]) + '%, average ' + format('%f', [sum / (p.sizeX * p.sizeY)]));
 End;
 
-
 // Print how many connections occur from each kind of sensor neuron and to
 // each kind of action neuron over the entire population. This helps us to
 // see which sensors and actions are most useful for survival.
 
 Procedure displaySensorActionReferenceCounts();
+Type
+  TindexPair = Record
+    index, Value: integer;
+  End;
+
+  TIndexPairArray = Array Of TindexPair;
+
+  Procedure Sort(Var Data: TIndexPairArray; li, re: integer);
+  Var
+    l, r, p: Integer;
+    h: TindexPair;
+  Begin
+    If Li < Re Then Begin
+      p := Data[Trunc((li + re) / 2)].Value; // Auslesen des Pivo Elementes
+      l := Li;
+      r := re;
+      While l < r Do Begin
+        While Data[l].Value > p Do
+          inc(l);
+        While Data[r].Value < p Do
+          dec(r);
+        If L <= R Then Begin
+          h := Data[l];
+          Data[l] := Data[r];
+          Data[r] := h;
+          inc(l);
+          dec(r);
+        End;
+      End;
+      Sort(Data, li, r);
+      Sort(Data, l, re);
+    End;
+  End;
+
+
 Var
   index, gene, i: Integer;
   Indiv: PIndiv;
-  sensorCounts: Array[0..integer(NUM_SENSES)] Of unsigned;
-  actionCounts: Array[0..integer(NUM_ACTIONS)] Of unsigned;
+  sensorCounts: TIndexPairArray;
+  actionCounts: TIndexPairArray;
 Begin
-  sensorCounts[0] := 0; // This is rubish, but kills the Compiler warning ;)
-  actionCounts[0] := 0; // This is rubish, but kills the Compiler warning ;)
-  FillChar(sensorCounts, sizeof(sensorCounts), 0);
-  FillChar(actionCounts, sizeof(actionCounts), 0);
-
+  sensorCounts := Nil;
+  actionCounts := Nil;
+  setlength(sensorCounts, integer(NUM_SENSES) + 1);
+  setlength(actionCounts, integer(NUM_ACTIONS) + 1);
+  For i := 0 To high(sensorCounts) Do Begin
+    sensorCounts[i].index := i;
+    sensorCounts[i].Value := 0;
+  End;
+  For i := 0 To high(actionCounts) Do Begin
+    actionCounts[i].index := i;
+    actionCounts[i].Value := 0;
+  End;
   For index := 1 To p.population Do Begin
     If (peeps[index]^.alive) Then Begin
       indiv := peeps.Individual[index];
@@ -130,26 +171,28 @@ Begin
 
         If (indiv^.nnet.connections[gene].sourceType = SENSOR) Then Begin
           assert(indiv^.nnet.connections[gene].sourceNum < integer(NUM_SENSES));
-          sensorCounts[indiv^.nnet.connections[gene].sourceNum] := sensorCounts[indiv^.nnet.connections[gene].sourceNum] + 1;
+          sensorCounts[indiv^.nnet.connections[gene].sourceNum].Value := sensorCounts[indiv^.nnet.connections[gene].sourceNum].Value + 1;
         End;
         If (indiv^.nnet.connections[gene].sinkType = ACTION) Then Begin
           assert(indiv^.nnet.connections[gene].sinkNum < integer(NUM_ACTIONS));
-          actionCounts[indiv^.nnet.connections[gene].sinkNum] := actionCounts[indiv^.nnet.connections[gene].sinkNum] + 1;
+          actionCounts[indiv^.nnet.connections[gene].sinkNum].Value := actionCounts[indiv^.nnet.connections[gene].sinkNum].Value + 1;
         End;
       End;
     End;
   End;
-  // TODO: die Sensoren und Actions absteigend sortieren, so dass man immer gleich sehen kann welches die "Meist" genutzten sine !
+  // die Sensoren und Actions absteigend sortieren, so dass man immer gleich sehen kann welches die "Meist" genutzten sine !
+  Sort(sensorCounts, 0, high(sensorCounts));
+  Sort(actionCounts, 0, high(actionCounts));
   writeln('Sensors in use:');
   For i := 0 To length(sensorCounts) - 1 Do Begin
-    If (sensorCounts[i] > 0) Then Begin
-      writeln('  ' + inttostr(sensorCounts[i]) + ' - ' + sensorName(TSensor(i)));
+    If (sensorCounts[i].Value > 0) Then Begin
+      writeln('  ' + inttostr(sensorCounts[i].Value) + ' - ' + sensorName(TSensor(sensorCounts[i].index)));
     End;
   End;
   writeln('Actions in use:');
   For i := 0 To high(actionCounts) Do Begin
-    If (actionCounts[i] > 0) Then Begin
-      writeln('  ' + inttostr(actionCounts[i]) + ' - ' + actionName(TAction(i)));
+    If (actionCounts[i].Value > 0) Then Begin
+      writeln('  ' + inttostr(actionCounts[i].Value) + ' - ' + actionName(TAction(actionCounts[i].index)));
     End;
   End;
 End;

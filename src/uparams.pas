@@ -71,6 +71,7 @@ Type
     logDir: String;
     imageDir: String;
     graphLogUpdateCommand: String;
+    VisualizeChallenge: Boolean;
 
     // These are updated automatically and not set via the parameter file
     parameterChangeGenerationNumber: unsigned; // the most recent generation number that an automatic parameter change occured at
@@ -376,11 +377,16 @@ Begin
           privParams.deterministic := bVal;
         End;
       End;
+    'visualizechallenge': Begin
+        If (isBool) Then Begin
+          privParams.VisualizeChallenge := bVal;
+        End;
+      End;
     'rngseed': Begin
         If (isUint) Then Begin
           privParams.RNGSeed := uVal;
         End;
-      End;
+      End
   Else Begin
       writeln('Invalid param: ' + aname + ' = ' + aval);
     End;
@@ -433,6 +439,7 @@ Begin
   privParams.saveVideo := true;
   privParams.videoStride := 25;
   privParams.videoSaveFirstFrames := 2;
+  privParams.VisualizeChallenge := false; // Added by Corpsman
   privParams.displayScale := 8;
   privParams.agentSize := 4;
   privParams.genomeAnalysisStride := privParams.videoStride;

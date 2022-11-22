@@ -134,6 +134,10 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="uThreadIndiv"/>
       </Unit>
+      <Unit>
+        <Filename Value="biosim4.ini"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

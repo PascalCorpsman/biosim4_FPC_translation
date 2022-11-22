@@ -157,6 +157,7 @@ Procedure SetBarierCoord(Coord: TCoord; UserData: Pointer);
 Var
   BarrierCoordTmp: TCoordArray;
 Begin
+  // TODO: Kann man das hier noch optimieren ?
   BarrierCoordTmp := TCoordArray(UserData);
   setlength(BarrierCoordTmp, high(BarrierCoordTmp) + 2);
   BarrierCoordTmp[high(BarrierCoordTmp)] := Coord;
@@ -180,6 +181,7 @@ Var
     For x := minX To maxX Do Begin
       For y := minY To maxY Do Begin
         Set_(x, y, BARRIER);
+        // TODO: Kann man das hier noch optimieren ?
         setlength(barrierLocations, high(barrierLocations) + 2);
         barrierLocations[high(barrierLocations)].x := x;
         barrierLocations[high(barrierLocations)].y := y;
@@ -227,6 +229,7 @@ Begin
         For x := minx To maxx Do Begin
           For y := miny To maxy Do Begin
             set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
             setlength(barrierLocations, high(barrierLocations) + 2);
             barrierLocations[high(barrierLocations)].x := x;
             barrierLocations[high(barrierLocations)].y := y;
@@ -245,6 +248,7 @@ Begin
         For x := minx To maxx Do Begin
           For y := miny To maxy Do Begin
             Set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
             setlength(barrierLocations, high(barrierLocations) + 2);
             barrierLocations[high(barrierLocations)].x := x;
             barrierLocations[high(barrierLocations)].y := y;
@@ -289,6 +293,7 @@ Begin
         For x := minx To maxx Do Begin
           For y := miny To maxy Do Begin
             Set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
             setlength(barrierLocations, high(barrierLocations) + 2);
             barrierLocations[high(barrierLocations)].x := x;
             barrierLocations[high(barrierLocations)].y := y;
@@ -311,7 +316,7 @@ Begin
           center2 := RandomLoc(margin);
         Until ((center0 - center2).length() >= margin) And ((center1 - center2).length() >= margin);
 
-
+        // TODO: Kann man das hier noch optimieren ?
         setlength(barrierLocations, high(barrierLocations) + 2);
         barrierLocations[high(barrierLocations)] := center0;
 

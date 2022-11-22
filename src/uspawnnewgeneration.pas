@@ -173,7 +173,9 @@ Begin
     // Survivors are those within the specified radius of any corner.
     // Assumes square arena.
     CHALLENGE_CORNER: Begin
-        assert(p.sizeX = p.sizeY, 'Width needs to be equal to height.');
+        If (p.sizeX <> p.sizeY) Then Begin
+          Raise exception.Create('Width needs to be equal to height.');
+        End;
         radius := p.sizeX / 8.0;
 
         distance := (Coord(0, 0) - indiv^.loc).length();
@@ -197,7 +199,9 @@ Begin
     // Survivors are those within the specified radius of any corner. The score
     // is linearly weighted by distance from the corner point.
     CHALLENGE_CORNER_WEIGHTED: Begin
-        assert(p.sizeX = p.sizeY, 'Width needs to be equal to height.');
+        If (p.sizeX <> p.sizeY) Then Begin
+          Raise exception.Create('Width needs to be equal to height.');
+        End;
         radius := p.sizeX / 4.0;
 
         distance := (Coord(0, 0) - indiv^.loc).length();
@@ -357,7 +361,7 @@ Begin
       End;
 
   Else Begin
-      assert(false);
+      Raise exception.create('Error invalid challange, not known.');
     End;
   End;
 End;
@@ -470,15 +474,18 @@ Begin
   If (p.challenge <> CHALLENGE_ALTRUISM) Then Begin
     // First, make a list of all the individuals who will become parents; save
     // their scores for later sorting. Indexes start at 1.
+    setlength(parents, p.population);
+    i := 0;
     For index := 1 To p.population Do Begin
       passed := passedSurvivalCriterion(peeps[index], p.challenge);
       // Save the parent genome if it results in valid neural connections
       If (passed.first And assigned(peeps[index]^.nnet.connections)) Then Begin
-        setlength(parents, high(parents) + 2); // TODO: Speedup Implementieren
-        parents[high(parents)].first := index;
-        parents[high(parents)].Second := passed.second;
+        parents[i].first := index;
+        parents[i].Second := passed.second;
+        inc(i);
       End;
     End;
+    setlength(parents, i);
   End
   Else Begin
     // For the altruism challenge, test if the agent is inside either the sacrificial
@@ -501,6 +508,7 @@ Begin
         passed := passedSurvivalCriterion(peeps[index], CHALLENGE_ALTRUISM_SACRIFICE);
         If (passed.first) And (assigned(peeps[index]^.nnet.connections)) Then Begin
           If (considerKinship) Then Begin
+            // TODO: Kann man das hier noch optimieren ?
             setlength(sacrificesIndexes, high(sacrificesIndexes) + 2);
             sacrificesIndexes[high(sacrificesIndexes)] := index;
           End

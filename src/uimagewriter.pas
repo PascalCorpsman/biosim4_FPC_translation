@@ -50,6 +50,7 @@ Type
     fWritelnEvent: TWritelnEvent;
     Procedure saveOneFrameImmed(Const adata: TImageFrameData);
     Procedure Writeln(Value: String);
+    Procedure RenderChallengeToImage(Const Image: TBitmap; generation, simStep: integer);
   public
     Constructor Create(); virtual;
     Destructor Destroy(); override;
@@ -162,6 +163,11 @@ Begin
     image.Canvas.Ellipse(x, y, x + 2 * d, y + 2 * d); // Shift nach Rechts unten, um 0.5 displayScale damit es "ordentlich" aussieht.
   End;
 
+  // Draw Challange if Possible
+  If p.VisualizeChallenge Then Begin
+    RenderChallengeToImage(Image, adata.generation, adata.simStep);
+  End;
+
   If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin // Das ForceDir bleibt drin, damit die Filme ein Verzeichnis zum Ablegen haben !
     // Der Orig Code speichert auch keine Einzelbilder, da er ja die Videos Speichert
     // Sollten doch einzelbilder gespeichert werden, dann muss dieser Code hier wieder mit rein !
@@ -182,6 +188,7 @@ Begin
   //If p.saveVideo Or AdditionalVideoFrame Then Begin
   jp := TJPEGImage.Create;
   jp.Assign(image);
+  // TODO: Kann man das hier noch optimieren ?
   setlength(fimagelist, high(fimagelist) + 2);
   fimagelist[high(fimagelist)] := jp;
   //End;
@@ -195,6 +202,106 @@ Begin
   End
   Else Begin
     system.Writeln(Value);
+  End;
+End;
+
+Procedure TImageWriter.RenderChallengeToImage(Const Image: TBitmap; generation,
+  simStep: integer);
+Var
+  radioactiveX, w, h, R: integer;
+Begin
+  image.canvas.brush.Style := bsClear; // Brush ausschalten
+  (*
+   * In Grün die "Schwelle" die es zu überschreiten gillt ;-)
+   *)
+  image.canvas.Pen.Color := clGreen;
+  image.canvas.Pen.Width := 2;
+  w := p.displayScale * p.sizeX;
+  h := p.displayScale * p.sizeY;
+  (*
+   * Nicht alle Challenges können Visualisiert werden, aber man kann es wenigstens versuchen ;)
+   *)
+  Case p.challenge Of
+    CHALLENGE_CIRCLE: Begin
+        r := (w) Div 4;
+        image.canvas.Ellipse(-r + w Div 4, -r + h Div 4, r + w Div 4, r + h Div 4);
+      End;
+    CHALLENGE_RIGHT_HALF: Begin
+        image.canvas.Line(w Div 2, 0, w Div 2, h);
+      End;
+    CHALLENGE_RIGHT_QUARTER: Begin
+        image.canvas.Line(w Div 2 + w Div 4, 0, w Div 2 + w Div 4, h);
+      End;
+    CHALLENGE_LEFT_EIGHTH: Begin
+        image.canvas.Line(w Div 8, 0, w Div 8, h);
+      End;
+    CHALLENGE_STRING: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_CENTER_WEIGHTED: Begin
+        r := (w) Div 3;
+        image.canvas.Ellipse(-r + w Div 2, -r + h Div 2, r + w Div 2, r + h Div 2);
+      End;
+    CHALLENGE_CENTER_UNWEIGHTED: Begin
+        r := (w) Div 3;
+        image.canvas.Ellipse(-r + w Div 2, -r + h Div 2, r + w Div 2, r + h Div 2);
+      End;
+    CHALLENGE_CENTER_SPARSE: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_CORNER: Begin
+        r := (w) Div 8;
+        image.canvas.Ellipse(-r, -r, r, r);
+        image.canvas.Ellipse(-r + w, -r, r + w, r);
+        image.canvas.Ellipse(-r + w, -r + h, r + w, r + h);
+        image.canvas.Ellipse(-r, -r + h, r, r + h);
+      End;
+    CHALLENGE_CORNER_WEIGHTED: Begin
+        r := (w) Div 4;
+        image.canvas.Ellipse(-r, -r, r, r);
+        image.canvas.Ellipse(-r + w, -r, r + w, r);
+        image.canvas.Ellipse(-r + w, -r + h, r + w, r + h);
+        image.canvas.Ellipse(-r, -r + h, r, r + h);
+      End;
+    CHALLENGE_RADIOACTIVE_WALLS: Begin
+        // Die "save" Linie
+        image.canvas.Line(w Div 2, 0, w Div 2, h);
+        // Die Radioaktive Linie
+        image.canvas.Pen.Color := clred;
+        If (simStep < p.stepsPerGeneration / 2) Then
+          radioactiveX := 0
+        Else
+          radioactiveX := p.sizeX - 1;
+        image.canvas.Line(radioactiveX, 0, radioactiveX, h);
+      End;
+    CHALLENGE_AGAINST_ANY_WALL: Begin
+        image.Canvas.Rectangle(0, 0, w, h);
+      End;
+    CHALLENGE_TOUCH_ANY_WALL: Begin
+        image.Canvas.Rectangle(0, 0, w, h);
+      End;
+    CHALLENGE_MIGRATE_DISTANCE: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_EAST_WEST_EIGHTHS: Begin
+        image.canvas.Line(w Div 8, 0, w Div 8, h);
+        image.canvas.Line(w - w Div 8, 0, w - w Div 8, h);
+      End;
+    CHALLENGE_NEAR_BARRIER: Begin
+        // TODO: Knifflig sollte aber möglich sein ..
+      End;
+    CHALLENGE_PAIRS: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_LOCATION_SEQUENCE: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_ALTRUISM_SACRIFICE: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
+    CHALLENGE_ALTRUISM: Begin
+        // Wie auch immer man das Visualisiert ?
+      End;
   End;
 End;
 
