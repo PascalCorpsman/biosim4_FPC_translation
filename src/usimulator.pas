@@ -506,17 +506,6 @@ Begin
       End;
     End;
 
-    numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
-    If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
-      displaySampleGenomes(p.displaySampleGenomes);
-    End;
-    If (numberSurvivors = 0) Then Begin
-      writeln('No survivors, -> restart simulation.');
-      generation := 0; // start over
-    End
-    Else Begin
-      inc(generation);
-    End;
     AdditionalVideoFrame := false;
     ReloadConfigini := false;
     While KeyPressed Do Begin
@@ -524,12 +513,10 @@ Begin
       Case key Of
         #27: Begin
             If Not lastRound Then Begin
-              If Not lastRound Then Begin
-                writeln('--- Abort by user, will simulate one last generation with images (if enabled), then close. ---');
-              End;
-              lastRound := true;
-              p.maxGenerations := generation + 1;
+              writeln('--- Abort by user, will close. ---');
             End;
+            lastRound := true;
+            p.maxGenerations := generation + 1;
           End;
         'V', 'v': Begin // Nächste generation soll ein Videostride gerendert werden.
             If Not AdditionalVideoFrame Then Begin
@@ -570,13 +557,32 @@ Begin
           End;
       End;
     End;
+    (*
+     * Der User will noch mal ein Video und danach abbrechen -> dann muss der Simulator das hier auch Berücksichtigen und die Schwelle noch mal aushebeln.
+     *)
+    If AdditionalVideoFrame And lastRound Then Begin
+      p.maxGenerations := generation + 2;
+    End;
+
+    numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
+    If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
+      displaySampleGenomes(p.displaySampleGenomes);
+    End;
+    If (numberSurvivors = 0) Then Begin
+      If Not lastRound Then Begin
+        writeln('No survivors, -> restart simulation.');
+        generation := 0; // start over
+      End;
+    End
+    Else Begin
+      inc(generation);
+    End;
     If p.numThreads <> 0 Then Begin
       CheckSynchronize(1);
     End;
   End;
 
   displaySampleGenomes(3); // final report, for debugging
-
 End;
 
 End.
