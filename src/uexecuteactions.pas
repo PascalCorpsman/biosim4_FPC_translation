@@ -115,7 +115,7 @@ Begin
   If (isEnabled(SET_OSCILLATOR_PERIOD)) Then Begin
     periodf := actionLevels[integer(SET_OSCILLATOR_PERIOD)];
     newPeriodf01 := (tanh(periodf) + 1.0) / 2.0; // convert to 0.0..1.0
-    newPeriod := 1 + round(1.5 + exp(7.0 * newPeriodf01));
+    newPeriod := 1 + round(1.0 + exp(7.0 * newPeriodf01)); // Der Orig Code macht +1.5 und dann den Cast nach Int, das Round braucht das natürlich nicht, deswegen +1.0
     assert((newPeriod >= 2) And (newPeriod <= 2048));
     indiv^.oscPeriod := newPeriod;
   End;

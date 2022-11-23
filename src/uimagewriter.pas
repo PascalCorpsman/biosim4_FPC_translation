@@ -24,6 +24,7 @@ Type
   TImageFrameData = Record
     simStep: unsigned;
     generation: unsigned;
+    Challenge: unsigned;
     // TODO:  indivLocs und indivColors in ein Record zusammenfassen
     indivLocs: Array Of TCoord;
     indivColors: Array Of uint8_t;
@@ -34,7 +35,7 @@ Type
 
   IImageWriterInterface = Interface
     Procedure SetCrashed(Value: Boolean); // Dem Imagewriter Mitteilen dass die Anwendung abgeraucht ist
-    Function saveVideoFrameSync(simStep, generation: unsigned): bool;
+    Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure Free;
   End;
@@ -50,12 +51,12 @@ Type
     fWritelnEvent: TWritelnEvent;
     Procedure saveOneFrameImmed(Const adata: TImageFrameData);
     Procedure Writeln(Value: String);
-    Procedure RenderChallengeToImage(Const Image: TBitmap; generation, simStep: integer);
+    Procedure RenderChallengeToImage(Const Image: TBitmap; generation, simStep, Challenge: integer);
   public
     Constructor Create(); virtual;
     Destructor Destroy(); override;
     Procedure startNewGeneration();
-    Function saveVideoFrameSync(simStep, generation: unsigned): bool;
+    Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure SetCrashed(Value: Boolean);
   End;
@@ -93,7 +94,7 @@ Type
     Constructor Create(CreateSuspended: Boolean; WritelnCallback: TWritelnCallback;
       Const StackSize: SizeUInt = DefaultStackSize);
 
-    Function saveVideoFrameSync(simStep, generation: unsigned): bool;
+    Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure SetCrashed(Value: Boolean);
     Procedure Free;
@@ -140,6 +141,34 @@ Begin
       adata.barrierLocs[i].x * p.displayScale, ((p.sizeY - adata.barrierLocs[i].y) - 1) * p.displayScale,
       (adata.barrierLocs[i].x + 1) * p.displayScale, ((p.sizeY - (adata.barrierLocs[i].y - 0))) * p.displayScale);
   End;
+  (* Taken from : https://github.com/cavac/biosim4/commit/29c83f80667c5ca6e400b383169da442ab3359ea
+  // Draw standard pheromone trails (signal layer 0)
+      color[0] = 0x00;
+      color[1] = 0x00;
+      color[2] = 0xff;
+      for (int16_t x = 0; x < p.sizeX; ++x) {
+          for (int16_t y = 0; y < p.sizeY; ++y) {
+              temp = data.signalLayers[0][x][y];
+              if(temp > 0) {
+                  alpha = ((float)temp / 255.0) / 3.0;
+                  // max alpha 0.33
+                  if(alpha > 0.33) {
+                      alpha = 0.33;
+                  }
+
+                  image.draw_rectangle(
+                      ((x - 1)    * p.displayScale) + 1,
+                      (((p.sizeY - y) - 2))   * p.displayScale + 1,
+                      //x       * p.displayScale - (p.displayScale / 2), ((p.sizeY - y) - 1)   * p.displayScale - (p.displayScale / 2),
+                      (x + 1) * p.displayScale,
+                      ((p.sizeY - (y - 0))) * p.displayScale,
+                      color,  // rgb
+                      alpha);  // alpha
+
+              }
+          }
+      }
+  *)
 
   // Draw agents
   For i := 0 To high(adata.indivLocs) Do Begin
@@ -163,9 +192,9 @@ Begin
     image.Canvas.Ellipse(x, y, x + 2 * d, y + 2 * d); // Shift nach Rechts unten, um 0.5 displayScale damit es "ordentlich" aussieht.
   End;
 
-  // Draw Challange if Possible
+  // Draw Challenge if Possible
   If p.VisualizeChallenge Then Begin
-    RenderChallengeToImage(Image, adata.generation, adata.simStep);
+    RenderChallengeToImage(Image, adata.generation, adata.simStep, adata.Challenge);
   End;
 
   If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin // Das ForceDir bleibt drin, damit die Filme ein Verzeichnis zum Ablegen haben !
@@ -206,7 +235,7 @@ Begin
 End;
 
 Procedure TImageWriter.RenderChallengeToImage(Const Image: TBitmap; generation,
-  simStep: integer);
+  simStep, Challenge: integer);
 Var
   radioactiveX, w, h, R: integer;
 Begin
@@ -221,7 +250,7 @@ Begin
   (*
    * Nicht alle Challenges können Visualisiert werden, aber man kann es wenigstens versuchen ;)
    *)
-  Case p.challenge Of
+  Case Challenge Of
     CHALLENGE_CIRCLE: Begin
         r := (w) Div 4;
         image.canvas.Ellipse(-r + w Div 4, -r + h Div 4, r + w Div 4, r + h Div 4);
@@ -396,7 +425,8 @@ Begin
   Start;
 End;
 
-Function TImageWriterThread.saveVideoFrameSync(simStep, generation: unsigned): bool;
+Function TImageWriterThread.saveVideoFrameSync(simStep, generation,
+  Challenge: unsigned): bool;
 Var
   Indiv: Pindiv;
   index, i, data_indivLocs_cnt, data_indivColors_cnt: Integer;
@@ -409,6 +439,7 @@ Begin
   // saveFrameThread() is using it to output a video frame.
   data.simStep := simStep;
   data.generation := generation;
+  data.Challenge := Challenge;
   setlength(data.indivLocs, p.population + 1);
   data_indivLocs_cnt := 0;
   setlength(data.indivColors, p.population + 1);
@@ -517,7 +548,8 @@ End;
 
 // Synchronous version, always returns true
 
-Function TImageWriter.saveVideoFrameSync(simStep, generation: unsigned): bool;
+Function TImageWriter.saveVideoFrameSync(simStep, generation, Challenge: unsigned
+  ): bool;
 Var
   Indiv: Pindiv;
   index, i, data_indivLocs_cnt, data_indivColors_cnt: Integer;
@@ -528,6 +560,7 @@ Begin
   // saveFrameThread() is using it to output a video frame.
   data.simStep := simStep;
   data.generation := generation;
+  data.Challenge := Challenge;
   setlength(data.indivLocs, p.population + 1);
   data_indivLocs_cnt := 0;
   setlength(data.indivColors, p.population + 1);

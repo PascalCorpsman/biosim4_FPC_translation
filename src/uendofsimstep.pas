@@ -109,8 +109,8 @@ Begin
     Or (generation <= p.videoSaveFirstFrames)
     Or ((generation >= p.parameterChangeGenerationNumber) And (generation <= p.parameterChangeGenerationNumber + p.videoSaveFirstFrames))
     Or (generation = p.maxGenerations - 1) // Shure save the last simulated generation ;)
-    ))) or AdditionalVideoFrame Then Begin
-    If (Not imageWriter.saveVideoFrameSync(simStep, generation)) Then
+    ))) Or AdditionalVideoFrame Then Begin
+    If (Not imageWriter.saveVideoFrameSync(simStep, generation, p.challenge)) Then
       writeln('imageWriter busy');
   End;
 End;
