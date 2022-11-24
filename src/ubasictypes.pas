@@ -260,11 +260,11 @@ Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; User
 Var
   dy, y, extentY, dx, x: Integer;
 Begin
-  For dx := -round(min(radius, loc.x)) To round(min(radius, (p.sizeX - loc.x) - 1)) Do Begin
+  For dx := -trunc(min(radius, loc.x)) To trunc(min(radius, (p.sizeX - loc.x) - 1)) Do Begin
     x := loc.x + dx;
     assert((x >= 0) And (x < p.sizeX));
-    extentY := round(sqrt(max(0, radius * radius - dx * dx)));
-    For dy := -round(min(extentY, loc.y)) To round(min(extentY, (p.sizeY - loc.y) - 1)) Do Begin
+    extentY := trunc(sqrt(max(0, radius * radius - dx * dx)));
+    For dy := -trunc(min(extentY, loc.y)) To trunc(min(extentY, (p.sizeY - loc.y) - 1)) Do Begin
       y := loc.y + dy;
       assert((y >= 0) And (y < p.sizeY));
       f(Coord(x, y), UserData);
@@ -277,9 +277,9 @@ Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; User
 Var
   ii, i, j, x, y: integer;
 Begin
-  For i := -round(radius) To +round(radius) Do Begin
+  For i := -trunc(radius) To +trunc(radius) Do Begin
     ii := sqr(i);
-    For j := -round(radius) To +round(radius) Do Begin
+    For j := -trunc(radius) To +trunc(radius) Do Begin
       If ii + sqr(j) <= sqr(radius) Then Begin
         x := loc.x + i;
         y := loc.y + j;

@@ -160,8 +160,8 @@ Begin
     //BLOC_Y: result := 'birth loc Y';
     LONGPROBE_POP_FWD: result := 'long probe population fwd';
     LONGPROBE_BAR_FWD: result := 'long probe barrier fwd';
-    BARRIER_FWD: result := 'short probe barrier fwd - rev';
-    BARRIER_LR: result := 'short probe barrier left - right';
+    BARRIER_FWD: result := 'short probe barrier fwd-rev';
+    BARRIER_LR: result := 'short probe barrier left-right';
     OSC1: result := 'osc1';
     POPULATION: result := 'population';
     POPULATION_FWD: result := 'population fwd';

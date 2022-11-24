@@ -16,13 +16,15 @@ Implementation
 Uses ugenome, uindiv, ubasicTypes, uparams;
 
 Procedure unitTestConnectNeuralNetWiringFromGenome();
-  Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: Single): TGene;
+//Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: Single): TGene;
+  Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: integer): TGene;
   Begin
     result.sourceType := Sourcetype;
     result.SourceNum := SourceNum;
     result.SinkType := SinkType;
     result.SinkNum := SinkNum;
-    result.Weight := trunc(Weight * 8192);
+    //    result.Weight := trunc(Weight * 8192);
+    result.Weight := Weight;
   End;
 
 Var
@@ -33,18 +35,18 @@ Var
 Begin
   genome1 := Nil;
   setlength(genome1, 12);
-  genome1[0] := MakeGene(SENSOR, 0, NEURON, 0, 0.0);
-  genome1[1] := MakeGene(SENSOR, 1, NEURON, 2, 2.2);
-  genome1[2] := MakeGene(SENSOR, 13, NEURON, 9, 3.3);
-  genome1[3] := MakeGene(NEURON, 4, NEURON, 5, 4.4);
-  genome1[4] := MakeGene(NEURON, 4, NEURON, 4, 5.5);
-  genome1[5] := MakeGene(NEURON, 5, NEURON, 9, 6.6);
-  genome1[6] := MakeGene(NEURON, 0, NEURON, 0, 7.7);
-  genome1[7] := MakeGene(NEURON, 5, NEURON, 9, 8.8);
-  genome1[8] := MakeGene(SENSOR, 0, ACTION, 1, 9.9);
-  genome1[9] := MakeGene(SENSOR, 2, ACTION, 12, 10.1);
-  genome1[10] := MakeGene(NEURON, 0, ACTION, 1, 11.0);
-  genome1[11] := MakeGene(NEURON, 4, ACTION, 2, 12.0);
+  genome1[0] := MakeGene(SENSOR, 0, NEURON, 0, 0);
+  genome1[1] := MakeGene(SENSOR, 1, NEURON, 2, 2);
+  genome1[2] := MakeGene(SENSOR, 13, NEURON, 9, 3);
+  genome1[3] := MakeGene(NEURON, 4, NEURON, 5, 4);
+  genome1[4] := MakeGene(NEURON, 4, NEURON, 4, 5);
+  genome1[5] := MakeGene(NEURON, 5, NEURON, 9, 6);
+  genome1[6] := MakeGene(NEURON, 0, NEURON, 0, 7);
+  genome1[7] := MakeGene(NEURON, 5, NEURON, 9, 8);
+  genome1[8] := MakeGene(SENSOR, 0, ACTION, 1, 9);
+  genome1[9] := MakeGene(SENSOR, 2, ACTION, 12, 10);
+  genome1[10] := MakeGene(NEURON, 0, ACTION, 1, 11);
+  genome1[11] := MakeGene(NEURON, 4, ACTION, 2, 12);
 
   indiv.genome := genome1;
 
@@ -59,14 +61,17 @@ Begin
       s := 'NEURON';
     s := s + ' ';
     s := s + inttostr(indiv.nnet.connections[conn].sourceNum) + ' -> ';
-    If indiv.nnet.connections[conn].sourceType = ACTION Then
+    If indiv.nnet.connections[conn].sinkType = ACTION Then
       s := s + 'ACTION'
     Else
       s := s + 'NEURON';
     s := s + ' ';
     FormatSettings.DecimalSeparator := '.';
     s := s + IntToStr(indiv.nnet.connections[conn].sinkNum) + ' at ' +
-      FloatToStr(indiv.nnet.connections[conn].weightAsFloat());
+      //FloatToStr(indiv.nnet.connections[conn].weightAsFloat())
+      inttostr(indiv.nnet.connections[conn].weight)
+
+      ;
     writeln(s);
   End;
 End;
