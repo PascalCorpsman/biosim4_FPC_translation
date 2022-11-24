@@ -411,6 +411,7 @@ Begin
   // Unit tests:
   //unitTestConnectNeuralNetWiringFromGenome();
   //unitTestGridVisitNeighborhood();
+  //unitTestBasicTypes();
 
   If fLoadSim.Generation <> -1 Then Begin
     writeln('Restart simulation from generation: ' + inttostr(fLoadSim.Generation));

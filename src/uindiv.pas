@@ -902,14 +902,14 @@ Begin
         // Maps current Y location 0..p.sizeY-1 to sensor range 0.0..1.0
         sensorVal := loc.y / (p.sizeY - 1);
       End;
-    TSensor.BLOC_X: Begin
-        // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
-        sensorVal := birthLoc.x / (p.sizeX - 1);
-      End;
-    TSensor.BLOC_Y: Begin
-        // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
-        sensorVal := birthLoc.y / (p.sizey - 1);
-      End;
+    //TSensor.BLOC_X: Begin
+    //    // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
+    //    sensorVal := birthLoc.x / (p.sizeX - 1);
+    //  End;
+    //TSensor.BLOC_Y: Begin
+    //    // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
+    //    sensorVal := birthLoc.y / (p.sizey - 1);
+    //  End;
     TSensor.OSC1: Begin
         // Maps the oscillator sine wave to sensor range 0.0..1.0;
         // cycles starts at simStep 0 for everbody.

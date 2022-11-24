@@ -91,6 +91,10 @@ Type
     y: int16;
     Function length(): integer;
     Function asDir(): TDir;
+    Function Init(): TCoord static; overload;
+    Function Init(ax, ay: integer): TCoord static; overload;
+    Function IsNormalized(): Boolean;
+    Function normalize(): TCoord;
   End;
 
   TCoordArray = Array Of TCoord;
@@ -105,12 +109,14 @@ Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; User
 
 Function Coord(x, y: integer): TCoord;
 
+Operator * (a: TCoord; s: integer): TCoord;
 Operator + (a: TCoord; d: TDir): TCoord;
 Operator - (a: TCoord; d: TDir): TCoord;
 Operator - (a, b: TCoord): TCoord;
 Operator + (a, b: TCoord): TCoord;
 Operator = (a, b: TCoord): Boolean;
 Operator = (a: TDir; b: TCompass): Boolean;
+Operator = (a, b: TDir): Boolean;
 
 Function FixPathDelimeter(Path: String): String;
 Function prettyTime(TimeInMs: int64): String; // Code entliehen aus CCM
@@ -214,6 +220,12 @@ Begin
   result.y := a.y - b.y;
 End;
 
+Operator * (a: TCoord; s: integer): TCoord;
+Begin
+  result.x := a.x * s;
+  result.y := a.y * s;
+End;
+
 Operator + (a: TCoord; d: TDir): TCoord;
 Begin
   result := a + asNormalizedCoord(d);
@@ -234,10 +246,16 @@ Begin
   result := a.asInt() = integer(b);
 End;
 
+Operator = (a, b: TDir): Boolean;
+Begin
+  result := a.asInt() = b.asInt();
+End;
+
 // This is a utility function used when inspecting a local neighborhood around
 // some location. This function feeds each valid (in-bounds) location in the specified
 // neighborhood to the specified function. Locations include self (center of the neighborhood).
-(* Das ist der Original Code, brauchts den noch, oder kann das weg ?
+//(* Das ist der Original Code, brauchts den noch, oder kann das weg ?
+
 Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 Var
   dy, y, extentY, dx, x: Integer;
@@ -252,8 +270,9 @@ Begin
       f(Coord(x, y), UserData);
     End;
   End;
-End; *)
+End; // *)
 
+(*
 Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 Var
   ii, i, j, x, y: integer;
@@ -270,7 +289,7 @@ Begin
       End;
     End;
   End;
-End;
+End;   *)
 
 
 { TCoord }
@@ -306,6 +325,28 @@ Begin
   // the point now falls on, giving 16 cases, though only 9 are
   // possible.
   result := result.Dir(conversion[ord(yp > 0) * 8 + ord(xp > 0) * 4 + ord(yp > xp) * 2 + ord(yp >= -xp)]);
+End;
+
+Function TCoord.Init: TCoord;
+Begin
+  result.x := 0;
+  result.y := 0;
+End;
+
+Function TCoord.Init(ax, ay: integer): TCoord;
+Begin
+  result.x := ax;
+  result.y := ay;
+End;
+
+Function TCoord.IsNormalized: Boolean;
+Begin
+  result := (x >= -1) And (x <= 1) And (y >= -1) And (y <= 1);
+End;
+
+Function TCoord.normalize: TCoord;
+Begin
+  result := asNormalizedCoord(asDir());
 End;
 
 { TDir }

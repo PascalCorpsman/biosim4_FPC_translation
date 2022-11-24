@@ -112,10 +112,6 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="..\Sample\DatenSteuerung\ugwavi.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
         <Filename Value="usimulator.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="uSimulator"/>
@@ -138,6 +134,10 @@
         <Filename Value="biosim4.ini"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="..\Sample\Graphik\ugwavi.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -148,7 +148,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\Sample\DatenSteuerung"/>
+      <OtherUnitFiles Value="..\Sample\DatenSteuerung;..\Sample\Graphik"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
   </CompilerOptions>
