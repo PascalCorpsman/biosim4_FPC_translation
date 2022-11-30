@@ -91,11 +91,10 @@ Var
   newPeriod: unsigned;
   otherLoc, lastMoveOffset, offset, movementOffset, newLoc: TCoord;
   indiv2: PIndiv;
-  moveX, moveY: float;
+  moveX, moveY: Single;
   probX, probY: int16_t;
   signumX, signumy: Integer;
 Begin
-
   // Responsiveness action - convert neuron action level from arbitrary float range
   // to the range 0.0..1.0. If this action neuron is enabled but not driven, will
   // default to mid-level 0.5.
@@ -115,7 +114,7 @@ Begin
   If (isEnabled(SET_OSCILLATOR_PERIOD)) Then Begin
     periodf := actionLevels[integer(SET_OSCILLATOR_PERIOD)];
     newPeriodf01 := (tanh(periodf) + 1.0) / 2.0; // convert to 0.0..1.0
-    newPeriod := 1 + round(1.0 + exp(7.0 * newPeriodf01)); // Der Orig Code macht +1.5 und dann den Cast nach Int, das Round braucht das natürlich nicht, deswegen +1.0
+    newPeriod := 1 + trunc(1.5 + exp(7.0 * newPeriodf01));
     assert((newPeriod >= 2) And (newPeriod <= 2048));
     indiv^.oscPeriod := newPeriod;
   End;
@@ -127,7 +126,7 @@ Begin
     level := actionLevels[integer(SET_LONGPROBE_DIST)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := 1 + level * maxLongProbeDistance;
-    indiv^.longProbeDist := round(level);
+    indiv^.longProbeDist := trunc(level);
   End;
 
   // Emit signal0 - if this action value is below a threshold, nothing emitted.
@@ -143,7 +142,6 @@ Begin
       signals.increment(0, indiv^.loc); // Das ist Thread sicher aus zu führen ?!
     End;
   End;
-
 
   // Kill forward -- if this action value is > threshold, value is converted to probability
   // of an attempted murder. Probabilities under the threshold are considered 0.0.
@@ -263,12 +261,12 @@ Begin
   movementOffset := coord(trunc(probX * signumX), trunc(probY * signumY));
 
   // Move there if it's a valid location
-  If (movementOffset.x <> 0) or (movementOffset.y <> 0) Then Begin // Skip no movement
-    newLoc := indiv^.loc + movementOffset;
-    If (grid.isInBounds(newLoc) And grid.isEmptyAt(newLoc)) Then Begin
-      peeps.queueForMove(indiv, newLoc);
-    End;
+//  If (movementOffset.x <> 0) or (movementOffset.y <> 0) Then Begin // Skip no movement -> Das Braucht es nicht, weil das Indiv ja auf newLoc sitzt und deswegen isEmptyAt fehl schlägt !
+  newLoc := indiv^.loc + movementOffset;
+  If (grid.isInBounds(newLoc) And grid.isEmptyAt(newLoc)) Then Begin
+    peeps.queueForMove(indiv, newLoc);
   End;
+  //  End;
 End;
 
 End.

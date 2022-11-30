@@ -385,7 +385,7 @@ Begin
 
   IndivCalcDelta := p.population;
 
-  If p.numThreads <> 0 Then Begin
+  If p.numThreads > 1 Then Begin
     ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
     If p.numThreads > 2 Then Begin
       setlength(fIndivThreads, p.numThreads - 2);
@@ -399,7 +399,7 @@ Begin
     ImageWriter := TimageWriter.create();
   End;
 
-  randomUint.initialize(); // seed the RNG for main-thread use
+  randomUint.initialize(0); // seed the RNG for main-thread use
 
   // Allocate container space. Once allocated, these container elements
   // will be reused in each new generation.
@@ -412,6 +412,8 @@ Begin
   //unitTestConnectNeuralNetWiringFromGenome();
   //unitTestGridVisitNeighborhood();
   //unitTestBasicTypes();
+  //unitTestgenerateChildGenome();
+  //unitTestIndivSensors();
 
   If fLoadSim.Generation <> -1 Then Begin
     writeln('Restart simulation from generation: ' + inttostr(fLoadSim.Generation));
@@ -435,8 +437,10 @@ Begin
   // modifications in the single-thread regions.
 
   lastRound := false;
+  randomUint.initialize(0); // seed the RNG for main-thread use
+
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
-    //            #pragma omp single
+
     murderCount := 0; // for reporting purposes
     // Reset der Timing Counter
     For i := 0 To high(fIndivThreads) Do Begin
@@ -445,7 +449,6 @@ Begin
     Delta := 0;
     waittime := 0;
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
-
       // multithreaded loop: index 0 is reserved, start at 1
       // 1. die ganzen Threads mit den "Teilaufgaben" starten
       i := IndivCalcDelta + 1;
@@ -489,9 +492,9 @@ Begin
       murderCount := murderCount + peeps.deathQueueSize();
       endOfSimStep(simStep, generation);
     End;
-
     endOfGeneration(generation);
     fparamManager.updateFromConfigFile(generation + 1);
+
     If lastRound Then Begin
       p.maxGenerations := generation + 1;
     End;

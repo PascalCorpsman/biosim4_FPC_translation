@@ -327,7 +327,9 @@ Var
   itConn, j: Integer;
   n: TNode;
 Begin
-  For itConn := high(connections) Downto 0 Do Begin
+  //  For itConn := high(connections) Downto 0 Do Begin
+  itconn := 0;
+  While (itConn <= high(connections)) Do Begin
     If (connections[itConn].sinkType = NEURON) And (connections[itConn].sinkNum = neuronNumber) Then Begin
       // Remove the connection. If the connection source is from another
       // neuron, also decrement the other neuron's numOutputs:
@@ -340,6 +342,9 @@ Begin
         connections[j] := connections[j + 1];
       End;
       SetLength(connections, high(connections));
+    End
+    Else Begin
+      itConn := itConn + 1;
     End;
   End;
 End;
@@ -358,7 +363,8 @@ Begin
   allDone := false;
   While (Not allDone) Do Begin
     allDone := true;
-    For itNeuron := nodeMap.Count - 1 Downto 0 Do Begin
+    itNeuron := 0;
+    While (itNeuron < nodeMap.Count) Do Begin
       assert(nodeMap.Keys[itNeuron] < p.maxNumberNeurons);
       // We're looking for neurons with zero outputs, or neurons that feed itself
       // and nobody else:
@@ -367,6 +373,9 @@ Begin
         // Find and remove connections from sensors or other neurons
         removeConnectionsToNeuron(connections, nodeMap, nodeMap.Keys[itNeuron]);
         nodeMap.Delete(itNeuron);
+      End
+      Else Begin
+        inc(itNeuron);
       End;
     End;
   End;
@@ -519,7 +528,7 @@ Var
   NodeMap: TNodeMap; // list of neurons and their number of inputs and outputs
   connectionList: TconnectionList; // synaptic connections
   newNumber: uint16_t;
-  node, conn, newConn, neuronNum: Integer;
+  keyindex, node, conn, newConn, neuronNum: Integer;
   n: TNode;
 Begin
   // Convert the indiv's genome to a renumbered connection list
@@ -586,12 +595,37 @@ Begin
     End;
   End;
 
+  (*
+   * Dieser Code hier ist wie er "Original" ist
+   * Er erzeugt mehr Neuronen als Notwendig da wenn keyIndex vorher gelöscht wurde
+   * es diese Neuronen eigentlich nicht mehr geben sollte.
+   * Zumindest im Testrun deterministic0 scheint es aber so zu sein
+   * das dieser "Bug" zu einer höheren Survivor Rate führt (klar weil mehr neuronen)
+   * -> Der Code bleibt drin der unten auskommentierte Code bleibt als "Doku" aber enthalten.
+   *)
   // Create the indiv's neural node list
+  neuronNum := 0;
+  While neuronNum < NodeMap.Count Do Begin
+    keyindex := NodeMap.IndexOf(neuronNum);
+    If keyindex = -1 Then Begin
+      n.remappedNumber := 0;
+      n.numOutputs := 0;
+      n.numSelfInputs := 0;
+      n.numInputsFromSensorsOrOtherNeurons := 0;
+      keyindex := NodeMap.Add(neuronNum, n);
+    End;
+    setlength(nnet.neurons, high(nnet.neurons) + 2);
+    nnet.neurons[high(nnet.neurons)].output := initialNeuronOutput;
+    nnet.neurons[high(nnet.neurons)].driven := NodeMap.Data[keyindex].numInputsFromSensorsOrOtherNeurons <> 0;
+    inc(neuronNum);
+  End;
+  (* -- Die Implementierung wie man sie erwarten würde ...
   setlength(nnet.neurons, NodeMap.count);
   For neuronNum := 0 To NodeMap.Count - 1 Do Begin
     nnet.neurons[neuronNum].output := initialNeuronOutput;
     nnet.neurons[neuronNum].driven := (nodeMap.Data[neuronNum].numInputsFromSensorsOrOtherNeurons <> 0);
   End;
+  // *)
   NodeMap.Clear;
   NodeMap.Free;
   setlength(connectionList, 0);
@@ -902,14 +936,14 @@ Begin
         // Maps current Y location 0..p.sizeY-1 to sensor range 0.0..1.0
         sensorVal := loc.y / (p.sizeY - 1);
       End;
-    //TSensor.BLOC_X: Begin
-    //    // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
-    //    sensorVal := birthLoc.x / (p.sizeX - 1);
-    //  End;
-    //TSensor.BLOC_Y: Begin
-    //    // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
-    //    sensorVal := birthLoc.y / (p.sizey - 1);
-    //  End;
+    TSensor.BLOC_X: Begin
+        // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
+        sensorVal := birthLoc.x / (p.sizeX - 1);
+      End;
+    TSensor.BLOC_Y: Begin
+        // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
+        sensorVal := birthLoc.y / (p.sizey - 1);
+      End;
     TSensor.OSC1: Begin
         // Maps the oscillator sine wave to sensor range 0.0..1.0;
         // cycles starts at simStep 0 for everbody.

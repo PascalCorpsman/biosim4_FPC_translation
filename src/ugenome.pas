@@ -121,7 +121,7 @@ Begin
   (*
    * Die Datenstruktur von TGene ist im Prinzip 32-Bit Groß
    * Hier werden diese 32-Bit zusammengepackt zu
-   * <1:sourceType> <7:sourceNum> <1:sinkType> <7:sinkNum> <16:weight>
+   * <16:weight> <7:sinkNum> <1:sinkType> <7:sourceNum> <1:sourceType>
    * weight ist dabei eine Fließkommazahl in [-4 .. 4]
    *)
   sot := gene.sourceType And $0001;
@@ -130,22 +130,22 @@ Begin
   sin := gene.sinkNum And $007F;
   wsi := gene.weight;
 
-  sot := sot Shl 31;
-  son := son Shl 24;
-  sit := sit Shl 23;
-  sin := sin Shl 16;
-  w := wi;
+  //sot := sot Shl 0;
+  son := son Shl 1;
+  sit := sit Shl 8;
+  sin := sin Shl 9;
+  w := wi Shl 16;
 
   result := sot + son + sit + sin + w;
 End;
 
 Function GetGeneFromUInt(value: uint32_t): TGene; // Umkehrfunktion zu GetCompressedGene
 Begin
-  result.sourceType := (value Shr 31) And $0001;
-  result.sourceNum := (value Shr 24) And $007F;
-  result.sinkType := (value Shr 23) And $0001;
-  result.sinkNum := (value Shr 16) And $007F;
-  result.weight := (value Shr 0) And $FFFF;
+  result.sourceType := (value Shr 0) And $0001;
+  result.sourceNum := (value Shr 1) And $007F;
+  result.sinkType := (value Shr 8) And $0001;
+  result.sinkNum := (value Shr 9) And $007F;
+  result.weight := (value Shr 16) And $FFFF;
   assert(value = GetCompressedGene(result));
 End;
 
@@ -203,13 +203,13 @@ Var
   index0, index1, t, i: integer;
 Begin
   index0 := randomUint.RndRange(0, length(gShorter) - 1);
-  index1 := randomUint.RndRange(0, length(gShorter) - 1);
+  index1 := randomUint.RndRange(0, length(gShorter));
   If (index0 > index1) Then Begin
     t := index0;
     index0 := index1;
     index1 := t;
   End;
-  For i := index0 To index1 Do Begin
+  For i := index0 To index1 - 1 Do Begin
     Genome[i] := gshorter[i];
   End;
 End;
@@ -515,10 +515,12 @@ Var
   bitCount, lengthBits, lengthBytes, bytesPerElement, numElements: unsigned;
   index: Integer;
 Begin
-  assert(length(genome1) = length(genome2));
+  If (length(genome1) <> length(genome2)) Then Begin
+    Raise exception.create('Error, hammingDistanceBits only works for genes with equal length.');
+  End;
 
   numElements := length(genome1);
-  bytesPerElement := sizeof(genome1[0]);
+  bytesPerElement := sizeof(GetCompressedGene(genome1[0]));
   lengthBytes := numElements * bytesPerElement;
   lengthBits := lengthBytes * 8;
   bitCount := 0;
@@ -543,10 +545,12 @@ Var
   bytesPerElement, lengthBytes, byteCount, index: Integer;
   a, b: uint32_t;
 Begin
-  assert(length(genome1) = length(genome2));
+  If (length(genome1) <> length(genome2)) Then Begin
+    Raise exception.create('Error, hammingDistanceBytes only works for genes with equal length.');
+  End;
 
   numElements := length(genome1);
-  bytesPerElement := sizeof(genome1[0]);
+  bytesPerElement := sizeof(GetCompressedGene(genome1[0]));
   lengthBytes := numElements * bytesPerElement;
   byteCount := 0;
 

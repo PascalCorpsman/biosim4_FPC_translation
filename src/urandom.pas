@@ -26,8 +26,7 @@ Type
     // for the Jenkins algorithm
     a, b, c, d: uint32;
   public
-    Procedure initialize(); // must be called to seed the RNG
-    //    uint32_t operator()();
+    Procedure initialize(InitSeedOffset: integer); // must be called to seed the RNG
     Function Rnd(): uint32_t;
     Function RndRange(min, max: unsigned): unsigned;
   End;
@@ -36,11 +35,11 @@ Type
   // threadprivate causes each thread to instantiate a private instance.
 
 Var
-  randomUint: RandomUintGenerator;
+  randomUint: RandomUintGenerator; // TODO: Der Muss raus, und alle Funktionen die Rnd brauchen müssen es sich von Simulate rein Reichen lassen ! und der Random Generator muss in jedem Thread einzeln definiert werden -> Sonst nicht Deterministisch !
 
 Implementation
 
-Uses uparams, uomp;
+Uses uparams;
 
 // This file provides a random number generator (RNG) for the main thread
 // and child threads. The global-scoped RNG instance named randomUint is declared
@@ -59,7 +58,7 @@ Uses uparams, uomp;
 // the Jenkins algorithms. The member function operator() determines
 // which algorithm is actually used.
 
-Procedure RandomUintGenerator.initialize;
+Procedure RandomUintGenerator.initialize(InitSeedOffset: integer);
 Begin
 
   If (p.deterministic) Then Begin
@@ -68,10 +67,10 @@ Begin
     // event that a coefficient is zero, we'll force it to an arbitrary
     // non-zero value. Each thread uses a different seed, yet
     // deterministic per-thread.
-    rngx := p.RNGSeed + 123456789 + omp_get_thread_num();
-    rngy := p.RNGSeed + 362436000 + omp_get_thread_num();
-    rngz := p.RNGSeed + 521288629 + omp_get_thread_num();
-    rngc := p.RNGSeed + 7654321 + omp_get_thread_num();
+    rngx := p.RNGSeed + 123456789 + InitSeedOffset;
+    rngy := p.RNGSeed + 362436000 + InitSeedOffset;
+    rngz := p.RNGSeed + 521288629 + InitSeedOffset;
+    rngc := p.RNGSeed + 7654321 + InitSeedOffset;
     If rngx = 0 Then rngx := 123456789;
     If rngy = 0 Then rngy := 123456789;
     If rngz = 0 Then rngz := 123456789;
@@ -79,9 +78,9 @@ Begin
 
     // Initialize Jenkins determinstically per-thread:
     a := $F1EA5EED;
-    b := p.RNGSeed + omp_get_thread_num();
-    c := p.RNGSeed + omp_get_thread_num();
-    d := p.RNGSeed + omp_get_thread_num();
+    b := p.RNGSeed + InitSeedOffset;
+    c := p.RNGSeed + InitSeedOffset;
+    d := p.RNGSeed + InitSeedOffset;
     If (b = 0) Then Begin
       b := d + 123456789;
       c := d + 123456789;

@@ -85,6 +85,7 @@ Begin
         distance := offset.length();
         If distance <= radius Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
       End;
 
@@ -92,6 +93,7 @@ Begin
     CHALLENGE_RIGHT_HALF: Begin
         If indiv^.loc.x > p.sizeX Div 2 Then Begin
           result := Pair(true, 1);
+          exit;
         End
       End;
 
@@ -99,6 +101,7 @@ Begin
     CHALLENGE_RIGHT_QUARTER: Begin
         If (indiv^.loc.x > p.sizeX Div 2 + p.sizeX Div 4) Then Begin
           result := Pair(true, 1);
+          exit;
         End;
       End;
 
@@ -106,6 +109,7 @@ Begin
     CHALLENGE_LEFT_EIGHTH: Begin
         If indiv^.loc.x < p.sizeX Div 8 Then Begin
           result := Pair(true, 1);
+          exit;
         End;
       End;
 
@@ -122,6 +126,7 @@ Begin
         visitNeighborhood(indiv^.loc, radius, @VisitOccupied, @occupiedCount);
         If (occupiedCount >= minNeighbors_CHALLENGE_STRING) And (occupiedCount <= maxNeighbors_CHALLENGE_STRING) Then Begin
           result := Pair(true, 1);
+          exit;
         End;
       End;
 
@@ -135,6 +140,7 @@ Begin
         distance := offset.length();
         If distance <= radius Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
       End;
 
@@ -147,6 +153,7 @@ Begin
         distance := offset.length();
         If distance <= radius Then Begin
           result := Pair(true, 1.0);
+          exit;
         End;
       End;
 
@@ -166,6 +173,7 @@ Begin
           visitNeighborhood(indiv^.loc, innerRadius, @VisitOccupied, @occupiedCount);
           If (occupiedCount >= minNeighbors_CHALLENGE_CENTER_SPARSE) And (occupiedCount <= maxNeighbors_CHALLENGE_CENTER_SPARSE) Then Begin
             result := pair(true, 1.0);
+            exit;
           End;
         End;
       End;
@@ -181,18 +189,22 @@ Begin
         distance := (Coord(0, 0) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, 1);
+          exit;
         End;
         distance := (Coord(0, p.sizeY - 1) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, 1);
+          exit;
         End;
         distance := (Coord(p.sizeX - 1, 0) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, 1);
+          exit;
         End;
         distance := (Coord(p.sizeX - 1, p.sizeY - 1) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, 1);
+          exit;
         End;
       End;
 
@@ -207,18 +219,22 @@ Begin
         distance := (Coord(0, 0) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
         distance := (Coord(0, p.sizeY - 1) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
         distance := (Coord(p.sizeX - 1, 0) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
         distance := (Coord(p.sizeX - 1, p.sizeY - 1) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
       End;
 
@@ -232,6 +248,7 @@ Begin
         If (indiv^.loc.x = 0) Or (indiv^.loc.x = p.sizeX - 1) Or
           (indiv^.loc.y = 0) Or (indiv^.loc.y = p.sizeY - 1) Then Begin
           result := pair(true, 1.0);
+          exit;
         End;
       End;
 
@@ -243,6 +260,7 @@ Begin
     CHALLENGE_TOUCH_ANY_WALL: Begin
         If (indiv^.challengeBits <> 0) Then Begin
           result := pair(true, 1.0);
+          exit;
         End;
       End;
 
@@ -253,12 +271,14 @@ Begin
         distance := (indiv^.loc - indiv^.birthLoc).length();
         distance := distance / (max(p.sizeX, p.sizeY));
         result := pair(true, distance);
+        exit;
       End;
 
     // Survivors are all those on the left or right eighths of the arena
     CHALLENGE_EAST_WEST_EIGHTHS: Begin
         If (indiv^.loc.x < p.sizeX Div 8) Or (indiv^.loc.x >= (p.sizeX - (p.sizeX Div 8))) Then Begin
           result := pair(true, 1.0);
+          exit;
         End;
       End;
 
@@ -280,6 +300,7 @@ Begin
         End;
         If (minDistance <= radius) Then Begin
           result := pair(true, 1.0 - (minDistance / radius));
+          exit;
         End;
       End;
 
@@ -314,6 +335,7 @@ Begin
         End;
         If (count = 1) Then Begin
           result := pair(true, 1.0);
+          exit;
         End;
       End;
 
@@ -332,6 +354,7 @@ Begin
         End;
         If (count > 0) Then Begin
           result := pair(true, count / maxNumberOfBits);
+          exit;
         End;
       End;
 
@@ -344,6 +367,7 @@ Begin
         distance := (Coord(p.sizeX - p.sizeX Div 4, p.sizeY - p.sizeY Div 4) - indiv^.loc).length();
         If (distance <= radius) Then Begin
           result := Pair(true, (radius - distance) / radius);
+          exit;
         End;
       End;
 
@@ -357,6 +381,7 @@ Begin
         distance := offset.length();
         If distance <= radius Then Begin
           result := pair(true, (radius - distance) / radius);
+          exit;
         End;
       End;
 
@@ -425,9 +450,9 @@ Begin
     l := Li;
     r := re;
     While l < r Do Begin
-      While Parents[l].Second < p Do
+      While Parents[l].Second > p Do
         inc(l);
-      While Parents[r].Second > p Do
+      While Parents[r].Second < p Do
         dec(r);
       If L <= R Then Begin
         h := Parents[l];

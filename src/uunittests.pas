@@ -10,22 +10,25 @@ Uses
 Procedure unitTestConnectNeuralNetWiringFromGenome();
 Procedure unitTestGridVisitNeighborhood();
 Function unitTestBasicTypes(): Boolean;
+Procedure unitTestgenerateChildGenome();
+Procedure UnitTestSensors();
+Procedure unitTestIndivSensors();
 
 Implementation
 
 Uses ugenome, uindiv, ubasicTypes, uparams;
 
+Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: integer): TGene;
+Begin
+  result.sourceType := Sourcetype;
+  result.SourceNum := SourceNum;
+  result.SinkType := SinkType;
+  result.SinkNum := SinkNum;
+  //    result.Weight := trunc(Weight * 8192);
+  result.Weight := Weight;
+End;
+
 Procedure unitTestConnectNeuralNetWiringFromGenome();
-//Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: Single): TGene;
-  Function MakeGene(Sourcetype: integer; SourceNum: integer; SinkType: integer; SinkNum: integer; Weight: integer): TGene;
-  Begin
-    result.sourceType := Sourcetype;
-    result.SourceNum := SourceNum;
-    result.SinkType := SinkType;
-    result.SinkNum := SinkNum;
-    //    result.Weight := trunc(Weight * 8192);
-    result.Weight := Weight;
-  End;
 
 Var
   genome1: TGenome;
@@ -69,9 +72,7 @@ Begin
     FormatSettings.DecimalSeparator := '.';
     s := s + IntToStr(indiv.nnet.connections[conn].sinkNum) + ' at ' +
       //FloatToStr(indiv.nnet.connections[conn].weightAsFloat())
-      inttostr(indiv.nnet.connections[conn].weight)
-
-      ;
+    inttostr(indiv.nnet.connections[conn].weight);
     writeln(s);
   End;
 End;
@@ -399,6 +400,97 @@ Begin
   //assert(c1.x == -14 && c1.y == 0);
 
   result := true;
+End;
+
+Procedure printgene(Const g: TGenome);
+Var
+  s: String;
+  i: integer;
+Begin
+  s := '';
+  For i := 0 To high(g) Do Begin
+    s := s + format('%0.8x ', [GetCompressedGene(g[i])]);
+  End;
+  writeln(trim(s));
+End;
+
+Procedure unitTestgenerateChildGenome();
+Var
+  g1,
+    genome1, genome2, genome3: TGenome;
+  ui32: uint32_t;
+  g: TGene;
+  i: Integer;
+  parents: TGenomeArray;
+Begin
+  genome1 := Nil;
+  genome2 := Nil;
+  Parents := Nil;
+  g1 := Nil;
+  setlength(g1, 4);
+  g1[0] := MakeGene(SENSOR, 0, ACTION, 0, 0);
+  g1[1] := MakeGene(SENSOR, 1, ACTION, 1, 1);
+  g1[2] := MakeGene(SENSOR, 2, ACTION, 2, 32767);
+  g1[3] := MakeGene(SENSOR, 64, ACTION, 64, 0);
+  printgene(g1);
+  setlength(genome1, 8);
+  setlength(genome2, 8);
+  genome1[0] := MakeGene(SENSOR, 0, NEURON, 8, 16);
+  genome1[1] := MakeGene(SENSOR, 1, NEURON, 9, 17);
+  genome1[2] := MakeGene(SENSOR, 2, NEURON, 10, 18);
+  genome1[3] := MakeGene(NEURON, 3, NEURON, 11, 19);
+  genome1[4] := MakeGene(NEURON, 4, NEURON, 12, 20);
+  genome1[5] := MakeGene(NEURON, 5, NEURON, 13, 21);
+  genome1[6] := MakeGene(SENSOR, 6, ACTION, 14, 22);
+  genome1[7] := MakeGene(NEURON, 7, ACTION, 15, 23);
+
+  genome2[0] := MakeGene(SENSOR, 100, NEURON, 108, 116);
+  genome2[1] := MakeGene(SENSOR, 101, NEURON, 109, 117);
+  genome2[2] := MakeGene(NEURON, 102, NEURON, 110, 118);
+  genome2[3] := MakeGene(NEURON, 103, NEURON, 111, 119);
+  genome2[4] := MakeGene(NEURON, 104, NEURON, 112, 120);
+  genome2[5] := MakeGene(SENSOR, 105, ACTION, 113, 121);
+  genome2[6] := MakeGene(SENSOR, 106, ACTION, 114, 122);
+  genome2[7] := MakeGene(NEURON, 107, ACTION, 115, 123);
+  printgene(genome1);
+  printgene(genome2);
+  setlength(parents, 2);
+  parents[0] := genome1;
+  parents[1] := genome2;
+  writeln('');
+  genome3 := generateChildGenome(parents);
+  printgene(genome3);
+
+  // Das hier testet nur die overlayWithSliceOf und da waren schon 2 Fehler drin !
+  // es fehlt noch:
+//  randomInsertDeletion
+//  applyPointMutations
+
+
+  For i := 0 To high(genome1) Do Begin
+    ui32 := GetCompressedGene(genome1[i]);
+    g := GetGeneFromUInt(ui32);
+    assert(genome1[i] = g);
+    ui32 := GetCompressedGene(genome2[i]);
+    g := GetGeneFromUInt(ui32);
+    assert(genome2[i] = g);
+  End;
+
+End;
+
+Procedure UnitTestSensors();
+Begin
+  //Hier gehts weiter nen Test für jeden Sensor schreiben, die haben es in sich..
+  //
+  //Dann wieder alle Bewegungen tracken mit den beiden "-- Debug to find that damn fucking Bug !"
+
+End;
+
+Procedure unitTestIndivSensors;
+//Var
+//  indiv: TIndiv;
+Begin
+
 End;
 
 End.

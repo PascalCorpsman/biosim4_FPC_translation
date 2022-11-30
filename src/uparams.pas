@@ -89,7 +89,6 @@ Type
     privParams: TParams;
     configFilename: String;
     configFileContent: TStringlist;
-    FirstRun: Boolean;
     //   lastModTime:    time_t ; // when config file was last read
     Procedure ingestParameter(aname, aval: String);
 
@@ -382,13 +381,16 @@ Begin
           privParams.VisualizeChallenge := bVal;
         End;
       End;
+    'graphlogupdatecommand': Begin
+        privParams.graphLogUpdateCommand := aval;
+      End;
     'rngseed': Begin
         If (isUint) Then Begin
           privParams.RNGSeed := uVal;
         End;
       End
   Else Begin
-      writeln('Invalid param: ' + aname + ' = ' + aval);
+      Raise exception.create('Invalid param: ' + aname + ' = "' + aval + '"');
     End;
   End;
 End;
@@ -396,7 +398,6 @@ End;
 Constructor TParamManager.Create;
 Begin
   configFileContent := Nil;
-  FirstRun := true;
 End;
 
 Destructor TParamManager.Destroy;
@@ -409,17 +410,17 @@ Procedure TParamManager.setDefaults;
 Begin
   privParams.sizeX := 128;
   privParams.sizeY := 128;
-  privParams.challenge := 6; // WTF ?, dass soll wohl CHALLENGE_CORNER_WEIGHTED sein ?
+  privParams.challenge := CHALLENGE_CORNER_WEIGHTED;
 
   privParams.genomeInitialLengthMin := 24;
   privParams.genomeInitialLengthMax := 24;
   privParams.genomeMaxLength := 300;
-  privParams.logDir := 'logs';
-  privParams.imageDir := 'images';
+  privParams.logDir := 'logs'; // Das Orig hat hier mit Pathdelims
+  privParams.imageDir := 'images'; // Das Orig hat hier mit Pathdelims
   privParams.population := 3000;
   privParams.stepsPerGeneration := 300;
   privParams.maxGenerations := 200000;
-  privParams.barrierType := 0; // WTF ?
+  privParams.barrierType := 0;
   privParams.numThreads := 4;
   privParams.signalLayers := 1;
   privParams.maxNumberNeurons := 5;
@@ -449,7 +450,7 @@ Begin
   privParams.updateGraphLogStride := privParams.videoStride;
   privParams.deterministic := false;
   privParams.RNGSeed := 12345678;
-  privParams.graphLogUpdateCommand := 'gnuplot --persist tools/graphlog.gp';
+  privParams.graphLogUpdateCommand := 'gnuplot --persist tools' + Pathdelim + 'graphlog.gp';
   privParams.parameterChangeGenerationNumber := 0;
 End;
 
@@ -499,7 +500,6 @@ Begin
       Else If (activeFromGeneration = generationNumber) Then Begin
         // Parameter value became active at exactly this generation number
         privParams.parameterChangeGenerationNumber := generationNumber;
-        FirstRun := true; // Es hat sich was geändert im Parametersatz, also zeigen wir ihn nun noch mal an
       End;
       name := copy(name, 1, generationDelimiterPos - 1);
     End;
@@ -514,13 +514,10 @@ Begin
     End;
     value := trim(value);
     // Nur beim 1. Mal anzeigen, sonst flippt die Konsole unnötig aus weil das Config File ständig eingelesen wird !
-    If FirstRun Then
-      writeln(Name + ' ' + value);
     ingestParameter(name, value);
   End;
   // Aktualisieren der "Globalen" Parameter
   p := privParams;
-  FirstRun := false;
 End;
 
 // Check parameter ranges, reasonableness, coherency, whatever. This is

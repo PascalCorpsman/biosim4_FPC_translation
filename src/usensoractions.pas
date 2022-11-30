@@ -42,8 +42,8 @@ Type
   TSensor = (
     LOC_X = 0, // I distance from left edge
     LOC_Y, // I distance from bottom
-    //    BLOC_X, // I distance from left edge during birth -- Added by Corpsman
-    //    BLOC_Y, // I distance from bottom during birth -- Added by Corpsman
+    BLOC_X, // I distance from left edge during birth -- Added by Corpsman
+    BLOC_Y, // I distance from bottom during birth -- Added by Corpsman
     BOUNDARY_DIST_X, // I X distance to nearest edge of world
     BOUNDARY_DIST {= 5}, // I distance to nearest edge of world
     BOUNDARY_DIST_Y, // I Y distance to nearest edge of world
@@ -90,8 +90,8 @@ Type
     MOVE_LEFT, // W
     MOVE_RIGHT, // W
     MOVE_REVERSE {= 15}, // W
-    NUM_ACTIONS, // <<----------------- END OF ACTIVE ACTIONS MARKER
-    KILL_FORWARD // W
+    KILL_FORWARD, // W
+    NUM_ACTIONS // <<----------------- END OF ACTIVE ACTIONS MARKER
     );
 
   TActionArray = Array[0..Integer(NUM_ACTIONS) - 1] Of Float;
@@ -125,8 +125,8 @@ Begin
     LAST_MOVE_DIR_Y: result := 'LMy';
     LOC_X: result := 'Lx';
     LOC_Y: result := 'Ly';
-    //BLOC_X: result := 'BLx';
-    //BLOC_Y: result := 'BLy';
+    BLOC_X: result := 'BLx';
+    BLOC_Y: result := 'BLy';
     LONGPROBE_POP_FWD: result := 'LPf';
     LONGPROBE_BAR_FWD: result := 'LPb';
     BARRIER_FWD: result := 'Bfd';
@@ -156,8 +156,8 @@ Begin
     LAST_MOVE_DIR_Y: result := 'last move dir Y';
     LOC_X: result := 'loc X';
     LOC_Y: result := 'loc Y';
-    //BLOC_X: result := 'birth loc X';
-    //BLOC_Y: result := 'birth loc Y';
+    BLOC_X: result := 'birth loc X';
+    BLOC_Y: result := 'birth loc Y';
     LONGPROBE_POP_FWD: result := 'long probe population fwd';
     LONGPROBE_BAR_FWD: result := 'long probe barrier fwd';
     BARRIER_FWD: result := 'short probe barrier fwd-rev';

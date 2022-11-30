@@ -18,8 +18,6 @@ Type
     cpqueueForMove
     );
 
-Function omp_get_thread_num(): integer; // wird in der Zufallszahlen generierung genutzt
-
 (*
  * Alles was die Threads zum Synchronisieren brauchen
  *)
@@ -31,8 +29,6 @@ Procedure LeaveCodePoint(CP: TCodePoint);
 
 Implementation
 
-Uses uparams;
-
 Procedure NOP();
 Begin
 
@@ -40,11 +36,6 @@ End;
 
 Var
   CSs: Array[TCodePoint] Of TRTLCriticalSection;
-
-Function omp_get_thread_num(): integer;
-Begin
-  result := p.numThreads;
-End;
 
 Procedure InitCriticalSections;
 Var
