@@ -110,6 +110,7 @@ Begin
     Or ((generation >= p.parameterChangeGenerationNumber) And (generation <= p.parameterChangeGenerationNumber + p.videoSaveFirstFrames))
     Or (generation = p.maxGenerations - 1) // Shure save the last simulated generation ;)
     ))) Or AdditionalVideoFrame Then Begin
+    // Die Auswertung ist Quatsch weil der Thread immer annimt.
     If (Not imageWriter.saveVideoFrameSync(simStep, generation, p.challenge)) Then
       writeln('imageWriter busy');
   End;

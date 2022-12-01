@@ -492,7 +492,6 @@ Begin
       murderCount := murderCount + peeps.deathQueueSize();
       endOfSimStep(simStep, generation);
     End;
-    endOfGeneration(generation);
     fparamManager.updateFromConfigFile(generation + 1);
 
     If lastRound Then Begin
@@ -569,6 +568,8 @@ Begin
     End;
 
     numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
+    endOfGeneration(generation); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
+
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
       displaySampleGenomes(p.displaySampleGenomes);
     End;

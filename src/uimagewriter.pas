@@ -599,7 +599,7 @@ Var
   i: Integer;
 Begin
   If assigned(fimageList) Then Begin
-    videoFilename := p.imageDir + PathDelim +
+    videoFilename := IncludeTrailingPathDelimiter(p.imageDir) +
       'gen-' + format('%0.6d', [generation]) +
       '.avi';
     fAVI.Open(videoFilename,

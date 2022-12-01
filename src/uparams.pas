@@ -70,7 +70,6 @@ Type
     genomeInitialLengthMax: unsigned; // > 0 and < genomeInitialLengthMin
     logDir: String;
     imageDir: String;
-    graphLogUpdateCommand: String;
     VisualizeChallenge: Boolean;
 
     // These are updated automatically and not set via the parameter file
@@ -381,9 +380,6 @@ Begin
           privParams.VisualizeChallenge := bVal;
         End;
       End;
-    'graphlogupdatecommand': Begin
-        privParams.graphLogUpdateCommand := aval;
-      End;
     'rngseed': Begin
         If (isUint) Then Begin
           privParams.RNGSeed := uVal;
@@ -450,7 +446,6 @@ Begin
   privParams.updateGraphLogStride := privParams.videoStride;
   privParams.deterministic := false;
   privParams.RNGSeed := 12345678;
-  privParams.graphLogUpdateCommand := 'gnuplot --persist tools' + Pathdelim + 'graphlog.gp';
   privParams.parameterChangeGenerationNumber := 0;
 End;
 

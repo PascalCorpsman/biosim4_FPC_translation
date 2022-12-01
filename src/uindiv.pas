@@ -327,7 +327,6 @@ Var
   itConn, j: Integer;
   n: TNode;
 Begin
-  //  For itConn := high(connections) Downto 0 Do Begin
   itconn := 0;
   While (itConn <= high(connections)) Do Begin
     If (connections[itConn].sinkType = NEURON) And (connections[itConn].sinkNum = neuronNumber) Then Begin
@@ -443,7 +442,6 @@ Begin
         n.numInputsFromSensorsOrOtherNeurons := 0;
         NodeMap.Data[it] := n;
       End;
-
       n := NodeMap.Data[it];
       If (ConnectionList[conn].sourceType = NEURON) And (ConnectionList[conn].sourceNum = ConnectionList[conn].sinkNum) Then Begin
         n.numSelfInputs := n.numSelfInputs + 1;
@@ -700,9 +698,7 @@ Begin
     Else Begin
       s := 'N' + inttostr(nnet.connections[conn].sourceNum);
     End;
-
     s := s + ' ';
-
     If (nnet.connections[conn].sinkType = ACTION) Then Begin
       s := s + actionShortName(TAction(nnet.connections[conn].sinkNum));
     End
