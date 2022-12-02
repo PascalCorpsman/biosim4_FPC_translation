@@ -39,7 +39,7 @@ Begin
     sc := TSimpleChart.Create();
     sc.XAXis.UseMinVal := true;
     sc.XAXis.MinVal := 0;
-    sc.XAXis.MarkFormat:='%0.f';
+    sc.XAXis.MarkFormat := '%0.f';
     sl := TStringList.Create;
     sl.LoadFromFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt'); // Der Existiert immer, da wir den vorher ja erstellt haben ;)
     Survivors := TSeries.Create();
@@ -71,7 +71,12 @@ Begin
       Diversity.AddDataPoint(x, strtofloatdef(sa[2], 0));
     End;
     png := sc.SaveToPngImage(2000, 400);
-    png.SaveToFile(IncludeTrailingPathDelimiter(p.imageDir) + 'log.png');
+    If Not ForceDirectories(p.imageDir) Then Begin
+      writeln('Error: could not create: ' + p.imageDir);
+    End
+    Else Begin
+      png.SaveToFile(IncludeTrailingPathDelimiter(p.imageDir) + 'log.png');
+    End;
     png.free;
     sl.free;
     sc.free;

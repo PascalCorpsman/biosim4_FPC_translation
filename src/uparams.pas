@@ -88,6 +88,7 @@ Type
     privParams: TParams;
     configFilename: String;
     configFileContent: TStringlist;
+    ChangerList: Array Of String;
     //   lastModTime:    time_t ; // when config file was last read
     Procedure ingestParameter(aname, aval: String);
 
@@ -156,30 +157,47 @@ End;
 
 Procedure TParamManager.ingestParameter(aname, aval: String);
 Var
-  isUint, isFloat, isBool, bVal: Boolean;
+
   uVal: unsigned;
   dval: double;
+
+  Function isUint(): Boolean;
+  Begin
+    isUint := checkIfUint(aval);
+    If isUint Then Begin
+      uval := strtoint(aval);
+    End
+    Else Begin
+      uVal := 0;
+    End;
+  End;
+
+  Function isFloat(): Boolean;
+  Begin
+    isFloat := checkIfFloat(aval);
+    If isFloat Then Begin
+      FormatSettings.DecimalSeparator := '.';
+      dval := StrToFloat(aval);
+    End
+    Else Begin
+      dval := 0.0;
+    End;
+  End;
+
+  Function isBool(): Boolean;
+  Begin
+    isBool := checkIfBool(aval);
+  End;
+
+  Function bval(): Boolean;
+  Begin
+    bVal := getBoolVal(aval);
+  End;
+
 Begin
   aname := LowerCase(aname);
   //std::cout << aname << " " << aval << '\n' << std::endl;
 
-  isUint := checkIfUint(aval);
-  If isUint Then Begin
-    uval := strtoint(aval);
-  End
-  Else Begin
-    uVal := 0;
-  End;
-  isFloat := checkIfFloat(aval);
-  If isFloat Then Begin
-    FormatSettings.DecimalSeparator := '.';
-    dval := StrToFloat(aval);
-  End
-  Else Begin
-    dval := 0.0;
-  End;
-  isBool := checkIfBool(aval);
-  bVal := getBoolVal(aval);
   aval := LowerCase(aval);
   Case aname Of
     'sizex': Begin
@@ -394,6 +412,7 @@ End;
 Constructor TParamManager.Create;
 Begin
   configFileContent := Nil;
+  ChangerList := Nil;
 End;
 
 Destructor TParamManager.Destroy;
@@ -462,54 +481,125 @@ Begin
 End;
 
 Procedure TParamManager.updateFromConfigFile(generationNumber: unsigned);
-Var
-  i: Integer;
-  value, value0, generationSpecifier, name, line: String;
-  delimiterComment, delimeterPos, generationDelimiterPos: Integer;
-  isUint: Boolean;
-  activeFromGeneration: unsigned;
-Begin
-  // TODO: Hier sollten je nach Generation (0 = alle, sonst nur die "Updatefähigen")
-  If ReloadConfigini Then Begin
-    registerConfigFile(configFilename);
+
+Type
+  TLine = Record
+    Name: String;
+    Value: String;
   End;
-  For i := 0 To configFileContent.Count - 1 Do Begin
-    line := trim(configFileContent[i]);
-    If (line = '') Or (line[1] = '#') Then Continue;
-    delimeterPos := pos('=', line);
-    name := trim(copy(line, 1, delimeterPos - 1));
+
+  Function UnpackLine(Line: String): TLine;
+  Begin
+    result.Value := '';
+    result.Name := '';
+    line := trim(lowercase(line));
+    If line = '' Then exit;
+    If line[1] = '#' Then exit;
+    result.Name := trim(copy(line, 1, pos('=', Line) - 1));
+    result.Value := trim(copy(line, pos('=', Line) + 1, length(Line)));
+    If pos('#', result.Value) <> 0 Then Begin
+      result.Value := trim(copy(result.Value, 1, pos('#', result.Value) - 1));
+    End;
+  End;
+
+  Procedure HandleLine(line: String);
+  Var
+    generationDelimiterPos: Integer;
+    generationSpecifier: String;
+    isUint: bool;
+    activeFromGeneration: LongInt;
+    aLine: TLine;
+  Begin
+    aline := UnpackLine(line);
+    If (aline.Name = '') Then exit;
 
     // Process the generation specifier if present:
-    generationDelimiterPos := pos('@', name);
+    generationDelimiterPos := pos('@', aline.Name);
     If (generationDelimiterPos > 0) Then Begin
-      generationSpecifier := copy(name, generationDelimiterPos + 1, length(name));
+      generationSpecifier := copy(aline.name, generationDelimiterPos + 1, length(aline.name));
       isUint := checkIfUint(generationSpecifier);
       If (Not isUint) Then Begin
-        writeln('Invalid generation specifier: ' + name + '.');
-        continue;
+        writeln('Invalid generation specifier: ' + aline.name + '.');
+        exit;
       End;
       activeFromGeneration := strtoint(generationSpecifier);
       If (activeFromGeneration > generationNumber) Then Begin
-        continue; // This parameter value is not active yet
+        Exit; // This parameter value is not active yet
       End
       Else If (activeFromGeneration = generationNumber) Then Begin
         // Parameter value became active at exactly this generation number
         privParams.parameterChangeGenerationNumber := generationNumber;
       End;
-      name := copy(name, 1, generationDelimiterPos - 1);
+      aline.name := copy(aline.name, 1, generationDelimiterPos - 1);
     End;
+    ingestParameter(aline.name, aline.value);
+  End;
 
-    value0 := lowercase(copy(line, delimeterPos + 1, length(line)));
-    delimiterComment := pos('#', value0);
-    If delimiterComment = 0 Then Begin
-      value := value0;
-    End
-    Else Begin
-      value := copy(value0, 1, delimiterComment - 1);
+Var
+  panik, ocnt, i, j, k: Integer;
+  aLine, cLine: TLine;
+  boolval: Boolean;
+Begin
+  If ReloadConfigini Then Begin
+    registerConfigFile(configFilename);
+  End;
+  If (generationNumber = 0) Or ReloadConfigini Then Begin
+    setlength(ChangerList, 0);
+    For i := 0 To configFileContent.Count - 1 Do Begin
+      HandleLine(configFileContent[i]);
+      aline := UnpackLine(configFileContent[i]);
+      // Ein parameter welcher erst ab einer Bestimmten Generation "Scharf" wird
+      // Muss in die Changelist damit der für später getracked werden kann.
+      If pos('@', aline.Name) <> 0 Then Begin
+        setlength(ChangerList, high(ChangerList) + 2);
+        ChangerList[high(ChangerList)] := configFileContent[i];
+      End;
     End;
-    value := trim(value);
-    // Nur beim 1. Mal anzeigen, sonst flippt die Konsole unnötig aus weil das Config File ständig eingelesen wird !
-    ingestParameter(name, value);
+    // In einem 2. Pass müssen noch mal alle Parameter Eingefügt werden die von
+    // anderen Parametern abhängig sind, welche von @ Parametern abhängig sind!
+    panik := 0;
+    Repeat
+      ocnt := length(ChangerList);
+      For i := 0 To configFileContent.Count - 1 Do Begin
+        aLine := UnpackLine(configFileContent[i]);
+        If (aLine.Name = '') Then Continue;
+        For j := 0 To high(ChangerList) Do Begin
+          cLine := UnpackLine(ChangerList[j]);
+          If pos('@', cline.name) <> 0 Then Begin
+            cline.name := trim(copy(cline.name, 1, pos('@', cline.name) - 1));
+          End;
+          If aline.Value = cLine.Name Then Begin
+            // Der Parameter ist Abhängig von einem anderen -> der muss in die ChangerList mit aufgenommen werden
+            boolval := true;
+            For k := 0 To high(ChangerList) Do Begin
+              If ChangerList[k] = configFileContent[i] Then Begin
+                boolval := false;
+                break;
+              End;
+            End;
+            If boolval Then Begin
+              setlength(ChangerList, high(ChangerList) + 2);
+              ChangerList[high(ChangerList)] := configFileContent[i];
+            End;
+            break;
+          End;
+        End;
+      End;
+      // Gemäß Erwartung, läuft diese repeat schleife maximal 2 Mal durch, aber man weis nie und so kriegen wir es mit !
+      inc(panik);
+      If (panik > 100) Then Begin
+        Raise exception.create('TParamManager.updateFromConfigFile: Stack overflow.');
+      End;
+    Until ocnt = length(ChangerList);
+  End
+  Else Begin
+    (*
+     * Während der Simulation werden nur noch Parameter "aktualisiert" welche
+     * sich auch tatsächlich ändern können, das spart Rechenzeit !
+     *)
+    For i := 0 To high(ChangerList) Do Begin
+      HandleLine(ChangerList[i]);
+    End;
   End;
   // Aktualisieren der "Globalen" Parameter
   p := privParams;

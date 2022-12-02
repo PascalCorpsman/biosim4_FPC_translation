@@ -418,6 +418,11 @@ Begin
   If fLoadSim.Generation <> -1 Then Begin
     writeln('Restart simulation from generation: ' + inttostr(fLoadSim.Generation));
     generation := fLoadSim.Generation + 1;
+    // Nachladen aller "Konfigurationen" der Bisherigen Generationen
+    For i := 0 To fLoadSim.Generation Do Begin
+      fparamManager.updateFromConfigFile(i);
+    End;
+
     If length(fLoadSim.parentGenomes) = 0 Then Begin
       writeln('No survivors, -> restart simulation.');
       initializeGeneration0(); // starting population
@@ -438,6 +443,9 @@ Begin
 
   lastRound := false;
   randomUint.initialize(0); // seed the RNG for main-thread use
+
+  //TODO:  Einmal mit Haltepunkten Prüfen In wie weiter die 1. Generation des Deterministic0.ini
+  //    alles was mit Sensoren / Spawn New Gen / Actionen abdeckt und bei "Fehlenden" entsprechend weitere Tests implementieren !
 
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
 
@@ -492,12 +500,6 @@ Begin
       murderCount := murderCount + peeps.deathQueueSize();
       endOfSimStep(simStep, generation);
     End;
-    fparamManager.updateFromConfigFile(generation + 1);
-
-    If lastRound Then Begin
-      p.maxGenerations := generation + 1;
-    End;
-
     // Sammeln der Einzel Thread zeiten ..
     dbgtimestamp := '';
     If DetailTimings Then Begin
@@ -573,6 +575,14 @@ Begin
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
       displaySampleGenomes(p.displaySampleGenomes);
     End;
+
+    //TOOD: Schauen ob das so passt Eine File machen die auf Gen 100 eine Barrier erstellt und 100 und 101 rendern lassen, was kommt dann raus ?
+
+    fparamManager.updateFromConfigFile(generation + 1);
+    If lastRound Then Begin
+      p.maxGenerations := generation + 1;
+    End;
+
     If (numberSurvivors = 0) Then Begin
       If Not lastRound Then Begin
         writeln('No survivors, -> restart simulation.');
