@@ -521,7 +521,6 @@ Begin
               writeln('--- Abort by user, will close. ---');
             End;
             lastRound := true;
-            p.maxGenerations := generation + 1;
           End;
         'V', 'v': Begin // Nächste generation soll ein Videostride gerendert werden.
             If Not AdditionalVideoFrame Then Begin
@@ -562,11 +561,27 @@ Begin
           End;
       End;
     End;
+
     (*
-     * Der User will noch mal ein Video und danach abbrechen -> dann muss der Simulator das hier auch Berücksichtigen und die Schwelle noch mal aushebeln.
+     * Das muss vor Spawn new Generation sein, damit so geschichten wie die
+     * "Barrier" korrekt in SpawnNewGeneration gesetzt werden, sonst kommt
+     * das seine Gen zu spät !
      *)
-    If AdditionalVideoFrame And lastRound Then Begin
-      p.maxGenerations := generation + 2;
+    fparamManager.updateFromConfigFile(generation + 1);
+
+    (*
+     * Das Muss vor spawnNewGeneration gemacht werden, weil dort auch das
+     * Autosaving gemacht wird !
+     *)
+    If lastRound Then Begin
+      p.maxGenerations := generation + 1; // Abbruch durch User
+      (*
+       * Der User will noch mal ein Video und danach abbrechen -> dann muss der
+       * Simulator das hier auch Berücksichtigen und die Schwelle noch mal aushebeln.
+       *)
+      If AdditionalVideoFrame Then Begin
+        p.maxGenerations := generation + 2;
+      End;
     End;
 
     numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
@@ -574,13 +589,6 @@ Begin
 
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
       displaySampleGenomes(p.displaySampleGenomes);
-    End;
-
-    //TOOD: Schauen ob das so passt Eine File machen die auf Gen 100 eine Barrier erstellt und 100 und 101 rendern lassen, was kommt dann raus ?
-
-    fparamManager.updateFromConfigFile(generation + 1);
-    If lastRound Then Begin
-      p.maxGenerations := generation + 1;
     End;
 
     If (numberSurvivors = 0) Then Begin
