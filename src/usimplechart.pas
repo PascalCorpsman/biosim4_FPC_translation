@@ -318,7 +318,7 @@ Begin
   XAXis.UseMaxVal := false;
   XAXis.MinVal := 0;
   XAXis.MaxVal := 0;
-  XAXis.MarkFormat:='%f';
+  XAXis.MarkFormat := '%f';
 End;
 
 Destructor TSimpleChart.Destroy;

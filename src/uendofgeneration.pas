@@ -22,7 +22,6 @@ Procedure endOfGeneration(generation: unsigned);
 Var
   sc: TSimpleChart;
   sl: TStringList;
-  png: TPortableNetworkGraphic;
   Diversity, Survivors: TSeries;
   sa: TStringArray;
   x, i: Integer;
@@ -70,16 +69,13 @@ Begin
       Survivors.AddDataPoint(x, strtointdef(sa[1], 0));
       Diversity.AddDataPoint(x, strtofloatdef(sa[2], 0));
     End;
-    png := sc.SaveToPngImage(2000, 400);
-    If Not ForceDirectories(p.imageDir) Then Begin
-      writeln('Error: could not create: ' + p.imageDir);
-    End
-    Else Begin
-      png.SaveToFile(IncludeTrailingPathDelimiter(p.imageDir) + 'log.png');
-    End;
-    png.free;
+    (*
+     * Im Multithread Modus Knallt es, wenn ein TBitmap aus dem Hauptthread heraus erzeugt wird und ebenfalls gleichzeitig im Thread
+     * also muss das erzeugen des Bildes ebenfalls durch den ImageWriter Thread geschleust werden ...
+     *)
+    ImageWriter.AddChartRendererToQueue(sc);
     sl.free;
-    sc.free;
+
   End;
 End;
 

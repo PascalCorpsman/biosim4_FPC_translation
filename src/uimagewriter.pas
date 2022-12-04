@@ -5,7 +5,7 @@ Unit uImageWriter;
 Interface
 
 Uses
-  Graphics, Classes, SysUtils, ubasicTypes, ufifo, ugwavi;
+  Graphics, Classes, SysUtils, ubasicTypes, ufifo, ugwavi, usimplechart;
 
 {$I c_types.inc}
 {$INTERFACES corba}
@@ -38,6 +38,7 @@ Type
     Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure Free;
+    Procedure AddChartRendererToQueue(Const SC: TSimpleChart);
   End;
 
 
@@ -59,6 +60,7 @@ Type
     Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure SetCrashed(Value: Boolean);
+    Procedure AddChartRendererToQueue(Const SC: TSimpleChart);
   End;
 
   tStringQueue = specialize TFifo < String > ;
@@ -71,11 +73,13 @@ Type
   End;
 
   TJobQueue = Specialize TFifo < TJob > ;
+  TSimpleChartQueue = Specialize TFifo < TSimpleChart > ;
 
   { TImageWriterThread }
 
   TImageWriterThread = Class(TThread, IImageWriterInterface)
   private
+    fscq: TSimpleChartQueue;
     fImageWriter: TImageWriter;
     fWritelnCallback: TWritelnCallback;
     fstringFivo: tStringQueue;
@@ -89,6 +93,7 @@ Type
     Procedure TearDown;
     Procedure Writeln(Value: String);
     Procedure HandleJob(Const Job: TJob);
+    Procedure HandleSCEvent(Const SC: TSimpleChart);
   public
     Procedure Execute(); override;
     Constructor Create(CreateSuspended: Boolean; WritelnCallback: TWritelnCallback;
@@ -97,6 +102,7 @@ Type
     Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
     Procedure SetCrashed(Value: Boolean);
+    Procedure AddChartRendererToQueue(Const SC: TSimpleChart);
     Procedure Free;
   End;
 
@@ -339,6 +345,21 @@ Begin
   // Nichts im Synchronen Modus ist uns das Egal
 End;
 
+Procedure TImageWriter.AddChartRendererToQueue(Const SC: TSimpleChart);
+Var
+  png: TPortableNetworkGraphic;
+Begin
+  png := sc.SaveToPngImage(2000, 400);
+  If Not ForceDirectories(p.imageDir) Then Begin
+    writeln('Error: could not create: ' + p.imageDir);
+  End
+  Else Begin
+    png.SaveToFile(IncludeTrailingPathDelimiter(p.imageDir) + 'log.png');
+  End;
+  png.free;
+  sc.free;
+End;
+
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
 Begin
   // TODO: Prüfen ob das den gleichen Bug hat wie er in GetCompressedGene war
@@ -369,6 +390,7 @@ End;
 Procedure TImageWriterThread.Setup;
 Begin
   fcrashed := false;
+  fscq := TSimpleChartQueue.create;
   fstringFivo := tStringQueue.create;
   fImageWriter := TImageWriter.Create();
   fImageWriter.fWritelnEvent := @self.Writeln;
@@ -399,6 +421,11 @@ Begin
   End;
 End;
 
+Procedure TImageWriterThread.HandleSCEvent(Const SC: TSimpleChart);
+Begin
+  fImageWriter.AddChartRendererToQueue(sc);
+End;
+
 Procedure TImageWriterThread.Execute;
 Begin
   Setup();
@@ -411,6 +438,9 @@ Begin
     End
     Else Begin
       HandleJob(fJobQueue.Pop);
+    End;
+    If fscq.Count <> 0 Then Begin
+      HandleSCEvent(fscq.Pop);
     End;
   End;
   Teardown;
@@ -486,6 +516,11 @@ Begin
   fcrashed := Value;
 End;
 
+Procedure TImageWriterThread.AddChartRendererToQueue(Const SC: TSimpleChart);
+Begin
+  fscq.Push(sc);
+End;
+
 Procedure TImageWriterThread.Free;
 Var
   key: Char;
@@ -495,7 +530,7 @@ Begin
     CheckSynchronize(1);
   End;
   (*
-   * Sollten noch Bilder in der Writequeue sein (in der Regen die von der letzten Generation)
+   * Sollten noch Bilder in der Writequeue sein (in der Regel die von der letzten Generation)
    * dann lassen wir dem User die Wahl diese auf zu heben oder "weg zu werfen".
    *)
   If assigned(fWritelnCallback) And (Not fcrashed) Then Begin
@@ -512,6 +547,17 @@ Begin
       End;
     End;
   End;
+  If Not fcrashed Then Begin
+    While Not fscq.isempty Do Begin
+      HandleSCEvent(fscq.Pop);
+    End;
+  End
+  Else Begin
+    While Not fscq.isempty Do Begin
+      fscq.Pop.Free;
+    End;
+  End;
+  fscq.free;
   fImageWriter.free;
   fImageWriter := Nil;
   fJobQueue.Clear;
@@ -548,8 +594,8 @@ End;
 
 // Synchronous version, always returns true
 
-Function TImageWriter.saveVideoFrameSync(simStep, generation, Challenge: unsigned
-  ): bool;
+Function TImageWriter.saveVideoFrameSync(simStep, generation,
+  Challenge: unsigned): bool;
 Var
   Indiv: Pindiv;
   index, i, data_indivLocs_cnt, data_indivColors_cnt: Integer;
