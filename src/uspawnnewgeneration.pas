@@ -5,7 +5,7 @@ Unit uspawnNewGeneration;
 Interface
 
 Uses
-  Classes, SysUtils, ugenome;
+  Classes, SysUtils, urandom, ugenome;
 
 {$I c_types.inc}
 
@@ -15,8 +15,8 @@ Var
   // Requires that the grid, signals, and peeps containers have been allocated.
   // This will erase the grid and signal layers, then create a new population in
   // the peeps container at random locations with random genomes.
-Procedure initializeGeneration0();
-Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
+Procedure initializeGeneration0(Const randomUint: RandomUintGenerator);
+Procedure initializeNewGeneration(Const randomUint: RandomUintGenerator; Var parentGenomes: TGenomeArray);
 
 // At this point, the deferred death queue and move queue have been processed
 // and we are left with zero or more individuals who will repopulate the
@@ -28,11 +28,11 @@ Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
 // nets instead of rebuilding them.
 // Returns number of survivor-reproducers.
 // Must be called in single-thread mode between generations.
-Function spawnNewGeneration(generation, murderCount: unsigned; ThreadTimes: String): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; ThreadTimes: String): unsigned;
 
 Implementation
 
-Uses uSimulator, uparams, uindiv, uanalysis, ubasicTypes, math, urandom;
+Uses uSimulator, uparams, uindiv, uanalysis, ubasicTypes, math;
 
 Type
   TBoolPair = Record
@@ -391,20 +391,20 @@ Begin
   End;
 End;
 
-Procedure initializeGeneration0();
+Procedure initializeGeneration0(Const randomUint: RandomUintGenerator);
 Var
   index: Integer;
 Begin
   // The grid, signals, and peeps containers have already been allocated, just
   // clear them if needed and reuse the elements
   grid.zeroFill();
-  grid.createBarrier(p.barrierType);
+  grid.createBarrier(randomUint, p.barrierType);
   signals.zeroFill();
 
   // Spawn the population. The peeps container has already been allocated,
   // just clear and reuse it
   For index := 1 To p.population Do Begin
-    peeps[index]^.initialize(index, grid.findEmptyLocation(), makeRandomGenome());
+    peeps[index]^.initialize(randomUint, index, grid.findEmptyLocation(randomUint), makeRandomGenome(randomUint));
   End;
 End;
 
@@ -414,19 +414,19 @@ End;
 // layers, then create a new population in the peeps container with random
 // locations and genomes derived from the container of parent genomes.
 
-Procedure initializeNewGeneration(Var parentGenomes: TGenomeArray);
+Procedure initializeNewGeneration(Const randomUint: RandomUintGenerator; Var parentGenomes: TGenomeArray);
 Var
   index: Integer;
 Begin
   // The grid, signals, and peeps containers have already been allocated, just
   // clear them if needed and reuse the elements
   grid.zeroFill();
-  grid.createBarrier(p.barrierType);
+  grid.createBarrier(randomUint, p.barrierType);
   signals.zeroFill();
 
   // Spawn the population. This overwrites all the elements of peeps[]
   For index := 1 To p.population Do Begin
-    peeps[index]^.initialize(index, grid.findEmptyLocation(), generateChildGenome(parentGenomes));
+    peeps[index]^.initialize(randomUint, index, grid.findEmptyLocation(randomUint), generateChildGenome(randomUint, parentGenomes));
   End;
 End;
 
@@ -467,7 +467,7 @@ Begin
   End;
 End;
 
-Function spawnNewGeneration(generation, murderCount: unsigned; ThreadTimes: String): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; ThreadTimes: String): unsigned;
 Const
   altruismFactor = 10; // the saved:sacrificed ratio
   generationToApplyKinship = 10;
@@ -603,25 +603,25 @@ Begin
   End;
   LastSpawnTime := at;
 
-  gendiversity := geneticDiversity();
+  gendiversity := geneticDiversity(randomUint);
   writeln('Gen ' + inttostr(generation) + ', ' +
     inttostr(length(parentGenomes)) + ' survivors = ' + format('%0.2d%%', [round((length(parentGenomes) * 100) / p.population)]) +
     ', genetic diversity = ' + format('%d%', [round(gendiversity * 100)]) +
     tmp
     );
-  appendEpochLog(generation, length(parentGenomes), murderCount, gendiversity);
+  appendEpochLog(randomUint, generation, length(parentGenomes), murderCount, gendiversity);
   // displaySignalUse(); // for debugging only
 
   // Now we have a container of zero or more parents' genomes
 
   If assigned(parentGenomes) Then Begin
     // Spawn a new generation
-    initializeNewGeneration(parentGenomes);
+    initializeNewGeneration(randomUint, parentGenomes);
   End
   Else Begin
     // Special case: there are no surviving parents: start the simulation over
     // from scratch with randomly-generated genomes
-    initializeGeneration0();
+    initializeGeneration0(randomUint);
   End;
   (* Store Simulation settings for continueing on a later time :-) *)
   If generation = p.maxGenerations - 1 Then Begin

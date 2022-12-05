@@ -5,7 +5,7 @@ Unit ugrid;
 Interface
 
 Uses
-  Classes, SysUtils, ubasicTypes;
+  Classes, SysUtils, ubasicTypes, urandom;
 
 {$I c_types.inc}
 
@@ -52,8 +52,8 @@ Type
 
     Procedure Set_(loc: TCoord; val: uint16_t); overload;
     Procedure Set_(x, y, val: uint16_t); overload;
-    Function findEmptyLocation(): TCoord;
-    Procedure createBarrier(barrierType: unsigned);
+    Function findEmptyLocation(Const randomUint: RandomUintGenerator): TCoord;
+    Procedure createBarrier(Const randomUint: RandomUintGenerator; barrierType: unsigned);
     Function getBarrierLocations(): TCoordArray;
     Function getBarrierCenters(): TCoordArray;
     // Direct access:
@@ -63,7 +63,7 @@ Type
 
 Implementation
 
-Uses uparams, urandom;
+Uses uparams;
 
 { TGrid }
 
@@ -132,7 +132,7 @@ End;
 
 // Finds a random unoccupied location in the grid
 
-Function TGrid.findEmptyLocation: TCoord;
+Function TGrid.findEmptyLocation(Const randomUint: RandomUintGenerator): TCoord;
 Var
   cnt: integer;
 Begin
@@ -148,7 +148,7 @@ Begin
   End;
 End;
 
-Function RandomLoc(margin: integer): tCoord;
+Function RandomLoc(Const randomUint: RandomUintGenerator; margin: integer): tCoord;
 Begin
   result := Coord(randomUint.RndRange(margin, p.sizeX - margin), randomUint.RndRange(margin, p.sizeY - margin));
 End;
@@ -170,7 +170,7 @@ End;
 // This function assumes an empty grid. This is typically called by
 // the main simulator thread after Grid::init() or Grid::zeroFill().
 
-Procedure TGrid.createBarrier(barrierType: unsigned);
+Procedure TGrid.createBarrier(Const randomUint: RandomUintGenerator; barrierType: unsigned);
 Var
   BarrierCoordTmp: TCoordArray;
 
@@ -307,13 +307,13 @@ Begin
         margin := 2 * trunc(radius);
 
 
-        center0 := randomLoc(margin);
+        center0 := randomLoc(randomUint, margin);
 
         Repeat
-          center1 := RandomLoc(margin);
+          center1 := RandomLoc(randomUint, margin);
         Until ((center0 - center1).length() >= margin);
         Repeat
-          center2 := RandomLoc(margin);
+          center2 := RandomLoc(randomUint, margin);
         Until ((center0 - center2).length() >= margin) And ((center1 - center2).length() >= margin);
 
         // TODO: Kann man das hier noch optimieren ?

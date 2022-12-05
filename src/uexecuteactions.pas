@@ -5,20 +5,20 @@ Unit uexecuteActions;
 Interface
 
 Uses
-  Classes, SysUtils, uindiv, usensoractions, ubasicTypes;
+  Classes, SysUtils, urandom, uindiv, usensoractions, ubasicTypes;
 
-Procedure executeActions(Indiv: Pindiv; actionLevels: TActionArray);
+Procedure executeActions(Const randomUint: RandomUintGenerator; Indiv: Pindiv; actionLevels: TActionArray);
 
 Implementation
 
-Uses math, uparams, urandom, uSimulator;
+Uses math, uparams, uSimulator;
 
 // Given a factor in the range 0.0..1.0, return a bool with the
 // probability of it being true proportional to factor. For example, if
 // factor == 0.2, then there is a 20% chance this function will
 // return true.
 
-Function prob2bool(factor: float): Boolean;
+Function prob2bool(Const randomUint: RandomUintGenerator; factor: float): Boolean;
 Begin
   assert((factor >= 0.0) And (factor <= 1.0));
   result := (randomUint.Rnd() / RANDOM_UINT_MAX) < factor;
@@ -80,7 +80,7 @@ Begin
   result := integer(Action) < Integer(NUM_ACTIONS);
 End;
 
-Procedure executeActions(Indiv: Pindiv; actionLevels: TActionArray);
+Procedure executeActions(Const randomUint: RandomUintGenerator; Indiv: Pindiv; actionLevels: TActionArray);
 Const
   maxLongProbeDistance = 32;
   emitThreshold = 0.5; // 0.0..1.0; 0.5 is midlevel
@@ -138,7 +138,7 @@ Begin
     level := actionLevels[integer(EMIT_SIGNAL0)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;
-    If ((level > emitThreshold) And prob2bool(level)) Then Begin
+    If ((level > emitThreshold) And prob2bool(randomUint, level)) Then Begin
       signals.increment(0, indiv^.loc); // Das ist Thread sicher aus zu führen ?!
     End;
   End;
@@ -150,7 +150,7 @@ Begin
     level := actionLevels[integer(KILL_FORWARD)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;
-    If (level > killThreshold) And (prob2bool((level - ACTION_MIN) / ACTION_RANGE)) Then Begin
+    If (level > killThreshold) And (prob2bool(randomUint, (level - ACTION_MIN) / ACTION_RANGE)) Then Begin
       otherLoc := indiv^.loc + indiv^.lastMoveDir;
       If (grid.isInBounds(otherLoc) And grid.isOccupiedAt(otherLoc)) Then Begin
         indiv2 := peeps.getIndiv(otherLoc);
@@ -231,7 +231,7 @@ Begin
 
   If (isEnabled(MOVE_RANDOM)) Then Begin
     level := actionLevels[integer(MOVE_RANDOM)];
-    offset := asNormalizedCoord(TDir.random8());
+    offset := asNormalizedCoord(TDir.random8(randomUint));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
@@ -244,8 +244,8 @@ Begin
   moveY := moveY * responsivenessAdjusted;
 
   // The probability of movement along each axis is the absolute value
-  probX := ord(prob2bool(abs(moveX))); // convert abs(level) to 0 or 1
-  probY := ord(prob2bool(abs(moveY))); // convert abs(level) to 0 or 1
+  probX := ord(prob2bool(randomUint, abs(moveX))); // convert abs(level) to 0 or 1
+  probY := ord(prob2bool(randomUint, abs(moveY))); // convert abs(level) to 0 or 1
 
   // The direction of movement (if any) along each axis is the sign
   If moveX < 0 Then

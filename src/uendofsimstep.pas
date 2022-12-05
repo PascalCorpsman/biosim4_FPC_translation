@@ -5,15 +5,15 @@ Unit uEndOfSimStep;
 Interface
 
 Uses
-  Classes, SysUtils, uindiv;
+  Classes, SysUtils, urandom, uindiv;
 
 {$I c_types.inc}
 
-Procedure endOfSimStep(simStep, generation: unsigned);
+Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned);
 
 Implementation
 
-Uses uparams, uSimulator, uImageWriter, urandom, ubasicTypes;
+Uses uparams, uSimulator, uImageWriter, ubasicTypes;
 
 (*
 At the end of each sim step, this function is called in single-thread
@@ -29,7 +29,7 @@ mode to take care of several things:
    p.saveVideo is true).
 *)
 
-Procedure endOfSimStep(simStep, generation: unsigned);
+Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned);
 Const
   radius = 9.0;
 Var

@@ -31,12 +31,6 @@ Type
     Function RndRange(min, max: unsigned): unsigned;
   End;
 
-  // The globally-scoped random number generator. Declaring it
-  // threadprivate causes each thread to instantiate a private instance.
-
-Var
-  randomUint: RandomUintGenerator; // TODO: Der Muss raus, und alle Funktionen die Rnd brauchen müssen es sich von Simulate rein Reichen lassen ! und der Random Generator muss in jedem Thread einzeln definiert werden -> Sonst nicht Deterministisch !
-
 Implementation
 
 Uses uparams;

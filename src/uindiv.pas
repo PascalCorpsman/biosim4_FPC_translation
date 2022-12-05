@@ -5,7 +5,7 @@ Unit uindiv;
 Interface
 
 Uses
-  Classes, SysUtils, ubasicTypes, ugenome, usensoractions;
+  Classes, SysUtils, ubasicTypes, ugenome, urandom, usensoractions;
 
 {$I c_types.inc}
 
@@ -30,10 +30,10 @@ Type
     longProbeDist: unsigned; // distance for long forward probe for obstructions
     lastMoveDir: TDir; // direction of last movement
     challengeBits: unsigned; // modified when the indiv accomplishes some task
-    Function feedForward(simStep: unsigned): TActionArray; // reads sensors, returns actions
+    Function feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray; // reads sensors, returns actions
 
-    Function getSensor(sensorNum: TSensor; simStep: unsigned): float;
-    Procedure initialize(index_: uint16_t; loc_: TCoord; genome_: TGenome);
+    Function getSensor(Const randomUint: RandomUintGenerator; sensorNum: TSensor; simStep: unsigned): float;
+    Procedure initialize(Const randomUint: RandomUintGenerator; index_: uint16_t; loc_: TCoord; genome_: TGenome);
     Procedure createWiringFromGenome(); // creates .nnet member from .genome member
     Procedure printNeuralNet();
     Procedure printIGraphEdgeList();
@@ -44,7 +44,7 @@ Type
 
 Implementation
 
-Uses uSimulator, uparams, Math, fgl, urandom, usignals;
+Uses uSimulator, uparams, Math, fgl, usignals;
 
 Type
 
@@ -486,7 +486,7 @@ End;
 // of 1.0, then depending on which action activation function is used,
 // the default undriven value may be changed to 1.0 or action midrange.
 
-Procedure TIndiv.initialize(index_: uint16_t; loc_: TCoord; genome_: TGenome);
+Procedure TIndiv.initialize(Const randomUint: RandomUintGenerator; index_: uint16_t; loc_: TCoord; genome_: TGenome);
 Var
   i: Integer;
 Begin
@@ -499,7 +499,7 @@ Begin
   age := 0;
   oscPeriod := 34; // ToDo !!! define a constant
   alive := true;
-  lastMoveDir := TDir.random8();
+  lastMoveDir := TDir.random8(randomUint);
   responsiveness := 0.5; // range 0.0..1.0
   longProbeDist := p.longProbeDistance;
   challengeBits := 0; //(unsigned)false; // will be set true when some task gets accomplished
@@ -767,7 +767,7 @@ We have three types of neurons:
          actionLevels[] which is returned to the caller by value (thanks RVO).
 ********************************************************************************)
 
-Function TIndiv.feedForward(simStep: unsigned): TActionArray;
+Function TIndiv.feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray;
 Var
   actionLevels: TActionArray;
   neuronAccumulators: Array Of Float;
@@ -815,7 +815,7 @@ Begin
     // The values are summed for now, later passed through a transfer function
 
     If (nnet.connections[gene].sourceType = SENSOR) Then Begin
-      inputVal := getSensor(TSensor(nnet.connections[gene].sourceNum), simStep);
+      inputVal := getSensor(randomUint, TSensor(nnet.connections[gene].sourceNum), simStep);
     End
     Else Begin
       inputVal := nnet.neurons[nnet.connections[gene].sourceNum].output;
@@ -854,7 +854,7 @@ End;
 
 // Returned sensor values range SENSOR_MIN..SENSOR_MAX
 
-Function TIndiv.getSensor(sensorNum: TSensor; simStep: unsigned): float;
+Function TIndiv.getSensor(Const randomUint: RandomUintGenerator; sensorNum: TSensor; simStep: unsigned): float;
 Var
   sensorVal: float;
   lastY, lastX, minDistX, minDistY,

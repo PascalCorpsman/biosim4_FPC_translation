@@ -5,18 +5,18 @@ Unit uanalysis;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, urandom, SysUtils;
 
 {$I c_types.inc}
 
 Procedure displaySignalUse();
 Procedure displaySampleGenomes(count: unsigned);
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
+Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
 
 Implementation
 
 Uses
-  uparams, uSimulator, ugenome, urandom, usensoractions, ubasicTypes, uindiv;
+  uparams, uSimulator, ugenome, usensoractions, ubasicTypes, uindiv;
 
 (*
 Example format:
@@ -35,7 +35,7 @@ Example format:
     Neuron y ...
 *)
 
-Function averageGenomeLength(): Float;
+Function averageGenomeLength(Const randomUint: RandomUintGenerator): Float;
 Var
   count, numberSamples: unsigned;
   sum: uint32_t;
@@ -54,7 +54,7 @@ End;
 // The epoch log contains one line per generation in a format that can be
 // fed to graphlog.gp to produce a chart of the simulation progress.
 
-Procedure appendEpochLog(generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
+Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
 Var
   sl: TStringlist;
 Begin
@@ -68,7 +68,7 @@ Begin
     sl.add('Generation;Number of survivors;genetic diversity;average genome length;murder count');
   End;
   FormatSettings.DecimalSeparator := '.';
-  sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength()) + ';' + inttostr(murderCount));
+  sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength(randomUint)) + ';' + inttostr(murderCount));
   If Not ForceDirectories(ExcludeTrailingPathDelimiter(p.logDir)) Then Begin
     sl.free;
     Raise exception.create('Error, unable to write into folder:' + p.logDir);

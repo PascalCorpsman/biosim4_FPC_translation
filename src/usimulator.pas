@@ -5,7 +5,7 @@ Unit uSimulator;
 Interface
 
 Uses
-  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, uThreadIndiv, uindiv;
+  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, uThreadIndiv, urandom, uindiv;
 
 {$I c_types.inc}
 {$INTERFACES corba} // Für TImageWriter, so kann man Interfaces ohne den .net Gruscht nutzen
@@ -50,6 +50,7 @@ Type
      *)
     fLoadSim: TLoadSim;
     fIndivThreads: Array Of TThreadIndivs; // Im Multithread Modus sind das die weiteren Threads
+    fRandomGenerator: RandomUintGenerator;
     (*
      * Rest
      *)
@@ -77,11 +78,11 @@ Var
   AdditionalVideoFrame: Boolean = false; // If true, the next generation will definitly write a video
   ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
-Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
+Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
 
 Implementation
 
-Uses usensoractions, urandom, uspawnNewGeneration, uexecuteActions,
+Uses usensoractions, uspawnNewGeneration, uexecuteActions,
   uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp, ubasicTypes;
 
 Var
@@ -122,13 +123,13 @@ Var
       randomUint - global random number generator, a private instance is given to each thread
   **********************************************************************************************)
 
-Procedure simStepOneIndiv(Indiv: Pindiv; simStep: unsigned);
+Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; simStep: unsigned);
 Var
   actionLevels: TActionArray;
 Begin
   indiv^.age := indiv^.age + 1; // for this implementation, tracks simStep
-  actionLevels := indiv^.feedForward(simStep);
-  executeActions(indiv, actionLevels);
+  actionLevels := indiv^.feedForward(randomUint, simStep);
+  executeActions(randomUint, indiv, actionLevels);
 End;
 
 { TSimulator }
@@ -377,7 +378,6 @@ Begin
 
   // Simulator parameters are available read-only through the global
   // variable p after paramManager is initialized.
-  // Todo: remove the hardcoded parameter filename.
   fparamManager.setDefaults();
   fparamManager.registerConfigFile(Filename);
   fparamManager.updateFromConfigFile(0);
@@ -390,7 +390,7 @@ Begin
     If p.numThreads > 2 Then Begin
       setlength(fIndivThreads, p.numThreads - 2);
       For i := 0 To high(fIndivThreads) Do Begin
-        fIndivThreads[i] := TThreadIndivs.Create();
+        fIndivThreads[i] := TThreadIndivs.Create(i + 1);
       End;
       IndivCalcDelta := ceil(p.population / (p.numThreads - 1)); // Nur -1 weil der Hauptthread natürlich auch rechnet !
     End;
@@ -399,7 +399,7 @@ Begin
     ImageWriter := TimageWriter.create();
   End;
 
-  randomUint.initialize(0); // seed the RNG for main-thread use
+  fRandomGenerator.initialize(0); // seed the RNG for main-thread use
 
   // Allocate container space. Once allocated, these container elements
   // will be reused in each new generation.
@@ -425,16 +425,16 @@ Begin
 
     If length(fLoadSim.parentGenomes) = 0 Then Begin
       writeln('No survivors, -> restart simulation.');
-      initializeGeneration0(); // starting population
+      initializeGeneration0(fRandomGenerator); // starting population
       generation := 0;
     End
     Else Begin
-      initializeNewGeneration(fLoadSim.parentGenomes);
+      initializeNewGeneration(fRandomGenerator, fLoadSim.parentGenomes);
     End;
   End
   Else Begin
     generation := 0;
-    initializeGeneration0(); // starting population
+    initializeGeneration0(fRandomGenerator); // starting population
   End;
   runMode := rmRUN;
 
@@ -442,10 +442,12 @@ Begin
   // modifications in the single-thread regions.
 
   lastRound := false;
-  randomUint.initialize(0); // seed the RNG for main-thread use
 
   //TODO:  Einmal mit Haltepunkten Prüfen In wie weiter die 1. Generation des Deterministic0.ini
-  //    alles was mit Sensoren / Spawn New Gen / Actionen abdeckt und bei "Fehlenden" entsprechend weitere Tests implementieren !
+  (*       => Folgende Dinge fehlen noch:
+   *       Procedure executeActions: Kill Forward !
+   *       Procedure randomInsertDeletion Komplett
+   *)
 
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
 
@@ -469,7 +471,7 @@ Begin
       Start := GetTickCount64;
       For indivIndex := 1 To IndivCalcDelta Do Begin
         If (peeps[indivIndex]^.alive) Then Begin
-          simStepOneIndiv(peeps[indivIndex], simStep);
+          simStepOneIndiv(fRandomGenerator, peeps[indivIndex], simStep);
         End;
       End;
       delta := delta + (GetTickCount64 - Start);
@@ -498,7 +500,7 @@ Begin
       // In single-thread mode: this executes deferred, queued deaths and movements,
       // updates signal layers (pheromone), etc.
       murderCount := murderCount + peeps.deathQueueSize();
-      endOfSimStep(simStep, generation);
+      endOfSimStep(fRandomGenerator, simStep, generation);
     End;
     // Sammeln der Einzel Thread zeiten ..
     dbgtimestamp := '';
@@ -584,7 +586,7 @@ Begin
       End;
     End;
 
-    numberSurvivors := spawnNewGeneration(generation, murderCount, dbgtimestamp);
+    numberSurvivors := spawnNewGeneration(fRandomGenerator, generation, murderCount, dbgtimestamp);
     endOfGeneration(generation); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
 
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin

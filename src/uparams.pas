@@ -611,7 +611,7 @@ End;
 Procedure TParamManager.checkParameters;
 Begin
   If (privParams.deterministic) And (privParams.numThreads <> 1) Then Begin
-    Writeln('Warning: When deterministic is true, you probably want to set numThreads = 1.');
+    Writeln('Warning: When deterministic is true, the number of threads shall not be changed!');
   End;
 End;
 

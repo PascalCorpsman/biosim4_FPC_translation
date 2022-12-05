@@ -85,6 +85,7 @@ Procedure TPeeps.init(population: unsigned);
 Begin
   // Index 0 is reserved, so add one:
   setlength(individuals, population + 1);
+  individuals[0].alive := false; // Das 1. Element ist nur ein Platzhalter, warum auch immer, aber es wird mal "Tot" initialisiert !
   setlength(deathQueue, population); // Give enough space for everyone to die
   setlength(moveQueue, population); // Give enough space for everyone to move
 End;

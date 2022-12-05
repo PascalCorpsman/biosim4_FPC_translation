@@ -5,12 +5,12 @@ Unit uUnittests;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, SysUtils, urandom;
 
 Procedure unitTestConnectNeuralNetWiringFromGenome();
 Procedure unitTestGridVisitNeighborhood();
 Function unitTestBasicTypes(): Boolean;
-Procedure unitTestgenerateChildGenome();
+Procedure unitTestgenerateChildGenome(Const randomUint: RandomUintGenerator);
 Procedure UnitTestSensors();
 Procedure unitTestIndivSensors();
 
@@ -414,7 +414,7 @@ Begin
   writeln(trim(s));
 End;
 
-Procedure unitTestgenerateChildGenome();
+Procedure unitTestgenerateChildGenome(Const randomUint: RandomUintGenerator);
 Var
   g1,
     genome1, genome2, genome3: TGenome;
@@ -458,7 +458,7 @@ Begin
   parents[0] := genome1;
   parents[1] := genome2;
   writeln('');
-  genome3 := generateChildGenome(parents);
+  genome3 := generateChildGenome(randomUint, parents);
   printgene(genome3);
 
   // Das hier testet nur die overlayWithSliceOf und da waren schon 2 Fehler drin !

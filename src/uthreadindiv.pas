@@ -5,7 +5,7 @@ Unit uThreadIndiv;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, SysUtils, urandom;
 
 Type
 
@@ -18,11 +18,12 @@ Type
     FFirstindex, FLastIndex, fsimStep: Integer;
     fState: TThreadIndivState;
     fWorkingDelta, fWorkingStartTime: uint64;
+    fRandomGenerator: RandomUintGenerator;
   public
     Property GetWorkingDelta: uint64 read fWorkingDelta;
     Procedure ResetCounter();
     Procedure Execute(); override;
-    Constructor Create(); reintroduce;
+    Constructor Create(Index: integer); reintroduce;
     Function IsStateIdle(): Boolean;
     Function StartWork(FirstIndex, LastIndex, simStep: integer): Boolean;
   End;
@@ -33,9 +34,10 @@ Uses upeeps, uSimulator;
 
 { TThreadIndic }
 
-Constructor TThreadIndivs.Create;
+Constructor TThreadIndivs.Create(Index: integer);
 Begin
   Inherited Create(true);
+  fRandomGenerator.initialize(Index);
   FreeOnTerminate := true;
   fState := isIdle;
   Start;
@@ -57,7 +59,7 @@ Begin
   fState := isRunning;
 End;
 
-Procedure TThreadIndivs.ResetCounter();
+Procedure TThreadIndivs.ResetCounter;
 Begin
   fWorkingDelta := 0;
 End;
@@ -76,7 +78,7 @@ Begin
           // Mache die Arbeit
           For indivIndex := FFirstindex To FLastIndex Do Begin
             If (peeps[indivIndex]^.alive) Then Begin
-              simStepOneIndiv(peeps[indivIndex], fsimStep);
+              simStepOneIndiv(fRandomGenerator, peeps[indivIndex], fsimStep);
             End;
           End;
           fWorkingDelta := fWorkingDelta + (GetTickCount64() - fWorkingStartTime);

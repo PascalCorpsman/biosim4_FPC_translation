@@ -221,8 +221,6 @@ Procedure TSeries.RenderToRect(Const Canvas: TCanvas; Rect: TRect;
   XInterval: TXInterval);
 Var
   dim: TDimension;
-
-Var
   tickx, i: Integer;
   p: TPoint;
   dy: Single;
@@ -243,7 +241,6 @@ Begin
     canvas.Pen.Width := 1;
     dy := (Dim.MaxY - dim.MinY) / 10;
     For i := 1 To 9 Do Begin
-      // TODO: Render der Background linien
       p := Convert(dim, rect, v2(0, Dim.MinY + dy * i));
       Canvas.MoveTo(tickx, p.Y);
       Canvas.LineTo(tickx + TickLen, p.Y);
@@ -450,7 +447,6 @@ Begin
   If p.x + tw Div 2 <= Width Then Begin
     RenderNumOnPos(p, dim.MaxX, b.Canvas);
   End;
-
 
   // Die Eigentlichen Kurven Rendern
   For i := 0 To high(fSeries) Do Begin

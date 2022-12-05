@@ -5,7 +5,7 @@ Unit ubasicTypes;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, urandom, SysUtils;
 
 {$I c_types.inc}
 
@@ -70,7 +70,7 @@ Type
   public
     Function Dir(aDir: TCompass = CENTER): TDir static;
 
-    Function random8(): TDir static;
+    Function random8(Const randomUint: RandomUintGenerator): TDir static;
     Function asInt(): uint8;
 
     Function rotate(n: integer = 0): TDir;
@@ -123,7 +123,7 @@ Function prettyTime(TimeInMs: int64): String; // Code entliehen aus CCM
 
 Implementation
 
-Uses urandom, Math, uparams;
+Uses Math, uparams;
 
 Procedure Nop();
 Begin
@@ -356,7 +356,7 @@ Begin
   Result.dir9 := aDir;
 End;
 
-Function TDir.random8: TDir;
+Function TDir.random8(Const randomUint: RandomUintGenerator): TDir;
 Begin
   result := Dir(TCompass.N).rotate(randomUint.RndRange(0, 7));
   assert(integer(result) <= 8);

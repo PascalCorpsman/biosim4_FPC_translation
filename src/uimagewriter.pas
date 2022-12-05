@@ -362,7 +362,6 @@ End;
 
 Function makeGeneticColor(Const Genome: Tgenome): uint8_t;
 Begin
-  // TODO: Prüfen ob das den gleichen Bug hat wie er in GetCompressedGene war
   result := ((length(genome) And 1)
     Or ((genome[0].sourceType) Shl 1)
     Or ((genome[high(genome)].sourceType) Shl 2)
@@ -428,7 +427,6 @@ End;
 
 Procedure TImageWriterThread.Execute;
 Begin
-  Setup();
   While Not Terminated Do Begin
     If fstringFivo.Count <> 0 Then Begin
       Synchronize(@WritelnEvent);
@@ -452,6 +450,7 @@ Begin
   Inherited Create(CreateSuspended, StackSize);
   fWritelnCallback := WritelnCallback;
   FreeOnTerminate := false;
+  Setup(); // Setup noch im Context des MainThread ausführen, sonst kann es "knallen"
   Start;
 End;
 

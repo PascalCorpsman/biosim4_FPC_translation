@@ -5,7 +5,7 @@ Unit ugenome;
 Interface
 
 Uses
-  Classes, SysUtils;
+  Classes, SysUtils, urandom;
 
 {$I c_types.inc}
 
@@ -37,7 +37,7 @@ Type
     sinkNum: uint16_t; // 7-Bit
     weight: int16_t;
     Function weightAsFloat(): Float;
-    Function makeRandomWeight(): int16_t;
+    Function makeRandomWeight(Const randomUint: RandomUintGenerator): int16_t;
   End;
 
 
@@ -83,14 +83,14 @@ Type
 
   TGenomeArray = Array Of TGenome;
 
-Function makeRandomGene(): TGene;
+Function makeRandomGene(Const randomUint: RandomUintGenerator): TGene;
 
 // Returns by value a single genome with random genes.
-Function makeRandomGenome(): TGenome;
+Function makeRandomGenome(Const randomUint: RandomUintGenerator): TGenome;
 
-Function generateChildGenome(Var parentGenomes: TGenomeArray): TGenome;
+Function generateChildGenome(Const randomUint: RandomUintGenerator; Var parentGenomes: TGenomeArray): TGenome;
 
-Function geneticDiversity(): float;
+Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
 
 Function genomeSimilarity(Const g1, g2: TGenome): Float;
 Function GetCompressedGene(Const gene: TGene): uint32_t; // Komprimiert die TGene Datenstruktur in 32-Bit (damit die dann "Packed" ist).
@@ -100,7 +100,7 @@ Operator = (g1, g2: TGene): Boolean; // True if genes are identical
 
 Implementation
 
-Uses uparams, urandom, Math, upeeps, uSimulator;
+Uses uparams, Math, upeeps, uSimulator;
 
 Operator = (g1, g2: TGene): Boolean;
 Begin
@@ -170,7 +170,7 @@ End;
 // Returns by value a single gene with random members.
 // See genome.h for the width of the members.
 
-Function makeRandomGene(): TGene;
+Function makeRandomGene(Const randomUint: RandomUintGenerator): TGene;
 Var
   Gene: Tgene;
 Begin
@@ -178,12 +178,12 @@ Begin
   gene.sourceNum := randomUint.RndRange(0, $7F); // Beschränken auf die 7-Bit die wir im Gen haben - Sonst geht das Laden / Speichern Schief weil dort ja definitiv auf 7-Bit gekürzt wird!
   gene.sinkType := randomUint.rnd() And 1;
   gene.sinkNum := randomUint.RndRange(0, $7F); // Beschränken auf die 7-Bit die wir im Gen haben - Sonst geht das Laden / Speichern Schief weil dort ja definitiv auf 7-Bit gekürzt wird!
-  gene.weight := Gene.makeRandomWeight();
+  gene.weight := Gene.makeRandomWeight(randomUint);
 
   result := gene;
 End;
 
-Function makeRandomGenome: TGenome;
+Function makeRandomGenome(Const randomUint: RandomUintGenerator): TGenome;
 Var
   genome: TGenome;
   length: unsigned;
@@ -193,12 +193,12 @@ Begin
   length := randomUint.RndRange(p.genomeInitialLengthMin, p.genomeInitialLengthMax);
   setlength(genome, length);
   For n := 0 To high(genome) Do Begin
-    genome[n] := makeRandomGene();
+    genome[n] := makeRandomGene(randomUint);
   End;
   result := genome;
 End;
 
-Procedure overlayWithSliceOf(Var Genome: TGenome; gshorter: TGenome);
+Procedure overlayWithSliceOf(Const randomUint: RandomUintGenerator; Var Genome: TGenome; gshorter: TGenome);
 Var
   index0, index1, t, i: integer;
 Begin
@@ -219,7 +219,7 @@ End;
 // used only when the simulator is configured to allow genomes of
 // unequal lengths during a simulation.
 
-Procedure cropLength(Var genome: TGenome; nlength: unsigned);
+Procedure cropLength(Const randomUint: RandomUintGenerator; Var genome: TGenome; nlength: unsigned);
 Var
   numberElementsToTrim, i: integer;
 Begin
@@ -243,7 +243,7 @@ End;
 // used only when the simulator is configured to allow genomes of
 // unequal lengths during a simulation.
 
-Procedure randomInsertDeletion(Var Genome: Tgenome);
+Procedure randomInsertDeletion(Const randomUint: RandomUintGenerator; Var Genome: Tgenome);
 Var
   probability: Float;
   index, i: unsigned;
@@ -274,7 +274,7 @@ Begin
       //End;
       //Genome[index] := makeRandomGene();
       setlength(Genome, high(Genome) + 2);
-      Genome[high(Genome)] := makeRandomGene();
+      Genome[high(Genome)] := makeRandomGene(randomUint);
     End;
   End;
 End;
@@ -282,7 +282,7 @@ End;
 
 // This applies a point mutation at a random bit in a genome.
 
-Procedure randomBitFlip(Var Genome: Tgenome);
+Procedure randomBitFlip(Const randomUint: RandomUintGenerator; Var Genome: Tgenome);
 Var
   elementIndex, bitIndex8: unsigned;
   chance: Single;
@@ -311,7 +311,7 @@ End;
 // This function causes point mutations in a genome with a probability defined
 // by the parameter p.pointMutationRate.
 
-Procedure applyPointMutations(Var Genome: Tgenome);
+Procedure applyPointMutations(Const randomUint: RandomUintGenerator; Var Genome: Tgenome);
 Var
   numberOfGenes: unsigned;
   i: Integer;
@@ -321,7 +321,7 @@ Begin
   For i := 0 To numberOfGenes - 1 Do Begin
     //while (numberOfGenes-- > 0) {
     If ((randomUint.Rnd() / RANDOM_UINT_MAX) < p.pointMutationRate) Then Begin
-      randomBitFlip(genome);
+      randomBitFlip(randomUint, genome);
     End;
   End;
 End;
@@ -331,7 +331,7 @@ End;
 // genes to the offspring. The new genome may undergo mutation.
 // Must be called in single-thread mode between generations
 
-Function generateChildGenome(Var parentGenomes: TGenomeArray): TGenome;
+Function generateChildGenome(Const randomUint: RandomUintGenerator; Var parentGenomes: TGenomeArray): TGenome;
 Var
   // random parent (or parents if sexual reproduction) with random
   // mutations
@@ -369,7 +369,7 @@ Begin
       For j := 0 To high(g1) Do Begin
         genome[j] := g1[j];
       End;
-      overlayWithSliceOf(genome, g2);
+      overlayWithSliceOf(randomUint, genome, g2);
       assert(length(genome) <> 0);
     End
     Else Begin
@@ -377,7 +377,7 @@ Begin
       For j := 0 To high(g2) Do Begin
         genome[j] := g2[j];
       End;
-      overlayWithSliceOf(genome, g1);
+      overlayWithSliceOf(randomUint, genome, g1);
       assert(length(genome) <> 0);
     End;
     // Trim to length = average length of parents
@@ -387,7 +387,7 @@ Begin
       sum := sum + 1;
     End;
 
-    cropLength(genome, sum Div 2);
+    cropLength(randomUint, genome, sum Div 2);
     assert(length(genome) <> 0);
   End
   Else Begin
@@ -398,16 +398,16 @@ Begin
     assert(length(genome) <> 0);
   End;
 
-  randomInsertDeletion(genome);
+  randomInsertDeletion(randomUint, genome);
   assert(length(genome) <> 0);
-  applyPointMutations(genome);
+  applyPointMutations(randomUint, genome);
   assert(length(genome) <> 0);
   assert(length(genome) <= p.genomeMaxLength);
 
   result := genome;
 End;
 
-Function geneticDiversity(): float;
+Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
 Var
   count: unsigned;
   numSamples: integer;
@@ -420,7 +420,7 @@ Begin
   End;
 
   // count limits the number of genomes sampled for performance reasons.
-  count := min(1000, p.population); // todo: !!! p.analysisSampleSize;
+  count := min(1000, p.population);
   numSamples := 0;
   similaritySum := 0.0;
 
@@ -583,7 +583,7 @@ Begin
   result := weight / 8192.0;
 End;
 
-Function TGene.makeRandomWeight: int16_t;
+Function TGene.makeRandomWeight(Const randomUint: RandomUintGenerator): int16_t;
 Begin
   result := randomUint.RndRange(0, $FFFF) - $8000;
 End;
