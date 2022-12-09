@@ -34,7 +34,7 @@ Begin
     ))) Or AdditionalVideoFrame Then Begin
     imageWriter.saveGenerationVideo(generation);
   End;
-  If (p.updateGraphLog And ((generation = 1) Or ((generation Mod p.updateGraphLogStride) = 0))) Then Begin
+  If (p.updateGraphLog And ((generation = 1) Or ((generation Mod p.updateGraphLogStride) = 0)) Or AdditionalVideoFrame) Then Begin
     sc := TSimpleChart.Create();
     sc.XAXis.UseMinVal := true;
     sc.XAXis.MinVal := 0;
