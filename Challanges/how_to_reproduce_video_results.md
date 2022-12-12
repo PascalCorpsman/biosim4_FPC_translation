@@ -29,8 +29,8 @@ In generation 5000 the interesting thing happens (suddenly there are barriers cr
 
 As you can see when all 4 simulations finished the "bigger" the brain, the higher is the surviver rate
 
-2 genes, 1 inner ~ %
-8 genes, 2 inner ~ %
+2 genes, 1 inner ~ 45.2%
+8 genes, 2 inner ~ 77.5%
 32 genes, 5 inner ~ %
 1000 genes, 127 inner ~ %
 

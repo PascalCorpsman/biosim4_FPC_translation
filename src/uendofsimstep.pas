@@ -9,7 +9,7 @@ Uses
 
 {$I c_types.inc}
 
-Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned);
+Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned; AdditionalVideoFrame: boolean);
 
 Implementation
 
@@ -29,7 +29,7 @@ mode to take care of several things:
    p.saveVideo is true).
 *)
 
-Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned);
+Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generation: unsigned; AdditionalVideoFrame: boolean);
 Const
   radius = 9.0;
 Var

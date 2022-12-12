@@ -75,7 +75,6 @@ Var
   signals: TSignals = Nil; // A 2D array of pheromones that overlay the world grid
   peeps: TPeeps = Nil; // The container of all the individuals in the population
   ImageWriter: IImageWriterInterface = Nil; // This is for generating the movies
-  AdditionalVideoFrame: Boolean = false; // If true, the next generation will definitly write a video
   ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
 Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
@@ -338,6 +337,7 @@ Var
   i: integer;
   dbgtimestamp, tmps: String;
   waittime, Delta, Start: UInt64;
+  AdditionalVideoFrameSaver, AdditionalVideoFrame: Boolean; // If true, the next generation will definitly write a video
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -400,6 +400,7 @@ Begin
   End;
 
   fRandomGenerator.initialize(0); // seed the RNG for main-thread use
+  AdditionalVideoFrame := false;
 
   // Allocate container space. Once allocated, these container elements
   // will be reused in each new generation.
@@ -500,7 +501,7 @@ Begin
       // In single-thread mode: this executes deferred, queued deaths and movements,
       // updates signal layers (pheromone), etc.
       murderCount := murderCount + peeps.deathQueueSize();
-      endOfSimStep(fRandomGenerator, simStep, generation);
+      endOfSimStep(fRandomGenerator, simStep, generation, AdditionalVideoFrame);
     End;
     // Sammeln der Einzel Thread zeiten ..
     dbgtimestamp := '';
@@ -513,6 +514,11 @@ Begin
       End;
     End;
 
+    (*
+     * Das Einlesen der Variablen wird hier platt gemacht, aber AdditionalVideoFrame wird danach noch mal benötigt, damit das dann stimmt
+     * braucht es den "Saver" der den unteren Code entsprechend 1-Pass Verzögert ablaufen lässt.
+     *)
+    AdditionalVideoFrameSaver := AdditionalVideoFrame;
     AdditionalVideoFrame := false;
     ReloadConfigini := false;
     While KeyPressed Do Begin
@@ -587,7 +593,7 @@ Begin
     End;
 
     numberSurvivors := spawnNewGeneration(fRandomGenerator, generation, murderCount, dbgtimestamp);
-    endOfGeneration(generation); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
+    endOfGeneration(generation, AdditionalVideoFrameSaver); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
 
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
       displaySampleGenomes(p.displaySampleGenomes);

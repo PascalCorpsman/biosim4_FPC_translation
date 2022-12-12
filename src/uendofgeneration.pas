@@ -9,7 +9,7 @@ Uses
 
 {$I c_types.inc}
 
-Procedure endOfGeneration(generation: unsigned);
+Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 
 Implementation
 
@@ -18,7 +18,7 @@ Uses uparams, uSimulator, uImageWriter, usimplechart;
 // At the end of each generation, we save a video file (if p.saveVideo is true) and
 // print some genomic statistics to stdout (if p.updateGraphLog is true).
 
-Procedure endOfGeneration(generation: unsigned);
+Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 Var
   sc: TSimpleChart;
   sl: TStringList;
