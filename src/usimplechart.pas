@@ -388,8 +388,8 @@ Begin
     For i := 0 To high(fSeries) Do Begin
       b.canvas.Pen.Color := fSeries[i].SeriesColor;
       b.canvas.Pen.Width := fSeries[i].SeriesWidth;
-      b.canvas.MoveTo(Legendwidth - Margin - 50, Margin + th * i + tw Div 2);
-      b.canvas.LineTo(Legendwidth - Margin, Margin + th * i + tw Div 2);
+      b.canvas.MoveTo(Legendwidth - Margin - 50, Margin + th * (i + 1) + th Div 2);
+      b.canvas.LineTo(Legendwidth - Margin, Margin + th * (i + 1) + th Div 2);
     End;
   End;
 

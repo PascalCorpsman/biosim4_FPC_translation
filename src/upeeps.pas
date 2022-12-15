@@ -116,8 +116,8 @@ Var
   index: Integer;
 Begin
   For index := 0 To deathQueueLen - 1 Do Begin
-    grid.set_(individuals[index].loc, 0);
-    individuals[index].alive := false;
+    grid.set_(individuals[deathQueue[index]].loc, 0);
+    individuals[deathQueue[index]].alive := false;
   End;
   deathQueueLen := 0;
 End;

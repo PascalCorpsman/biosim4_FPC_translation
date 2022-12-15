@@ -31,10 +31,12 @@ As you can see when all 4 simulations finished the "bigger" the brain, the highe
 
 2 genes, 1 inner ~ 45.2%
 8 genes, 2 inner ~ 77.5%
-32 genes, 5 inner ~ %
+32 genes, 5 inner ~ 78.4%
 1000 genes, 127 inner ~ %
 
 
-## Timestamp 52:15 - xx:xx ??
+## Timestamp 43:57 - XX:XX "Challange_40_Unweighted_Center_Kill_neurons.ini"
+
+## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
 
 ### Steps to reproduce:

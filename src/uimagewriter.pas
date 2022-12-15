@@ -304,10 +304,12 @@ Begin
         // Die Radioaktive Linie
         image.canvas.Pen.Color := clred;
         If (simStep < p.stepsPerGeneration / 2) Then
-          radioactiveX := 0
+          radioactiveX := 1
         Else
-          radioactiveX := p.sizeX - 1;
+          radioactiveX := w - 1;
+        image.canvas.Pen.Width := 2;
         image.canvas.Line(radioactiveX, 0, radioactiveX, h);
+        image.canvas.Pen.Width := 1;
       End;
     CHALLENGE_AGAINST_ANY_WALL: Begin
         image.Canvas.Rectangle(0, 0, w, h);

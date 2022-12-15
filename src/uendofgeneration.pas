@@ -22,7 +22,7 @@ Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 Var
   sc: TSimpleChart;
   sl: TStringList;
-  Diversity, Survivors: TSeries;
+  murders, Diversity, Survivors: TSeries;
   sa: TStringArray;
   x, i: Integer;
 Begin
@@ -45,6 +45,7 @@ Begin
     Diversity := TSeries.Create();
     sc.AddSeries(Survivors);
     sc.AddSeries(Diversity);
+
     Survivors.SeriesColor := clGreen;
     Survivors.SeriesCaption := 'Survivors';
     Survivors.SeriesWidth := 2;
@@ -53,6 +54,7 @@ Begin
     Survivors.YAxis.UseMaxVal := true;
     Survivors.YAxis.MaxVal := p.population;
     Survivors.YAxis.MarkFormat := '%.0f';
+
     Diversity.SeriesColor := clPurple;
     Diversity.SeriesCaption := 'Diversity';
     Diversity.SeriesWidth := 2;
@@ -62,12 +64,28 @@ Begin
     Diversity.YAxis.MaxVal := 1.0;
     Diversity.YAxis.MarkFormat := '%0.2f';
     Diversity.YAxis.Pos := apRight;
+
+    If p.killEnable Then Begin
+      murders := TSeries.Create();
+      murders.SeriesColor := $00C0C0;
+      murders.SeriesCaption := 'Murders';
+      murders.SeriesWidth := 2;
+      murders.YAxis.UseMinVal := true;
+      murders.YAxis.MinVal := 0;
+      murders.YAxis.UseMaxVal := true;
+      murders.YAxis.MaxVal := p.population;
+      murders.YAxis.Pos := apNone; // Deactivte Murder Y-Achsis is the same as the Survivors
+      sc.AddSeries(murders);
+    End;
     FormatSettings.DecimalSeparator := '.';
     For i := 1 To sl.Count - 1 Do Begin
       sa := sl[i].Split(';');
       x := strtointdef(sa[0], -1);
       Survivors.AddDataPoint(x, strtointdef(sa[1], 0));
       Diversity.AddDataPoint(x, strtofloatdef(sa[2], 0));
+      If p.killEnable Then Begin
+        murders.AddDataPoint(x, strtointdef(sa[4], 0));
+      End;
     End;
     (*
      * Im Multithread Modus Knallt es, wenn ein TBitmap aus dem Hauptthread heraus erzeugt wird und ebenfalls gleichzeitig im Thread
