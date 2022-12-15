@@ -35,7 +35,7 @@ As you can see when all 4 simulations finished the "bigger" the brain, the highe
 1000 genes, 127 inner ~ %
 
 
-## Timestamp 43:57 - XX:XX "Challange_40_Unweighted_Center_Kill_neurons.ini"
+## Timestamp 43:57 - 48:12 "Challange_40_Unweighted_Center_Kill_neurons.ini"
 
 ## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
 

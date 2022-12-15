@@ -82,7 +82,7 @@ Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; 
 Implementation
 
 Uses usensoractions, uspawnNewGeneration, uexecuteActions,
-  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp, ubasicTypes;
+  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp, ubasicTypes, UTF8Process;
 
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
@@ -338,6 +338,7 @@ Var
   dbgtimestamp, tmps: String;
   waittime, Delta, Start: UInt64;
   AdditionalVideoFrameSaver, AdditionalVideoFrame: Boolean; // If true, the next generation will definitly write a video
+  cores: Integer;
 Begin
   PrintHelp();
   printSensorsActions(); // show the agents' capabilities
@@ -386,6 +387,10 @@ Begin
   IndivCalcDelta := p.population;
 
   If p.numThreads > 1 Then Begin
+    cores := GetSystemThreadCount;
+    If p.numThreads > cores Then Begin
+      writeln(format('Warning, your system has %d cores, using more threads could slowdown all calculations.', [cores]));
+    End;
     ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
     If p.numThreads > 2 Then Begin
       setlength(fIndivThreads, p.numThreads - 2);

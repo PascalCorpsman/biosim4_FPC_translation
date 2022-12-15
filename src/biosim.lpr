@@ -5,6 +5,7 @@ Program biosim;
 Uses
 {$IFDEF UNIX}
   cthreads,
+  cmem, // Akkording to https://wiki.freepascal.org/Parallel_procedures this also speeds up the execution
 {$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Classes, SysUtils, uSimulator, crt, uThreadIndiv
