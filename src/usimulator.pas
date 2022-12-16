@@ -140,6 +140,7 @@ Begin
   writeln('biosim, ported by corpsman to lazarus /fpc');
   writeln('press ESC to end simulation after next full generation.');
   writeln('press V to force video rendering on the next generation simulation.');
+  writeln('press I display sample genome in console.');
   writeln('press R to force reloading .ini file from disk on the next generation simulation');
   writeln('press P to pause the simulation until Return is pressed.');
 End;
@@ -332,7 +333,7 @@ Var
   SimStep, indivIndex: Integer;
   numberSurvivors: unsigned;
   key: Char;
-  inPause, lastRound, b1: Boolean;
+  ShowGenomeInfo, inPause, lastRound, b1: Boolean;
   IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
   i: integer;
   dbgtimestamp, tmps: String;
@@ -406,6 +407,7 @@ Begin
 
   fRandomGenerator.initialize(0); // seed the RNG for main-thread use
   AdditionalVideoFrame := false;
+  ShowGenomeInfo := false;
 
   // Allocate container space. Once allocated, these container elements
   // will be reused in each new generation.
@@ -535,6 +537,12 @@ Begin
             End;
             lastRound := true;
           End;
+        'I', 'i': Begin
+            If Not ShowGenomeInfo Then Begin
+              writeln('--- activated genome plot as soon as possible. ---');
+              ShowGenomeInfo := true;
+            End;
+          End;
         'V', 'v': Begin // Nächste generation soll ein Videostride gerendert werden.
             If Not AdditionalVideoFrame Then Begin
               writeln('--- next generation a video generation will be forced. ---');
@@ -600,9 +608,10 @@ Begin
     numberSurvivors := spawnNewGeneration(fRandomGenerator, generation, murderCount, dbgtimestamp);
     endOfGeneration(generation, AdditionalVideoFrameSaver); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
 
-    If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Then Begin
+    If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Or ShowGenomeInfo Then Begin
       displaySampleGenomes(p.displaySampleGenomes);
     End;
+    ShowGenomeInfo := false;
 
     If (numberSurvivors = 0) Then Begin
       If Not lastRound Then Begin

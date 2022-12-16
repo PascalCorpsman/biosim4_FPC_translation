@@ -35,7 +35,11 @@ As you can see when all 4 simulations finished the "bigger" the brain, the highe
 1000 genes, 127 inner ~ %
 
 
-## Timestamp 43:57 - 48:12 "Challange_40_Unweighted_Center_Kill_neurons.ini"
+## Timestamp 43:57 - 48:12 "Challange_4_Unweighted_Center_Kill_neurons.ini"
+* run with "Challange_4_Weighted_Center_Kill_neurons.ini"
+* maybe run with "Challange_40_Unweighted_Center_Kill_neurons.ini"
+
+Results here are not that simple, as you can see in the different runs, if there is no need to fight the individuals tend to loose the ability to kill. To get the results similar to the ones in the video i needed to change the challange from 40 to 4, this increases the preasure on the individuals and then they startet to make use of the kill feature. Both versions i uploaded are showing that a stable run without killing is possible. But if the murder genes spread through out all the population the violent does not stop anymore.
 
 ## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
 
