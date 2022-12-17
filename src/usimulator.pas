@@ -4,8 +4,10 @@ Unit uSimulator;
 
 Interface
 
+// Needed by mtprocs tu support pointer to nested methods
+{$MODESWITCH nestedprocvars}
 Uses
-  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, uThreadIndiv, urandom, uindiv;
+  Classes, SysUtils, uparams, ugrid, usignals, upeeps, uImageWriter, ugenome, urandom, uindiv, mtprocs;
 
 {$I c_types.inc}
 {$INTERFACES corba} // Für TImageWriter, so kann man Interfaces ohne den .net Gruscht nutzen
@@ -49,8 +51,7 @@ Type
      * Variablen welche von LoadSim initialisiert werden damit
      *)
     fLoadSim: TLoadSim;
-    fIndivThreads: Array Of TThreadIndivs; // Im Multithread Modus sind das die weiteren Threads
-    fRandomGenerator: RandomUintGenerator;
+    fThreadRandomGenerators: Array Of RandomUintGenerator; // Im MultiThread Modus hat jeder Thread seinen eigenen Zufallszahlen Generator
     (*
      * Rest
      *)
@@ -271,19 +272,13 @@ Begin
   signals := TSignals.Create();
   peeps := TPeeps.Create();
   ImageWriter := Nil;
-  fIndivThreads := Nil;
   InitCriticalSections();
 End;
 
 Destructor TSimulator.Destroy;
-Var
-  i: Integer;
 Begin
   If p.numThreads > 1 Then Begin
     writeln('Waiting for threads to shut down.');
-  End;
-  For i := 0 To high(fIndivThreads) Do Begin
-    fIndivThreads[i].Terminate;
   End;
   fParamManager.free;
   grid.Free;
@@ -326,18 +321,38 @@ The threads are:
 ********************************************************************************)
 
 Procedure TSimulator.Simulator(Filename: String);
-Const
-  DetailTimings = true; // True, dann werden diverse Detailinfos über die Thread laufzeiten aus gegeben
+Var
+  SimStep: integer;
+
+  Procedure DoSomeThingParallel(Index: PtrInt; Data: Pointer; Item: TMultiThreadProcItem);
+  Var
+    BlockStart, BlockEnd: PtrInt;
+    IndivIndex: integer;
+  Begin
+    (*
+     * Jeder Thread bearbeitet einen gleich großen Teil der population
+     * da dieses Array aber 1 Bassiert ist wird Blockstart um 1 erhöht
+     * anstatt wie üblich Blockend um 1 verringert.
+     *)
+    BlockStart := Index * (p.population Div p.numThreads) + 1;
+    BlockEnd := (Index + 1) * (p.population Div p.numThreads);
+    If BlockEnd > p.population Then BlockEnd := p.population;
+    For IndivIndex := BlockStart To BlockEnd Do Begin
+      assert(IndivIndex > 0);
+      assert(IndivIndex <= p.population);
+      If (peeps[IndivIndex]^.alive) Then Begin
+        simStepOneIndiv(fThreadRandomGenerators[Index], peeps[IndivIndex], SimStep);
+      End;
+    End;
+  End;
+
 Var
   murderCount, generation: unsigned;
-  SimStep, indivIndex: Integer;
   numberSurvivors: unsigned;
   key: Char;
-  ShowGenomeInfo, inPause, lastRound, b1: Boolean;
-  IndivCalcDelta, // Im Multhread mode ist dieser wert <> p.population
+  ShowGenomeInfo, inPause, lastRound: Boolean;
   i: integer;
-  dbgtimestamp, tmps: String;
-  waittime, Delta, Start: UInt64;
+  tmps: String;
   AdditionalVideoFrameSaver, AdditionalVideoFrame: Boolean; // If true, the next generation will definitly write a video
   cores: Integer;
 Begin
@@ -385,27 +400,22 @@ Begin
   fparamManager.updateFromConfigFile(0);
   fparamManager.checkParameters(); // check and report any problems
 
-  IndivCalcDelta := p.population;
-
   If p.numThreads > 1 Then Begin
     cores := GetSystemThreadCount;
     If p.numThreads > cores Then Begin
       writeln(format('Warning, your system has %d cores, using more threads could slowdown all calculations.', [cores]));
     End;
     ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
-    If p.numThreads > 2 Then Begin
-      setlength(fIndivThreads, p.numThreads - 2);
-      For i := 0 To high(fIndivThreads) Do Begin
-        fIndivThreads[i] := TThreadIndivs.Create(i + 1);
-      End;
-      IndivCalcDelta := ceil(p.population / (p.numThreads - 1)); // Nur -1 weil der Hauptthread natürlich auch rechnet !
-    End;
   End
   Else Begin
     ImageWriter := TimageWriter.create();
   End;
 
-  fRandomGenerator.initialize(0); // seed the RNG for main-thread use
+  // Init all random number generators for all threads
+  setlength(fThreadRandomGenerators, p.numThreads);
+  For i := 0 To p.numThreads - 1 Do Begin
+    fThreadRandomGenerators[i].initialize(i);
+  End;
   AdditionalVideoFrame := false;
   ShowGenomeInfo := false;
 
@@ -433,16 +443,16 @@ Begin
 
     If length(fLoadSim.parentGenomes) = 0 Then Begin
       writeln('No survivors, -> restart simulation.');
-      initializeGeneration0(fRandomGenerator); // starting population
+      initializeGeneration0(fThreadRandomGenerators[0]); // starting population
       generation := 0;
     End
     Else Begin
-      initializeNewGeneration(fRandomGenerator, fLoadSim.parentGenomes);
+      initializeNewGeneration(fThreadRandomGenerators[0], fLoadSim.parentGenomes);
     End;
   End
   Else Begin
     generation := 0;
-    initializeGeneration0(fRandomGenerator); // starting population
+    initializeGeneration0(fThreadRandomGenerators[0]); // starting population
   End;
   runMode := rmRUN;
 
@@ -460,67 +470,21 @@ Begin
   While (runMode = rmRun) And (generation < p.maxGenerations) Do Begin
 
     murderCount := 0; // for reporting purposes
-    // Reset der Timing Counter
-    For i := 0 To high(fIndivThreads) Do Begin
-      fIndivThreads[i].ResetCounter;
-    End;
-    Delta := 0;
-    waittime := 0;
     For SimStep := 0 To p.stepsPerGeneration - 1 Do Begin
-      // multithreaded loop: index 0 is reserved, start at 1
-      // 1. die ganzen Threads mit den "Teilaufgaben" starten
-      i := IndivCalcDelta + 1;
-      For indivIndex := 0 To high(fIndivThreads) Do Begin
-        assert(fIndivThreads[indivIndex].IsStateIdle());
-        fIndivThreads[indivIndex].StartWork(i, min(i + IndivCalcDelta, p.population), SimStep);
-        i := i + IndivCalcDelta + 1;
-      End;
-      // 2. Der Main Thread übernimmt natürlich auch einen Teil der muss ja eh warten auf die anderen Threads
-      Start := GetTickCount64;
-      For indivIndex := 1 To IndivCalcDelta Do Begin
-        If (peeps[indivIndex]^.alive) Then Begin
-          simStepOneIndiv(fRandomGenerator, peeps[indivIndex], simStep);
-        End;
-      End;
-      delta := delta + (GetTickCount64 - Start);
-
-      // Warten darauf, dass alle Threads "fertig" sind
       (*
-       * Das Doofe unter Windows ist, dass das immer nur
-       * 0ms, 16ms oder 32ms dauert
-       *  -> wenn also die "Berechnung" Single Threaded entsprechend Schnell ist
-       *     kann das in sehr vielen Fällen immer noch deutlich schneller sein
-       * Bei 300 Generationen sind 300 * 0.016 halt auch Knapp 5s :/
+       * Da jeder Thread seinen eigenen Zufallszahlengenerator hat, muss die Schleife
+       * über die Anzahl der Threads laufen und nicht über p.Population !
+       *
+       * Der Threadpool unterstützt dies auch mittels der "Blockbearbeitung", auf diese wurde
+       * hier aber bewust verzichtet, da die Zahl der Threads unter umständen schwankt und damit
+       * im deterministic modus sonst keine Reproduzierbaren Ergebnisse mehr entstehen.
        *)
-      Start := GetTickCount64();
-      b1 := true;
-      While b1 Do Begin
-        b1 := false;
-        For i := 0 To high(fIndivThreads) Do Begin
-          If Not fIndivThreads[i].IsStateIdle() Then Begin
-            CheckSynchronize(0);
-            b1 := true;
-            break;
-          End;
-        End;
-      End;
-      waittime := waittime + (GetTickCount64 - start);
+      ProcThreadPool.DoParallelNested(@DoSomeThingParallel, 0, p.numThreads - 1, Nil, p.numThreads);
       // In single-thread mode: this executes deferred, queued deaths and movements,
       // updates signal layers (pheromone), etc.
       murderCount := murderCount + peeps.deathQueueSize();
-      endOfSimStep(fRandomGenerator, simStep, generation, AdditionalVideoFrame);
+      endOfSimStep(fThreadRandomGenerators[0], simStep, generation, AdditionalVideoFrame);
     End;
-    // Sammeln der Einzel Thread zeiten ..
-    dbgtimestamp := '';
-    If DetailTimings Then Begin
-      For i := 0 To high(fIndivThreads) Do Begin
-        dbgtimestamp := dbgtimestamp + ' ' + prettyTime(fIndivThreads[i].GetWorkingDelta);
-      End;
-      If dbgtimestamp <> '' Then Begin // Die Einzelzeit des Main-Thread mit hinzu rechnen
-        dbgtimestamp := prettyTime(delta) + dbgtimestamp + '[W=' + prettyTime(waittime) + ']';
-      End;
-    End;
-
     (*
      * Das Einlesen der Variablen wird hier platt gemacht, aber AdditionalVideoFrame wird danach noch mal benötigt, damit das dann stimmt
      * braucht es den "Saver" der den unteren Code entsprechend 1-Pass Verzögert ablaufen lässt.
@@ -605,7 +569,7 @@ Begin
       End;
     End;
 
-    numberSurvivors := spawnNewGeneration(fRandomGenerator, generation, murderCount, dbgtimestamp);
+    numberSurvivors := spawnNewGeneration(fThreadRandomGenerators[0], generation, murderCount);
     endOfGeneration(generation, AdditionalVideoFrameSaver); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
 
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Or ShowGenomeInfo Then Begin
@@ -627,7 +591,7 @@ Begin
     End;
   End;
 
-  displaySampleGenomes(3); // final report, for debugging
+  // displaySampleGenomes(3); // final report, for debugging
 End;
 
 End.

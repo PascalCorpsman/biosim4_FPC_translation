@@ -26,6 +26,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="multithreadprocslaz"/>
+      </Item>
+      <Item>
         <PackageName Value="LCL"/>
       </Item>
       <Item>
@@ -126,11 +129,6 @@
         <UnitName Value="ubasicTypes"/>
       </Unit>
       <Unit>
-        <Filename Value="uthreadindiv.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="uThreadIndiv"/>
-      </Unit>
-      <Unit>
         <Filename Value="biosim4.ini"/>
         <IsPartOfProject Value="True"/>
       </Unit>
@@ -150,6 +148,10 @@
         <Filename Value="biosim_deterministic0.ini"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="..\Sample\DatenSteuerung\uvectormath.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -163,11 +165,6 @@
       <OtherUnitFiles Value="..\Sample\DatenSteuerung;..\Sample\Graphik"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
-    <Parsing>
-      <SyntaxOptions>
-        <IncludeAssertionCode Value="True"/>
-      </SyntaxOptions>
-    </Parsing>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

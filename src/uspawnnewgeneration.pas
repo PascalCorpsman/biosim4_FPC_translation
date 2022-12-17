@@ -28,7 +28,7 @@ Procedure initializeNewGeneration(Const randomUint: RandomUintGenerator; Var par
 // nets instead of rebuilding them.
 // Returns number of survivor-reproducers.
 // Must be called in single-thread mode between generations.
-Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; ThreadTimes: String): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned): unsigned;
 
 Implementation
 
@@ -467,7 +467,7 @@ Begin
   End;
 End;
 
-Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; ThreadTimes: String): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned): unsigned;
 Const
   altruismFactor = 10; // the saved:sacrificed ratio
   generationToApplyKinship = 10;
@@ -597,9 +597,6 @@ Begin
   tmp := '';
   If LastSpawnTime <> 0 Then Begin
     tmp := ', time to calculate = ' + PrettyTime(at - LastSpawnTime);
-    If ThreadTimes <> '' Then Begin
-      tmp := tmp + '(' + ThreadTimes + ')';
-    End;
   End;
   LastSpawnTime := at;
 
