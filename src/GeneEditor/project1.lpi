@@ -64,6 +64,10 @@
         <Filename Value="uvectormath.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="..\c_types.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -73,7 +77,7 @@
       <Filename Value="project1"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)"/>
+      <IncludeFiles Value="$(ProjOutDir);.."/>
       <OtherUnitFiles Value="..;..\..\Sample\Graphik;..\..\Sample\DatenSteuerung"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
