@@ -96,7 +96,6 @@ Type
 
   TActionArray = Array[0..Integer(NUM_ACTIONS) - 1] Of Float;
 
-
 Function sensorName(sensor: TSensor): String; // This converts sensor numbers to descriptive strings.
 Function sensorShortName(Sensor: Tsensor): String;
 

@@ -8,6 +8,7 @@ object Form1: TForm1
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnShow = FormShow
+  Position = poScreenCenter
   LCLVersion = '2.3.0.0'
   object MainMenu1: TMainMenu
     Left = 24
@@ -45,6 +46,17 @@ object Form1: TForm1
         Caption = 'Del Edges'
         OnClick = MenuItem11Click
       end
+      object MenuItem14: TMenuItem
+        Caption = 'Del Node'
+        OnClick = MenuItem14Click
+      end
+      object Separator1: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem15: TMenuItem
+        Caption = 'Show genome string'
+        OnClick = MenuItem15Click
+      end
     end
   end
   object PopupMenu1: TPopupMenu
@@ -60,6 +72,11 @@ object Form1: TForm1
     end
     object MenuItem8: TMenuItem
       Caption = 'Fill up missing actions / sensors'
+      OnClick = MenuItem8Click
+    end
+    object MenuItem13: TMenuItem
+      Caption = 'Add inner neuron'
+      OnClick = MenuItem13Click
     end
   end
   object OpenDialog1: TOpenDialog

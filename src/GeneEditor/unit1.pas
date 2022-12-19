@@ -17,6 +17,9 @@ Type
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -29,18 +32,23 @@ Type
     OpenDialog2: TOpenDialog;
     PopupMenu1: TPopupMenu;
     SaveDialog1: TSaveDialog;
+    Separator1: TMenuItem;
     Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
     Procedure FormCreate(Sender: TObject);
     Procedure FormShow(Sender: TObject);
     Procedure MenuItem10Click(Sender: TObject);
     Procedure MenuItem11Click(Sender: TObject);
     Procedure MenuItem12Click(Sender: TObject);
+    Procedure MenuItem13Click(Sender: TObject);
+    Procedure MenuItem14Click(Sender: TObject);
+    Procedure MenuItem15Click(Sender: TObject);
     Procedure MenuItem2Click(Sender: TObject);
     Procedure MenuItem3Click(Sender: TObject);
     Procedure MenuItem4Click(Sender: TObject);
     Procedure MenuItem5Click(Sender: TObject);
     Procedure MenuItem6Click(Sender: TObject);
     Procedure MenuItem7Click(Sender: TObject);
+    Procedure MenuItem8Click(Sender: TObject);
   private
     fdx, fdy: integer;
 
@@ -55,6 +63,7 @@ Type
     Procedure CreateSensorActionsNet();
     Procedure OnNodePrepareCanvas(Sender: TGraph; Const aCanvas: TCanvas; Const NodeIndex: Integer);
   public
+    DownSelectedIndex: Integer;
     GraphBox: TGraphBox;
     pm: TParamManager;
     Function LoadGenome(Filename: String; index: integer): Boolean; // Index = -1 Load Random
@@ -70,6 +79,21 @@ Implementation
 {$R *.lfm}
 
 Uses ugenome, usensoractions, Math;
+
+Function Clamp(Value, Lower, Upper: Integer): Integer;
+Begin
+  If value < lower Then Begin
+    result := lower;
+  End
+  Else Begin
+    If value > Upper Then Begin
+      result := Upper;
+    End
+    Else Begin
+      result := value;
+    End;
+  End;
+End;
 
 { TForm1 }
 
@@ -91,6 +115,7 @@ Begin
   GraphBox.OnMouseUp := @GraphBoxMouseUp;
   GraphBox.Graph.OnPrepareNodeCanvas := @OnNodePrepareCanvas;
   GraphBox.PopupMenu := PopupMenu1;
+  p.maxNumberNeurons := 4;
   CreateSensorActionsNet();
 End;
 
@@ -108,6 +133,7 @@ Begin
   MenuItem10.Checked := Not MenuItem10.Checked;
   If MenuItem10.Checked Then Begin
     MenuItem11.Checked := false;
+    MenuItem14.Checked := false;
   End;
 End;
 
@@ -117,6 +143,7 @@ Begin
   MenuItem11.Checked := Not MenuItem11.Checked;
   If MenuItem11.Checked Then Begin
     MenuItem10.Checked := false;
+    MenuItem14.Checked := false;
   End;
 End;
 
@@ -136,6 +163,69 @@ Begin
   MenuItem5Click(Nil);
 End;
 
+Procedure TForm1.MenuItem13Click(Sender: TObject);
+Var
+  c, i: Integer;
+  n: TNode;
+Begin
+  // Add Inner Node
+  c := 0;
+  For i := 0 To GraphBox.Graph.NodeCount - 1 Do Begin
+    If GraphBox.Graph.Node[i].Name[1] = 'N' Then inc(c);
+  End;
+  i := GraphBox.Graph.AddNode('N' + inttostr(c), 'N' + inttostr(c), Nil, false, 0);
+  n := GraphBox.Graph.Node[i];
+  n.position := point(
+    round((GraphBox.ClientWidth - 20) * system.Random(1000) / 1000 + 10),
+    round((GraphBox.ClientHeight - 20) * system.Random(1000) / 1000 + 10));
+  GraphBox.Graph.Node[i] := n;
+  GraphBox.Invalidate;
+End;
+
+Procedure TForm1.MenuItem14Click(Sender: TObject);
+Begin
+  // Del Node
+  MenuItem14.Checked := Not MenuItem14.Checked;
+  If MenuItem14.Checked Then Begin
+    MenuItem10.Checked := false;
+    MenuItem11.Checked := false;
+  End;
+End;
+
+Procedure TForm1.MenuItem15Click(Sender: TObject);
+Var
+  s, t: String;
+  g: TGene;
+  i: Integer;
+Begin
+  // Show Genome String
+  With GraphBox.Graph Do Begin
+    s := inttostr(EdgeCount) + ' ';
+    For i := 0 To EdgeCount - 1 Do Begin
+      t := Node[Edge[i].StartIndex].Name;
+      If t[1] = 'N' Then Begin
+        g.sourceType := NEURON;
+      End
+      Else Begin
+        g.sourceType := SENSOR;
+      End;
+      g.sourceNum := strtoint(copy(t, 2, length(t)));
+      t := Node[Edge[i].EndIndex].Name;
+      If t[1] = 'N' Then Begin
+        g.sinkType := NEURON;
+      End
+      Else Begin
+        g.sinkType := SENSOR;
+      End;
+      g.sinkNum := strtoint(copy(t, 2, length(t)));
+      g.weight := clamp(round(strtofloat(Edge[i].EdgeCaption) * 8192), low(int16_t), high(int16_t));
+      s := s + format('%0.8X ', [GetCompressedGene(g)]);
+    End;
+    s := trim(s);
+  End;
+  showmessage('The genome of this brain is:' + LineEnding + s);
+End;
+
 Procedure TForm1.FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
 Begin
   pm.free;
@@ -145,16 +235,46 @@ End;
 Procedure TForm1.GraphBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 Begin
+  DownSelectedIndex := -1;
+  If MenuItem10.Checked Or MenuItem11.Checked Then Begin
+    DownSelectedIndex := GraphBox.SelectedNode;
+  End;
   If GraphBox.SelectedNode <> -1 Then Begin
     fdx := x - GraphBox.graph.Node[GraphBox.SelectedNode].Position.X;
     fdy := y - GraphBox.graph.Node[GraphBox.SelectedNode].Position.y;
+    If MenuItem14.Checked Then Begin
+      GraphBox.Graph.DelNode(GraphBox.SelectedNode);
+      GraphBox.Invalidate;
+    End;
   End;
 End;
 
 Procedure TForm1.GraphBoxMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+Var
+  s: String;
+  f: Single;
 Begin
-
+  If DownSelectedIndex <> -1 Then Begin
+    If MenuItem10.Checked Then Begin
+      // Add Edge
+      If GraphBox.SelectedNode <> -1 Then Begin
+        s := InputBox('Question', 'Enter edge weight', format('%0.5f', [0.0]));
+        f := strtofloatdef(s, 0.0);
+        If f <> 0 Then Begin
+          GraphBox.Graph.AddEdge(DownSelectedIndex, GraphBox.SelectedNode, ClBlack, Nil, true, format('%0.5f', [f]));
+          GraphBox.Invalidate;
+        End;
+      End;
+    End;
+    If MenuItem11.Checked Then Begin
+      // Del Edge
+      If GraphBox.SelectedNode <> -1 Then Begin
+        GraphBox.Graph.DelEdge(DownSelectedIndex, GraphBox.SelectedNode);
+        GraphBox.Invalidate;
+      End;
+    End;
+  End;
 End;
 
 Procedure TForm1.GraphBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -171,6 +291,14 @@ Begin
     GraphBox.graph.Node[GraphBox.SelectedNode] := n;
     GraphBox.Invalidate;
   End;
+  If (ssleft In shift) And (MenuItem10.Checked Or MenuItem11.Checked) Then Begin
+    If DownSelectedIndex <> -1 Then Begin
+      GraphBox.Canvas.Pen.Color := clRed;
+      GraphBox.Canvas.moveto(GraphBox.graph.Node[DownSelectedIndex].Position);
+      GraphBox.Canvas.LineTo(x, y);
+      GraphBox.Invalidate;
+    End;
+  End;
 End;
 
 Procedure TForm1.CreateSensorActionsNet;
@@ -179,13 +307,13 @@ Var
 Begin
   GraphBox.Graph.Clear;
   For i := 0 To integer(NUM_SENSES) - 1 Do Begin
-    GraphBox.graph.AddNode('Sensor' + inttostr(i), sensorName(TSensor(i)), Nil);
+    GraphBox.graph.AddNode('S' + inttostr(i), sensorName(TSensor(i)), Nil);
   End;
   For i := 0 To p.maxNumberNeurons - 1 Do Begin
     GraphBox.graph.AddNode('N' + IntToStr(i), 'N' + IntToStr(i), Nil, false, 1);
   End;
   For i := 0 To integer(NUM_ACTIONS) - 1 Do Begin
-    GraphBox.graph.AddNode('Action' + inttostr(i), actionName(TAction(i)), Nil, false, 2);
+    GraphBox.graph.AddNode('A' + inttostr(i), actionName(TAction(i)), Nil, false, 2);
   End;
   GraphBox.Invalidate;
 End;
@@ -316,7 +444,7 @@ Begin
   // Die Neuronen in die Mitte
   For i := 0 To high(Nis) Do Begin
     n := GraphBox.Graph.Node[Nis[i]];
-    n.Position := point(round(GraphBox.ClientWidth * 0.9 * (i + 1) / length(nis)), round(dh));
+    n.Position := point(round(GraphBox.ClientWidth * (i + 1.5) / (length(nis) + 2)), round(dh));
     GraphBox.Graph.Node[Nis[i]] := n;
   End;
   For i := 0 To high(Ais) Do Begin
@@ -350,7 +478,28 @@ Begin
     GraphBox.Graph.LoadFromStream(f);
     f.free;
     GraphBox.Invalidate;
+    MenuItem10.Checked := false;
+    MenuItem11.Checked := false;
+    MenuItem14.Checked := false;
   End;
+End;
+
+Procedure TForm1.MenuItem8Click(Sender: TObject);
+Var
+  i: Integer;
+Begin
+  // Fill Up With Missings
+  For i := 0 To integer(NUM_SENSES) - 1 Do Begin
+    If GraphBox.graph.FindNode('S' + inttostr(i)) = -1 Then Begin
+      GraphBox.graph.AddNode('S' + inttostr(i), sensorName(TSensor(i)), Nil);
+    End;
+  End;
+  For i := 0 To integer(NUM_ACTIONS) - 1 Do Begin
+    If GraphBox.graph.FindNode('A' + inttostr(i)) = -1 Then Begin
+      GraphBox.graph.AddNode('A' + inttostr(i), actionName(TAction(i)), Nil, false, 2);
+    End;
+  End;
+  GraphBox.Invalidate;
 End;
 
 Function TForm1.VisGeneString(Value: String): Boolean;
@@ -372,7 +521,7 @@ Begin
     g := GetGeneFromUInt(ui32);
     // 1. Anlegen der Knoten, sollte es diese noch nicht geben
     If g.sourceType = SENSOR Then Begin
-      son := 'Sensor' + inttostr(g.sourceNum Mod integer(NUM_SENSES));
+      son := 'S' + inttostr(g.sourceNum Mod integer(NUM_SENSES));
     End
     Else Begin
       son := 'N' + inttostr(g.sourceNum Mod p.maxNumberNeurons);
@@ -382,7 +531,7 @@ Begin
       Raise exception.create('Error, sensor ' + sensorName(TSensor(g.sourceNum Mod integer(NUM_SENSES))) + 'not found.');
     End;
     If g.sinkType = ugenome.ACTION Then Begin
-      sin := 'Action' + inttostr(g.sinkNum Mod integer(NUM_ACTIONS));
+      sin := 'A' + inttostr(g.sinkNum Mod integer(NUM_ACTIONS));
     End
     Else Begin
       sin := 'N' + inttostr(g.sinkNum Mod p.maxNumberNeurons);
@@ -392,7 +541,7 @@ Begin
       Raise exception.create('Error, action ' + actionName(TAction(g.sinkNum Mod integer(NUM_ACTIONS))) + 'not found.');
     End;
     // 2. Eintragen der Kantengewichte
-    GraphBox.graph.AddEdge(soi, sii, clblack, Nil, true, format('%0.3f', [g.weightAsFloat()]));
+    GraphBox.graph.AddEdge(soi, sii, clblack, Nil, true, format('%0.5f', [g.weightAsFloat()]));
   End;
   GraphBox.Invalidate;
 End;

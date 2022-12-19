@@ -169,7 +169,7 @@ Type
 
 
     // Fügt eine Kante ein, wenn es die Knoten nicht gibt, werden sie via AddSingleNode angelegt
-    Procedure AddEdge(StartNode, StartNodeCaption, EndNode, EndNodeCaption: String; EdgeColor: TColor; Userdata: Pointer = Nil; Directed: Boolean = false; EdgeLabel: String = ''); overload;
+    Procedure AddEdge(StartNode, StartNodeCaption, EndNode, EndNodeCaption: String; EdgeColor: TColor; Userdata: Pointer = Nil; Directed: Boolean = false; EdgeLabel: String = ''); overload; Deprecated;
     Procedure AddEdge(StartNode, EndNode: Integer; EdgeColor: TColor; Userdata: Pointer = Nil; Directed: Boolean = false; EdgeCaption: String = ''); overload;
     Procedure DelallEdges(); // Löscht alle Kanten heraus
 
