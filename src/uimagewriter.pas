@@ -8,7 +8,6 @@ Uses
   Graphics, Classes, SysUtils, ubasicTypes, ufifo, ugwavi, usimplechart;
 
 {$I c_types.inc}
-{$INTERFACES corba}
 
 // Creates a graphic frame for each simStep, then
 // assembles them into a video at the end of a generation.
@@ -31,20 +30,9 @@ Type
     barrierLocs: Array Of TCoord;
   End;
 
-  { IImageWriterInterface }
-
-  IImageWriterInterface = Interface
-    Procedure SetCrashed(Value: Boolean); // Dem Imagewriter Mitteilen dass die Anwendung abgeraucht ist
-    Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
-    Procedure saveGenerationVideo(generation: unsigned);
-    Procedure Free;
-    Procedure AddChartRendererToQueue(Const SC: TSimpleChart);
-  End;
-
-
   { TImageWriter }
 
-  TImageWriter = Class(IImageWriterInterface)
+  TImageWriter = Class
   private
     fimagelist: Array Of TJPEGImage;
     data: TImageFrameData;
@@ -77,7 +65,7 @@ Type
 
   { TImageWriterThread }
 
-  TImageWriterThread = Class(TThread, IImageWriterInterface)
+  TImageWriterThread = Class(TThread)
   private
     fscq: TSimpleChartQueue;
     fImageWriter: TImageWriter;

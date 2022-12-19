@@ -75,7 +75,7 @@ Var
   grid: TGrid = Nil; // The 2D world where the creatures live
   signals: TSignals = Nil; // A 2D array of pheromones that overlay the world grid
   peeps: TPeeps = Nil; // The container of all the individuals in the population
-  ImageWriter: IImageWriterInterface = Nil; // This is for generating the movies
+  ImageWriter: TImageWriterThread = Nil; // This is for generating the movies
   ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
 Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
@@ -405,11 +405,9 @@ Begin
     If p.numThreads > cores Then Begin
       writeln(format('Warning, your system has %d cores, using more threads could slowdown all calculations.', [cores]));
     End;
-    ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
-  End
-  Else Begin
-    ImageWriter := TimageWriter.create();
   End;
+  // Always use the Imagewriter Thread !
+  ImageWriter := TImageWriterThread.create(true, @OnWritelnCallback);
 
   // Init all random number generators for all threads
   setlength(fThreadRandomGenerators, p.numThreads);
