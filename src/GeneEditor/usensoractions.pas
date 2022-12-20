@@ -63,6 +63,7 @@ Type
     SIGNAL0 {= 20}, // W strength of signal0 in neighborhood
     SIGNAL0_FWD, // W strength of signal0 in the forward-reverse axis
     SIGNAL0_LR, // W strength of signal0 in the left-right axis
+    All1, // W A Sensor that always fires -- Added by Corpsman
     NUM_SENSES // <<------------------ END OF ACTIVE SENSES MARKER
     );
 
@@ -139,6 +140,7 @@ Begin
     SIGNAL0_FWD: result := 'Sfd';
     SIGNAL0_LR: result := 'Slr';
     GENETIC_SIM_FWD: result := 'Gen';
+    All1: result := '1';
   Else
     Raise exception.create('sensorShortName: Error, missing implementation.');
   End;
@@ -170,6 +172,7 @@ Begin
     SIGNAL0_FWD: result := 'signal 0 fwd';
     SIGNAL0_LR: result := 'signal 0 LR';
     GENETIC_SIM_FWD: result := 'genetic similarity fwd';
+    All1:result := 'Always 1';
   Else Begin
       Raise exception.create('sensorName: Error, missing implementation.');
     End;

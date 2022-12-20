@@ -1008,6 +1008,7 @@ Begin
         // Sense signal0 density along an axis perpendicular to last movement direction
         sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir.rotate90DegCW());
       End;
+    Tsensor.All1: sensorVal := 1.0;
     TSensor.GENETIC_SIM_FWD: Begin
         // Return minimum sensor value if nobody is alive in the forward adjacent location,
         // else returns a similarity match in the sensor range 0.0..1.0

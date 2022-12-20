@@ -261,10 +261,10 @@ Begin
       If GraphBox.SelectedNode <> -1 Then Begin
         s := InputBox('Question', 'Enter edge weight', format('%0.5f', [0.0]));
         f := strtofloatdef(s, 0.0);
-        If f <> 0 Then Begin
-          GraphBox.Graph.AddEdge(DownSelectedIndex, GraphBox.SelectedNode, ClBlack, Nil, true, format('%0.5f', [f]));
-          GraphBox.Invalidate;
-        End;
+        //        If f <> 0 Then Begin
+        GraphBox.Graph.AddEdge(DownSelectedIndex, GraphBox.SelectedNode, ClBlack, Nil, true, format('%0.5f', [f]));
+        GraphBox.Invalidate;
+        //        End;
       End;
     End;
     If MenuItem11.Checked Then Begin
