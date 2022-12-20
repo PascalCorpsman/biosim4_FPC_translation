@@ -330,7 +330,7 @@ End;
 Procedure TForm1.MenuItem2Click(Sender: TObject);
 Begin
   If OpenDialog1.Execute Then Begin
-    LoadGenome(OpenDialog1.FileName, 0);
+    LoadGenome(OpenDialog1.FileName, -1);
   End;
   //  LoadGenome('..' + PathDelim + 'Challange_1_Right_Half.sim', 0);
 End;
@@ -402,7 +402,7 @@ Procedure TForm1.MenuItem5Click(Sender: TObject);
 Var
   Sis, Ais, Nis: Array Of Integer;
   ang, i, dh, mx: Integer;
-  angle, s, c: Single;
+  l, angle, s, c: Single;
   n: TNode;
 Begin
   // Oder Nice
@@ -440,10 +440,26 @@ Begin
     GraphBox.Graph.Node[sis[i]] := n;
   End;
   // Die Neuronen in die Mitte
-  For i := 0 To high(Nis) Do Begin
-    n := GraphBox.Graph.Node[Nis[i]];
-    n.Position := point(round(GraphBox.ClientWidth * (i + 1.5) / (length(nis) + 2)), round(dh));
-    GraphBox.Graph.Node[Nis[i]] := n;
+  If high(nis) >= 20 Then Begin
+    // Bei mehr als 20 Inneren Neuronen plazieren wir sie irgendwo im "inneren"
+    For i := 0 To high(Nis) Do Begin
+      ang := system.random(360);
+      SinCos(DegToRad(ang), s, c);
+      n := GraphBox.Graph.Node[Nis[i]];
+      l := (system.random(60) + 20) / 100;
+      n.Position := point(
+        round(mx + c * mx * l),
+        round(dh + s * dh * l)
+        );
+      GraphBox.Graph.Node[Nis[i]] := n;
+    End;
+  End
+  Else Begin
+    For i := 0 To high(Nis) Do Begin
+      n := GraphBox.Graph.Node[Nis[i]];
+      n.Position := point(round(GraphBox.ClientWidth * (i + 1.5) / (length(nis) + 2)), round(dh));
+      GraphBox.Graph.Node[Nis[i]] := n;
+    End;
   End;
   For i := 0 To high(Ais) Do Begin
     ang := 180 - 180 Div length(ais);
