@@ -13,7 +13,7 @@
   x enum (cast nach Integer)
   x So gut wie alles call by Reference (Addressen durchreichen anstatt Call by Value)
 
-Reine Portierung ca. 6 Wochen
+x Reine Portierung ca. 6 Wochen
 
 Fehlersuche und Validierung (4 bis 6 Wochen):
 x Wie testen, wenn kein Vergleich möglich ?
