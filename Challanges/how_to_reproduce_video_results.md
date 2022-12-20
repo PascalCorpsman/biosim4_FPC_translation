@@ -16,7 +16,7 @@ This challange tries to show the importance of mutations and how to see its impa
 * run with "Challange_13_Left_Right_eights_with_mutations.ini"
 * run with "Challange_13_Left_Right_eights_without_mutations.ini"
 ! Attention !
-  If the surviver rate stuck at around 68% (not reached values near 90% at around gen 90), you have to restart the whole simulation.
+  If the survivor rate stuck at around 68% (not reached values near 90% at around gen 90), you have to restart the whole simulation.
   => i did not figure out why this sometimes happens. In my opinion this is not a bug, but more bad luck at the beginning selection.
 
 As you can see in both simulations the individuals do not take long to "learn" to go left and right to survive. The main reason for the simulation to wait until generation 5000 is to let the diversity go down to the lowest value "possible".
@@ -45,8 +45,11 @@ As you can see when all 4 simulations finished the "bigger" the brain, the highe
 Results here are not that simple, as you can see in the different runs, if there is no need to fight the individuals tend to loose the ability to kill. To get the results similar to the ones in the video i needed to change the challange from 40 to 4, this increases the preasure on the individuals and then they startet to make use of the kill feature. Both versions i uploaded are showing that a stable run without killing is possible. But if the murder genes spread through out all the population the violent does not stop anymore.
 
 ## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
+This simulation shall show how complex movements can be learned by the individuals.
+
+### Steps to reproduce:
 * run with "Challange_10_Radioactive_walls.ini"
 
 Reaching a 100% survivor rate is impossible, due to the fact that the indivs that are born at the left more or less die instantly without any chance.
 The best strategy you could evolve is to run to the right the first half of the life and then go to the left. And thats exaktly what they learned.
-### Steps to reproduce:
+
