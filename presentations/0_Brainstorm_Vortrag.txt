@@ -1,0 +1,76 @@
+* Technische Aspekte
+  x Statistik: C++, 35 Files, 3277 Lines of Code
+  x OMP (Multithread Lib)
+  x cimg_library (AVI Lib)
+  x std::map (TFPGMap)
+  x std::list (Array of)
+  x Anonyme Funktionen  (Function Pointer, UserPointer), Problem: Threadsafe kriegen
+  x Eigener Zufallszahlengenerator für Thread Sicherheit 
+  x Bitbreite Union Datentypen (Tgene), GetCompressedGene, GetUncompressedGene
+  x Code "Chaotisch" aus sicht FPC-Programmierung (Implementierung verteilt auf diverse .cpp Dateien, .h Datein wild und unstrukturiert)
+  x Mehrdimensionale arrays werden in C++ wohl nicht direkt unterstützt
+  x struct (Object)
+  x enum (cast nach Integer)
+  x So gut wie alles call by Reference (Addressen durchreichen anstatt Call by Value)
+
+Reine Portierung ca. 6 Wochen
+
+Fehlersuche und Validierung (4 bis 6 Wochen):
+x Wie testen, wenn kein Vergleich möglich ?
+  \-> Ausführen, Funktion prinzipiell vorhanden
+  \-> Nachstellen der Challanges aus dem Youtube Video
+  \-> Challange 6 Fehlschlag
+      \-> Start Fehlersuche
+	  \-> Codereview
+	  \-> Unittests (Random Generator, diverse teilfunktionen)
+	  \-> Kontakt David Miller, Hinweis deterministic0.ini
+	  \-> Trace über 200K Datenpunkte
+	     \-> Toleranz 0.0015
+
+Weitere Technische Themen
+  - std::map (TFPGMap) (Zugriff auf nicht definierte Speicherbereiche ==> Init mit "0en" -> Orig Autor nicht bereit Bug an zu erkennen)
+  - std::list.Sort nicht Ordnungserhaltend, kein Quicksort, nicht vergleichbar mit FPC Quicksort -> Durch Permutationsliste korrigiert
+  - C-Compiler ignoriert div by 0 (siehe ettliche Bugfixes)
+  - Orig Code nicht ausführbar
+    \-> Wurde umgeschrieben in Single Thread, dann mit Tracer und comparer weitere Bugs gefunden  
+  - Gnuplot	
+  - Optimierungen: 
+    \-> Exceptions ausbauen
+  - Ersetzen Eigener Threadpool durch -> https://wiki.freepascal.org/Parallel_procedures
+  - Vergleich Laufzeit und Geschwindigkeiten:    
+  Windows: 
+	biosim_c (ohne video generierung): 3:14min deterministic0.ini
+	biosim_fpc (mit video): 1:25min deterministic0.ini
+  Linux
+    biosim_c (ohne video generierung): 3:57min deterministic0.ini
+	biosim_fpc (mit video): 3:38min deterministic0.ini
+	         
+	        
+* Analysen:
+  - Erhöht man die Anzahl verfügbarer Sensoren dauert es länger bis eine Spezies etwas lernt !
+  -"Inbetriebnahme"
+    \-> 1. Big Bug, anstatt die besten Genome wurden immer die schlechtesten genommen
+           \=> dennoch einige Challanges lösbar-- Natur ist einfach Krass --
+  -"Go Right" Challange 1:
+    \-> Ziel ist es zu lernen nach Rechts zu gehen und dort zu überleben, Einzige Möglichkeit des "Lernens" ist der Selektionsdruck
+        Ziel ist in der Regel nach 60-80 Generationen bereits erreicht, dann beginnt die Inzucht phase welche die Diversität reduziert.
+  
+  -"Brain Size" Challange 6:
+    \-> Zeigen Neuronen und Hirn sind wichtig
+  
+  -"Mutation" Challange 13:
+    1. Auswerten der Number of Surviverskurve
+	   \-> Knick bei gen 35 - 80 -> Alle haben gelernt nach Rechts zu laufen 
+	                             -> sind zu viele deswegen sterben die
+								 -> Nun lernen sie gleichverteilt nach Links und Rechts
+								 -> zu laufen.
+    2. Auswerten Diversity Kurve
+        \-> diversity sinkt immer aufgrund der Inzucht (interessant der nach Unten Knick bei _without_Mutation ab generation 5000)
+            \-> bei ohne Mutation wird tatsächlich der Wert 0 erreicht (was sinn macht)
+            \-> Mit mutaition Waagrechte Asymptote bei 0.1% = Mutationsrate
+
+								 
+	2. Auswertung Mutation vs. nicht Mutation
+	   \-> Simulation läuft 5000 gens damit die divergenz -> 0 laufen kann
+	   \-> Einstellen auf "neue" Lebensbedingung auswerten mit und ohne Mutation
+       => Mit Mutation erhohlt sich nach Gen 5000 und zeigt tendenzen strategieen zu entwickeln, ohne Mutation hat keine Chance
