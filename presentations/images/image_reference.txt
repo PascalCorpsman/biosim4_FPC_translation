@@ -1,1 +1,6 @@
-DNA_hero.png: https://www.genome.gov/genetics-glossary/Human-Genome-Reference-Sequence
+DNA_hero.png: 
+https://www.genome.gov/genetics-glossary/Human-Genome-Reference-Sequence
+
+1 JP95eWdDGjEjTlZBVH_PCg.jpeg:
+Photo by Ahmad Ardity / Pixaby
+https://medium.com/the-guardian-mobile-innovation-lab/libraries-of-note-sharing-open-source-code-from-the-guardian-mobile-innovation-labs-storytelling-17603d088c9f
