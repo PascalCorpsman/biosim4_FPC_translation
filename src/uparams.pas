@@ -144,7 +144,7 @@ Begin
   If Not result Then exit;
   result := s[1] = '%';
   If Not result Then exit;
-  For i := 1 To length(s) Do Begin
+  For i := 2 To length(s) Do Begin
     If (Not (s[i] In ['0', '1'])) Then Begin
       result := false;
       exit;
@@ -518,8 +518,8 @@ Begin
       privParams.Actions := privParams.Actions Or (1 Shl i);
     End;
   End;
-  UpdateActionLookUps(privParams.Sensors);
-  UpdateSensorLookups(privParams.Actions);
+  UpdateActionLookUps(privParams.Actions);
+  UpdateSensorLookups(privParams.Sensors);
 End;
 
 Procedure TParamManager.registerConfigFile(filename: String);

@@ -399,6 +399,15 @@ Begin
       ConnectionList[gene].sourceNum := ConnectionList[gene].sourceNum Mod p.maxNumberNeurons;
     End
     Else Begin
+      (*
+       * If Sensor "Changes" are implemented, some could change the behaviour at this position
+       * Pro: every gene that is connected to a sensor, the sensor is used and working
+       * Con: when changing the available sensors, this automatically results in a different interpretation
+       *      of the connected Sensor, so changing the sensors during one simulation run is not possible.
+       *
+       *     -> The con wins, here is no code change, instead all "deactivated" sensors always results in "no" value.
+       *        If you want a different behavior you need to adjust TIndiv.getSensor
+       *)
       ConnectionList[gene].sourceNum := ConnectionList[gene].sourceNum Mod integer(NUM_SENSES);
     End;
 
@@ -864,164 +873,176 @@ Var
   indiv2: PIndiv;
   FCountPopulation: TCountPopulation;
 Begin
+  (* Sensor Values are in Range 0.0 .. 1.0 *)
   sensorVal := 0.0;
-  Case Tsensor(sensorNum) Of
-    tsensor.AGE: Begin
-        // Converts age (units of simSteps compared to life expectancy)
-        // linearly to normalized sensor range 0.0..1.0
-        sensorVal := age / p.stepsPerGeneration;
-      End;
+  (*
+   * If Sensor "Changes" are implemented, some could change the behaviour at this position
+   * Pro: every gene that is connected to a sensor, the sensor is used and working
+   * Con: when changing the available sensors, this automatically results in a different interpretation
+   *      of the connected Sensor, so changing the sensors during one simulation run is not possible.
+   *
+   *     -> The con wins, the Sensor is blocked here.
+   *        If you want a different behavior you need to adjust makeRenumberedConnectionList
+   *)
+  If IsSensorEnabled(Tsensor(sensorNum)) Then Begin
+    Case Tsensor(sensorNum) Of
+      tsensor.AGE: Begin
+          // Converts age (units of simSteps compared to life expectancy)
+          // linearly to normalized sensor range 0.0..1.0
+          sensorVal := age / p.stepsPerGeneration;
+        End;
 
-    tSensor.BOUNDARY_DIST: Begin
-        // Finds closest boundary, compares that to the max possible dist
-        // to a boundary from the center, and converts that linearly to the
-        // sensor range 0.0..1.0
-        distX := min(loc.x, (p.sizeX - loc.x) - 1);
-        distY := min(loc.y, (p.sizeY - loc.y) - 1);
-        closest := min(distX, distY);
-        maxPossible := max(p.sizeX Div 2 - 1, p.sizeY Div 2 - 1);
-        sensorVal := closest / maxPossible;
-      End;
-    tSensor.BOUNDARY_DIST_X: Begin
-        // Measures the distance to nearest boundary in the east-west axis,
-        // max distance is half the grid width; scaled to sensor range 0.0..1.0.
-        minDistX := min(loc.x, (p.sizeX - loc.x) - 1);
-        sensorVal := minDistX / (p.sizeX / 2.0);
-      End;
-    TSensor.BOUNDARY_DIST_Y: Begin
-        // Measures the distance to nearest boundary in the south-north axis,
-        // max distance is half the grid height; scaled to sensor range 0.0..1.0.
-        minDistY := min(loc.y, (p.sizeY - loc.y) - 1);
-        sensorVal := minDistY / (p.sizeY / 2.0);
-      End;
-    TSensor.LAST_MOVE_DIR_X: Begin
-        // X component -1,0,1 maps to sensor values 0.0, 0.5, 1.0
-        lastX := asNormalizedCoord(lastMoveDir).x;
-        If lastx = 0 Then Begin
-          sensorVal := 0.5;
-        End
-        Else Begin
-          If lastX = -1 Then Begin
-            sensorVal := 0;
+      tSensor.BOUNDARY_DIST: Begin
+          // Finds closest boundary, compares that to the max possible dist
+          // to a boundary from the center, and converts that linearly to the
+          // sensor range 0.0..1.0
+          distX := min(loc.x, (p.sizeX - loc.x) - 1);
+          distY := min(loc.y, (p.sizeY - loc.y) - 1);
+          closest := min(distX, distY);
+          maxPossible := max(p.sizeX Div 2 - 1, p.sizeY Div 2 - 1);
+          sensorVal := closest / maxPossible;
+        End;
+      tSensor.BOUNDARY_DIST_X: Begin
+          // Measures the distance to nearest boundary in the east-west axis,
+          // max distance is half the grid width; scaled to sensor range 0.0..1.0.
+          minDistX := min(loc.x, (p.sizeX - loc.x) - 1);
+          sensorVal := minDistX / (p.sizeX / 2.0);
+        End;
+      TSensor.BOUNDARY_DIST_Y: Begin
+          // Measures the distance to nearest boundary in the south-north axis,
+          // max distance is half the grid height; scaled to sensor range 0.0..1.0.
+          minDistY := min(loc.y, (p.sizeY - loc.y) - 1);
+          sensorVal := minDistY / (p.sizeY / 2.0);
+        End;
+      TSensor.LAST_MOVE_DIR_X: Begin
+          // X component -1,0,1 maps to sensor values 0.0, 0.5, 1.0
+          lastX := asNormalizedCoord(lastMoveDir).x;
+          If lastx = 0 Then Begin
+            sensorVal := 0.5;
           End
           Else Begin
-            sensorVal := 1;
+            If lastX = -1 Then Begin
+              sensorVal := 0;
+            End
+            Else Begin
+              sensorVal := 1;
+            End;
           End;
         End;
-      End;
-    TSensor.LAST_MOVE_DIR_Y: Begin
-        // Y component -1,0,1 maps to sensor values 0.0, 0.5, 1.0
-        lastY := asNormalizedCoord(lastMoveDir).y;
-        If lastY = 0 Then Begin
-          sensorVal := 0.5;
-        End
-        Else Begin
-          If lastY = -1 Then Begin
-            sensorVal := 0;
+      TSensor.LAST_MOVE_DIR_Y: Begin
+          // Y component -1,0,1 maps to sensor values 0.0, 0.5, 1.0
+          lastY := asNormalizedCoord(lastMoveDir).y;
+          If lastY = 0 Then Begin
+            sensorVal := 0.5;
           End
           Else Begin
-            sensorVal := 1;
+            If lastY = -1 Then Begin
+              sensorVal := 0;
+            End
+            Else Begin
+              sensorVal := 1;
+            End;
           End;
         End;
-      End;
-    TSensor.LOC_X: Begin
-        // Maps current X location 0..p.sizeX-1 to sensor range 0.0..1.0
-        sensorVal := loc.x / (p.sizeX - 1);
-      End;
-    TSensor.LOC_Y: Begin
-        // Maps current Y location 0..p.sizeY-1 to sensor range 0.0..1.0
-        sensorVal := loc.y / (p.sizeY - 1);
-      End;
-    TSensor.BLOC_X: Begin
-        // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
-        sensorVal := birthLoc.x / (p.sizeX - 1);
-      End;
-    TSensor.BLOC_Y: Begin
-        // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
-        sensorVal := birthLoc.y / (p.sizey - 1);
-      End;
-    TSensor.OSC1: Begin
-        // Maps the oscillator sine wave to sensor range 0.0..1.0;
-        // cycles starts at simStep 0 for everbody.
-        phase := (simStep Mod oscPeriod) / oscPeriod; // 0.0..1.0
-        factor := -cos(phase * 2.0 * Pi);
-        assert((factor >= -1.0) And (factor <= 1.0));
-        factor := factor + 1.0; // convert to 0.0..2.0
-        factor := factor / 2.0; // convert to 0.0..1.0
-        sensorVal := factor;
-        // Clip any round-off error
-        sensorVal := min(1.0, max(0.0, sensorVal));
-      End;
-    TSensor.LONGPROBE_POP_FWD: Begin
-        // Measures the distance to the nearest other individual in the
-        // forward direction. If non found, returns the maximum sensor value.
-        // Maps the result to the sensor range 0.0..1.0.
-        sensorVal := longProbePopulationFwd(loc, lastMoveDir, longProbeDist) / longProbeDist; // 0..1
-      End;
-    TSensor.LONGPROBE_BAR_FWD: Begin
-        // Measures the distance to the nearest barrier in the forward
-        // direction. If non found, returns the maximum sensor value.
-        // Maps the result to the sensor range 0.0..1.0.
-        sensorVal := longProbeBarrierFwd(loc, lastMoveDir, longProbeDist) / longProbeDist; // 0..1
-      End;
-    TSensor.POPULATION: Begin
-        // Returns population density in neighborhood converted linearly from
-        // 0..100% to sensor range
-        FCountPopulation.countLocs := 0;
-        FCountPopulation.countOccupied := 0;
-        visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation, @FCountPopulation);
-        sensorVal := FCountPopulation.countOccupied / FCountPopulation.countLocs;
-      End;
-    TSensor.POPULATION_FWD: Begin
-        // Sense population density along axis of last movement direction, mapped
-        // to sensor range 0.0..1.0
-        sensorVal := getPopulationDensityAlongAxis(loc, lastMoveDir);
-      End;
-    TSensor.POPULATION_LR: Begin
-        // Sense population density along an axis 90 degrees from last movement direction
-        sensorVal := getPopulationDensityAlongAxis(loc, lastMoveDir.rotate90DegCW());
-      End;
-    TSensor.BARRIER_FWD: Begin
-        // Sense the nearest barrier along axis of last movement direction, mapped
-        // to sensor range 0.0..1.0
-        sensorVal := getShortProbeBarrierDistance(loc, lastMoveDir, p.shortProbeBarrierDistance);
-      End;
-    TSensor.BARRIER_LR: Begin
-        // Sense the nearest barrier along axis perpendicular to last movement direction, mapped
-        // to sensor range 0.0..1.0
-        sensorVal := getShortProbeBarrierDistance(loc, lastMoveDir.rotate90DegCW(), p.shortProbeBarrierDistance);
-      End;
-    TSensor.RANDOM: Begin
-        // Returns a random sensor value in the range 0.0..1.0.
-        sensorVal := randomUint.rnd() / RANDOM_UINT_MAX;
-      End;
-    TSensor.SIGNAL0: Begin
-        // Returns magnitude of signal0 in the local neighborhood, with
-        // 0.0..maxSignalSum converted to sensorRange 0.0..1.0
-        sensorVal := getSignalDensity(0, loc);
-      End;
-    TSensor.SIGNAL0_FWD: Begin
-        // Sense signal0 density along axis of last movement direction
-        sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir);
-      End;
-    TSensor.SIGNAL0_LR: Begin
-        // Sense signal0 density along an axis perpendicular to last movement direction
-        sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir.rotate90DegCW());
-      End;
-    Tsensor.All1: sensorVal := 1.0;
-    TSensor.GENETIC_SIM_FWD: Begin
-        // Return minimum sensor value if nobody is alive in the forward adjacent location,
-        // else returns a similarity match in the sensor range 0.0..1.0
-        loc2 := loc + lastMoveDir;
-        If (grid.isInBounds(loc2) And grid.isOccupiedAt(loc2)) Then Begin
-          indiv2 := peeps.getIndiv(loc2);
-          If (indiv2^.alive) Then Begin
-            sensorVal := genomeSimilarity(genome, indiv2^.genome); // 0.0..1.0
+      TSensor.LOC_X: Begin
+          // Maps current X location 0..p.sizeX-1 to sensor range 0.0..1.0
+          sensorVal := loc.x / (p.sizeX - 1);
+        End;
+      TSensor.LOC_Y: Begin
+          // Maps current Y location 0..p.sizeY-1 to sensor range 0.0..1.0
+          sensorVal := loc.y / (p.sizeY - 1);
+        End;
+      TSensor.BLOC_X: Begin
+          // Maps Birthloc X location 0..p.sizeX-1 to sensor range 0.0..1.0
+          sensorVal := birthLoc.x / (p.sizeX - 1);
+        End;
+      TSensor.BLOC_Y: Begin
+          // Maps Birthloc Y location 0..p.sizeY-1 to sensor range 0.0..1.0
+          sensorVal := birthLoc.y / (p.sizey - 1);
+        End;
+      TSensor.OSC1: Begin
+          // Maps the oscillator sine wave to sensor range 0.0..1.0;
+          // cycles starts at simStep 0 for everbody.
+          phase := (simStep Mod oscPeriod) / oscPeriod; // 0.0..1.0
+          factor := -cos(phase * 2.0 * Pi);
+          assert((factor >= -1.0) And (factor <= 1.0));
+          factor := factor + 1.0; // convert to 0.0..2.0
+          factor := factor / 2.0; // convert to 0.0..1.0
+          sensorVal := factor;
+          // Clip any round-off error
+          sensorVal := min(1.0, max(0.0, sensorVal));
+        End;
+      TSensor.LONGPROBE_POP_FWD: Begin
+          // Measures the distance to the nearest other individual in the
+          // forward direction. If non found, returns the maximum sensor value.
+          // Maps the result to the sensor range 0.0..1.0.
+          sensorVal := longProbePopulationFwd(loc, lastMoveDir, longProbeDist) / longProbeDist; // 0..1
+        End;
+      TSensor.LONGPROBE_BAR_FWD: Begin
+          // Measures the distance to the nearest barrier in the forward
+          // direction. If non found, returns the maximum sensor value.
+          // Maps the result to the sensor range 0.0..1.0.
+          sensorVal := longProbeBarrierFwd(loc, lastMoveDir, longProbeDist) / longProbeDist; // 0..1
+        End;
+      TSensor.POPULATION: Begin
+          // Returns population density in neighborhood converted linearly from
+          // 0..100% to sensor range
+          FCountPopulation.countLocs := 0;
+          FCountPopulation.countOccupied := 0;
+          visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation, @FCountPopulation);
+          sensorVal := FCountPopulation.countOccupied / FCountPopulation.countLocs;
+        End;
+      TSensor.POPULATION_FWD: Begin
+          // Sense population density along axis of last movement direction, mapped
+          // to sensor range 0.0..1.0
+          sensorVal := getPopulationDensityAlongAxis(loc, lastMoveDir);
+        End;
+      TSensor.POPULATION_LR: Begin
+          // Sense population density along an axis 90 degrees from last movement direction
+          sensorVal := getPopulationDensityAlongAxis(loc, lastMoveDir.rotate90DegCW());
+        End;
+      TSensor.BARRIER_FWD: Begin
+          // Sense the nearest barrier along axis of last movement direction, mapped
+          // to sensor range 0.0..1.0
+          sensorVal := getShortProbeBarrierDistance(loc, lastMoveDir, p.shortProbeBarrierDistance);
+        End;
+      TSensor.BARRIER_LR: Begin
+          // Sense the nearest barrier along axis perpendicular to last movement direction, mapped
+          // to sensor range 0.0..1.0
+          sensorVal := getShortProbeBarrierDistance(loc, lastMoveDir.rotate90DegCW(), p.shortProbeBarrierDistance);
+        End;
+      TSensor.RANDOM: Begin
+          // Returns a random sensor value in the range 0.0..1.0.
+          sensorVal := randomUint.rnd() / RANDOM_UINT_MAX;
+        End;
+      TSensor.SIGNAL0: Begin
+          // Returns magnitude of signal0 in the local neighborhood, with
+          // 0.0..maxSignalSum converted to sensorRange 0.0..1.0
+          sensorVal := getSignalDensity(0, loc);
+        End;
+      TSensor.SIGNAL0_FWD: Begin
+          // Sense signal0 density along axis of last movement direction
+          sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir);
+        End;
+      TSensor.SIGNAL0_LR: Begin
+          // Sense signal0 density along an axis perpendicular to last movement direction
+          sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir.rotate90DegCW());
+        End;
+      Tsensor.All1: sensorVal := 1.0;
+      TSensor.GENETIC_SIM_FWD: Begin
+          // Return minimum sensor value if nobody is alive in the forward adjacent location,
+          // else returns a similarity match in the sensor range 0.0..1.0
+          loc2 := loc + lastMoveDir;
+          If (grid.isInBounds(loc2) And grid.isOccupiedAt(loc2)) Then Begin
+            indiv2 := peeps.getIndiv(loc2);
+            If (indiv2^.alive) Then Begin
+              sensorVal := genomeSimilarity(genome, indiv2^.genome); // 0.0..1.0
+            End;
           End;
         End;
-      End;
-  Else
-    assert(false);
+    Else
+      assert(false);
+    End;
   End;
 
   If IsNan(sensorVal) Or (sensorVal < -0.01) Or (sensorVal > 1.01) Then Begin
