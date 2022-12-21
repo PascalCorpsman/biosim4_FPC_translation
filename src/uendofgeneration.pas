@@ -13,7 +13,7 @@ Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 
 Implementation
 
-Uses uparams, uSimulator, uImageWriter, usimplechart;
+Uses uparams, uSimulator, uImageWriter, usimplechart, usensoractions;
 
 // At the end of each generation, we save a video file (if p.saveVideo is true) and
 // print some genomic statistics to stdout (if p.updateGraphLog is true).
@@ -65,7 +65,7 @@ Begin
     Diversity.YAxis.MarkFormat := '%0.2f';
     Diversity.YAxis.Pos := apRight;
 
-    If p.killEnable Then Begin
+    If IsActionEnabled(KILL_FORWARD) Then Begin
       murders := TSeries.Create();
       murders.SeriesColor := $00C0C0;
       murders.SeriesCaption := 'Murders';
@@ -83,7 +83,7 @@ Begin
       x := strtointdef(sa[0], -1);
       Survivors.AddDataPoint(x, strtointdef(sa[1], 0));
       Diversity.AddDataPoint(x, strtofloatdef(sa[2], 0));
-      If p.killEnable Then Begin
+      If IsActionEnabled(KILL_FORWARD) Then Begin
         murders.AddDataPoint(x, strtointdef(sa[4], 0));
       End;
     End;

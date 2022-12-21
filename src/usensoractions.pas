@@ -64,7 +64,7 @@ Type
     SIGNAL0_FWD, // W strength of signal0 in the forward-reverse axis
     SIGNAL0_LR, // W strength of signal0 in the left-right axis
     All1, // W A Sensor that always fires -- Added by Corpsman
-    NUM_SENSES // <<------------------ END OF ACTIVE SENSES MARKER
+    NUM_SENSES // <<------------------ This always has to be the last value of TSensor !!
     );
 
 
@@ -92,7 +92,7 @@ Type
     MOVE_RIGHT, // W
     MOVE_REVERSE {= 15}, // W
     KILL_FORWARD, // W
-    NUM_ACTIONS // <<----------------- END OF ACTIVE ACTIONS MARKER
+    NUM_ACTIONS // <<----------------- This always has to be the last value of TAction !!
     );
 
   TActionArray = Array[0..Integer(NUM_ACTIONS) - 1] Of Float;
@@ -109,7 +109,44 @@ Function actionShortName(Action: Taction): String;
  *)
 Procedure printSensorsActions;
 
+Procedure UpdateActionLookUps(LookupValue: uint32);
+Procedure UpdateSensorLookups(LookupValue: uint32);
+Function IsSensorEnabled(Const Sensor: TSensor): Boolean Inline;
+Function IsActionEnabled(Const Action: TAction): Boolean Inline;
+
 Implementation
+
+Var
+  AvailActions: Array[TAction] Of Boolean;
+  AvailSensors: Array[TSensor] Of Boolean;
+
+Procedure UpdateActionLookUps(LookupValue: uint32);
+Var
+  i: TAction;
+Begin
+  For i In TAction Do Begin
+    AvailActions[i] := (LookupValue And (1 Shl integer(i))) <> 0;
+  End;
+End;
+
+Procedure UpdateSensorLookups(LookupValue: uint32);
+Var
+  i: TSensor;
+Begin
+  For i In TSensor Do Begin
+    AvailSensors[i] := (LookupValue And (1 Shl integer(i))) <> 0;
+  End;
+End;
+
+Function IsSensorEnabled(Const Sensor: TSensor): Boolean Inline;
+Begin
+  result := AvailSensors[Sensor];
+End;
+
+Function IsActionEnabled(Const Action: TAction): Boolean Inline;
+Begin
+  result := AvailActions[Action];
+End;
 
 // This converts sensor numbers to mnemonic strings.
 // Useful for later processing by graph-nnet.py.
@@ -172,7 +209,7 @@ Begin
     SIGNAL0_FWD: result := 'signal 0 fwd';
     SIGNAL0_LR: result := 'signal 0 LR';
     GENETIC_SIM_FWD: result := 'genetic similarity fwd';
-    All1:result := 'Always 1';
+    All1: result := 'Always 1';
   Else Begin
       Raise exception.create('sensorName: Error, missing implementation.');
     End;

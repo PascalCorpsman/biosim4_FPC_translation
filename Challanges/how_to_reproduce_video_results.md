@@ -16,9 +16,6 @@ This challange tries to show the importance of mutations and how to see its impa
 ### Steps to reproduce:
 * run with "Challange_13_Left_Right_eights_with_mutations.ini"
 * run with "Challange_13_Left_Right_eights_without_mutations.ini"
-! Attention !
-  If the survivor rate stuck at around 68% (not reached values near 90% at around gen 90), you have to restart the whole simulation.
-  => i did not figure out why this sometimes happens. In my opinion this is not a bug, but more bad luck at the beginning selection.
 
 As you can see in both simulations the individuals do not take long to "learn" to go left and right to survive. The main reason for the simulation to wait until generation 5000 is to let the diversity go down to the lowest value "possible".
 
@@ -48,7 +45,7 @@ This example makes use of the kill neuron, which is indeed a difficulty thing fr
 * run with "Challange_4_Weighted_Center_Kill_neurons.ini"
 * run with "Challange_40_Unweighted_Center_Kill_neurons.ini"
 
-Results here are not that simple, as you can see in the different runs, if there is no need to fight the individuals tend to loose the ability to kill. To get the results similar to the ones in the video i needed to change the challange from 40 to 4, this increases the preasure on the individuals and then they startet to make use of the kill feature. Both versions i uploaded are showing that a stable run without killing is possible. But if the murder genes spread through out all the population, the violent does not stop anymore.
+Both simulations 4 and 40 holds enough space for the population to reach 100% survivors. In the video the author suggest challange 40 to be used. As you can see here, if there is no need to be violent the indivs loose this ability really soon and life in charm. So i needed to switch to challange 4. This challange weights the indivs and increases the "preasure" by a tiny bit. Looking into the results the simulation shows that live in harmony is still possible (gen 0 .. 4000 and ~9000 .. 10000). But also live in violent is stable. Further can be seen, that if the violent is present the diversity always drops really fast (which is clear as all the "diverse" gene pool gets killed). By looking into the movies you also can see, that all the violent is reducing the intelligent behavoir, the population looses the abillity to "find" the middle. The harmony phase from gen ~9000 to 10000 is to short to learn the best stragegy to survive again.
 
 ## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
 This simulation shall show how complex movements can be learned by the individuals. At first the left side of the world is deadly and at the second half of the life the right half.

@@ -146,7 +146,7 @@ Begin
   // Kill forward -- if this action value is > threshold, value is converted to probability
   // of an attempted murder. Probabilities under the threshold are considered 0.0.
   // If this action neuron is enabled but not driven, the neighbors are safe.
-  If (isEnabled(KILL_FORWARD) And p.killEnable) Then Begin
+  If (IsActionEnabled(KILL_FORWARD)) Then Begin
     level := actionLevels[integer(KILL_FORWARD)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;

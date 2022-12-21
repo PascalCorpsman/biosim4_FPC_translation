@@ -38,7 +38,7 @@ Type
     pointMutationRate: double; // 0.0..1.0
     geneInsertionDeletionRate: double; // 0.0..1.0
     deletionRatio: double; // 0.0..1.0
-    killEnable: bool;
+    // killEnable: bool; -- Replaced by Actions
     sexualReproduction: bool;
     chooseParentsByFitness: bool;
     populationSensorRadius: float; // > 0.0
@@ -62,6 +62,9 @@ Type
     barrierType: unsigned; // >= 0
     deterministic: bool;
     RNGSeed: unsigned; // >= 0
+    Sensors: UInt32;
+    Actions: UInt32;
+
 
     // These must not change after initialization
     sizeX: uint16; // 2..0x10000
@@ -108,7 +111,7 @@ Var
 
 Implementation
 
-Uses uSimulator, ubasicTypes;
+Uses uSimulator, ubasicTypes, usensoractions;
 
 Function checkIfUint(s: String): Bool;
 Var
@@ -122,16 +125,6 @@ Begin
   result := true;
 End;
 
-//bool checkIfInt(const std::string &s)
-//{
-//    //return s.find_first_not_of("-0123456789") == std::string::npos;
-//    std::istringstream iss(s);
-//    int i;
-//    iss >> std::noskipws >> i; // noskipws considers leading whitespace invalid
-//    // Check the entire string was consumed and if either failbit or badbit is set
-//    return iss.eof() && !iss.fail();
-//}
-
 Function checkIfFloat(s: String): Boolean;
 Begin
   Try
@@ -140,6 +133,20 @@ Begin
     result := true;
   Except
     result := false;
+  End;
+End;
+
+Function CheckIfBinNumber(s: String): Boolean;
+Begin
+  result := length(s) > 0;
+  If Not result Then exit;
+  result := s[1] = '%';
+  If Not result Then exit;
+  For i := 1 To length(s) Do Begin
+    If (Not (s[i] In ['0', '1'])) Then Begin
+      result := false;
+      exit;
+    End;
   End;
 End;
 
@@ -174,8 +181,8 @@ Var
 
   Function isFloat(): Boolean;
   Begin
-    isFloat := checkIfFloat(aval);
-    If isFloat Then Begin
+    result := checkIfFloat(aval);
+    If result Then Begin
       FormatSettings.DecimalSeparator := '.';
       dval := StrToFloat(aval);
     End
@@ -186,19 +193,27 @@ Var
 
   Function isBool(): Boolean;
   Begin
-    isBool := checkIfBool(aval);
+    result := checkIfBool(aval);
   End;
 
   Function bval(): Boolean;
   Begin
-    bVal := getBoolVal(aval);
+    result := getBoolVal(aval);
+  End;
+
+  Function isBinNumber(): Boolean;
+  Begin
+    result := CheckIfBinNumber(aval);
+    If result Then Begin
+      uval := 0;
+      for i := 2 to length(aval
+    End;
   End;
 
 Begin
   aname := LowerCase(aname);
-  //std::cout << aname << " " << aval << '\n' << std::endl;
-
   aval := LowerCase(aval);
+
   Case aname Of
     'sizex': Begin
         If (isUint) And (uVal >= 2) And (uVal <= High(UInt16) - 1) Then Begin
@@ -284,8 +299,22 @@ Begin
       End;
     'killenable': Begin
         If (isBool) Then Begin
-          privParams.killEnable := bVal;
+          If bval Then Begin
+            privParams.Actions := privParams.Actions Or (1 Shl integer(KILL_FORWARD));
+          End
+          Else Begin
+            privParams.Actions := privParams.Actions And Not (1 Shl integer(KILL_FORWARD));
+          End;
+          UpdateActionLookUps(privParams.Actions);
         End;
+      End;
+    'sensors': Begin
+
+        UpdateSensorLookups(privParams.Sensors);
+      End;
+    'actions': Begin
+
+        UpdateActionLookUps(privParams.Actions);
       End;
     'sexualreproduction': Begin
         If (isBool) Then Begin
@@ -403,10 +432,11 @@ Begin
           privParams.RNGSeed := uVal;
         End;
       End
-  Else Begin
-      Raise exception.create('Invalid param: ' + aname + ' = "' + aval + '"');
-    End;
+  End
+Else Begin
+    Raise exception.create('Invalid param: ' + aname + ' = "' + aval + '"');
   End;
+End;
 End;
 
 Constructor TParamManager.Create;
@@ -422,6 +452,8 @@ Begin
 End;
 
 Procedure TParamManager.setDefaults;
+Var
+  i: integer;
 Begin
   privParams.sizeX := 128;
   privParams.sizeY := 128;
@@ -442,7 +474,6 @@ Begin
   privParams.pointMutationRate := 0.001;
   privParams.geneInsertionDeletionRate := 0.0;
   privParams.deletionRatio := 0.5;
-  privParams.killEnable := false;
   privParams.sexualReproduction := true;
   privParams.chooseParentsByFitness := true;
   privParams.populationSensorRadius := 2.5;
@@ -466,6 +497,19 @@ Begin
   privParams.deterministic := false;
   privParams.RNGSeed := 12345678;
   privParams.parameterChangeGenerationNumber := 0;
+
+  privParams.Sensors := 0;
+  For i := 0 To integer(TSensor.NUM_SENSES) - 1 Do Begin
+    privParams.Sensors := privParams.Sensors Or (1 Shl i);
+  End;
+  privParams.Actions := 0;
+  For i := 0 To integer(TAction.NUM_ACTIONS) - 1 Do Begin
+    If Taction(i) <> KILL_FORWARD Then Begin
+      privParams.Actions := privParams.Actions Or (1 Shl i);
+    End;
+  End;
+  UpdateActionLookUps(privParams.Sensors);
+  UpdateSensorLookups(privParams.Actions);
 End;
 
 Procedure TParamManager.registerConfigFile(filename: String);
