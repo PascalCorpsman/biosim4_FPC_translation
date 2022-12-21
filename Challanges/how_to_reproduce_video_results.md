@@ -51,7 +51,7 @@ This example makes use of the kill neuron, which is indeed a difficulty thing fr
 * run with "Challange_4_Weighted_Center_Kill_neurons.ini"
 * run with "Challange_40_Unweighted_Center_Kill_neurons.ini"
 
-Both simulations 4 and 40 holds enough space for the population to reach 100% survivors. In the video the author suggest that he had used challange 40. As you can see in the results of challange 40, if there is no need to be violent the indivs loose this ability really soon and life in charm. 
+Both simulations 4 and 40 holds enough space for the population to reach 100% survivors. In the video the author suggest that he had used challange 40. As you can see in the results of challange 40, if there is no need to be violent the indivs loose this ability really soon and life in charm. You can clearly see that through mutations from time to time the "kill feature" comes back but dies out really soon again.
 So i needed to switch to challange 4. This challange weights the indivs and increases the "preasure" by a tiny bit. Looking into the results the simulation shows that live in harmony is still possible (gen 0 .. 4000 and ~9000 .. 10000). But also live in violent is stable. Further can be seen, that if the violent is present the diversity always drops really fast (which is clear as all the "diverse" gene pool gets killed). By looking into the movies you can also see, that all the violent is reducing the intelligent behavoir of the population. The population looses the abillity to "find" the middle. The harmony phase from gen ~9000 to 10000 is to short to learn the best stragegy to survive again.
 
 ## Timestamp 52:15 - 55:38 "Challange_10_Radioactive_walls.ini"
