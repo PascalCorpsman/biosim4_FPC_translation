@@ -137,6 +137,8 @@ Begin
 End;
 
 Function CheckIfBinNumber(s: String): Boolean;
+Var
+  i: Integer;
 Begin
   result := length(s) > 0;
   If Not result Then exit;
@@ -202,11 +204,16 @@ Var
   End;
 
   Function isBinNumber(): Boolean;
+  Var
+    i: Integer;
   Begin
     result := CheckIfBinNumber(aval);
     If result Then Begin
       uval := 0;
-      for i := 2 to length(aval
+      For i := 2 To length(aval) Do Begin
+        uval := uval Shl 1;
+        If aval[i] = '1' Then uval := uval Or 1;
+      End;
     End;
   End;
 
@@ -309,12 +316,16 @@ Begin
         End;
       End;
     'sensors': Begin
-
-        UpdateSensorLookups(privParams.Sensors);
+        If isBinNumber() Then Begin
+          privParams.Sensors := uVal;
+          UpdateSensorLookups(privParams.Sensors);
+        End;
       End;
     'actions': Begin
-
-        UpdateActionLookUps(privParams.Actions);
+        If isBinNumber() Then Begin
+          privParams.Actions := uVal;
+          UpdateActionLookUps(privParams.Actions);
+        End;
       End;
     'sexualreproduction': Begin
         If (isBool) Then Begin
@@ -432,11 +443,10 @@ Begin
           privParams.RNGSeed := uVal;
         End;
       End
-  End
-Else Begin
-    Raise exception.create('Invalid param: ' + aname + ' = "' + aval + '"');
+  Else Begin
+      Raise exception.create('Invalid param: ' + aname + ' = "' + aval + '"');
+    End;
   End;
-End;
 End;
 
 Constructor TParamManager.Create;

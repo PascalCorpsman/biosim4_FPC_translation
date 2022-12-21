@@ -71,15 +71,6 @@ simulator step by endOfSimStep() in a single thread after all individuals have b
 evaluated multithreadedly.
 **********************************************************************************)
 
-// Only a subset of all possible actions might be enabled (i.e., compiled in).
-// This returns true if the specified action is enabled. See sensors-actions.h
-// for how to enable sensors and actions during compilation.
-
-Function isEnabled(Action: TAction): Boolean;
-Begin
-  result := integer(Action) < Integer(NUM_ACTIONS);
-End;
-
 Procedure executeActions(Const randomUint: RandomUintGenerator; Indiv: Pindiv; actionLevels: TActionArray);
 Const
   maxLongProbeDistance = 32;
@@ -98,7 +89,7 @@ Begin
   // Responsiveness action - convert neuron action level from arbitrary float range
   // to the range 0.0..1.0. If this action neuron is enabled but not driven, will
   // default to mid-level 0.5.
-  If (isEnabled(SET_RESPONSIVENESS)) Then Begin
+  If (IsActionEnabled(SET_RESPONSIVENESS)) Then Begin
     level := actionLevels[integer(SET_RESPONSIVENESS)]; // default 0.0
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     indiv^.responsiveness := level;
@@ -111,7 +102,7 @@ Begin
   // Oscillator period action - convert action level nonlinearly to
   // 2..4*p.stepsPerGeneration. If this action neuron is enabled but not driven,
   // will default to 1.5 + e^(3.5) = a period of 34 simSteps.
-  If (isEnabled(SET_OSCILLATOR_PERIOD)) Then Begin
+  If (IsActionEnabled(SET_OSCILLATOR_PERIOD)) Then Begin
     periodf := actionLevels[integer(SET_OSCILLATOR_PERIOD)];
     newPeriodf01 := (tanh(periodf) + 1.0) / 2.0; // convert to 0.0..1.0
     newPeriod := 1 + trunc(1.5 + exp(7.0 * newPeriodf01));
@@ -122,7 +113,7 @@ Begin
   // Set longProbeDistance - convert action level to 1..maxLongProbeDistance.
   // If this action neuron is enabled but not driven, will default to
   // mid-level period of 17 simSteps.
-  If (isEnabled(SET_LONGPROBE_DIST)) Then Begin
+  If (IsActionEnabled(SET_LONGPROBE_DIST)) Then Begin
     level := actionLevels[integer(SET_LONGPROBE_DIST)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := 1 + level * maxLongProbeDistance;
@@ -134,7 +125,7 @@ Begin
   // signal (pheromone).
   // Pheromones may be emitted immediately (see signals.cpp). If this action neuron
   // is enabled but not driven, nothing will be emitted.
-  If (isEnabled(EMIT_SIGNAL0)) Then Begin
+  If (IsActionEnabled(EMIT_SIGNAL0)) Then Begin
     level := actionLevels[integer(EMIT_SIGNAL0)];
     level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;
@@ -182,54 +173,54 @@ Begin
 
   // moveX,moveY will be the accumulators that will hold the sum of all the
   // urges to move along each axis. (+- floating values of arbitrary range)
-  If isEnabled(MOVE_X) Then Begin
+  If IsActionEnabled(MOVE_X) Then Begin
     moveX := actionLevels[integer(MOVE_X)];
   End
   Else Begin
     moveX := 0.0;
   End;
-  If isEnabled(MOVE_Y) Then Begin
+  If IsActionEnabled(MOVE_Y) Then Begin
     moveY := actionLevels[integer(MOVE_Y)];
   End
   Else Begin
     moveY := 0.0;
   End;
 
-  If (isEnabled(MOVE_EAST)) Then moveX := moveX + actionLevels[integer(MOVE_EAST)];
-  If (isEnabled(MOVE_WEST)) Then moveX := moveX - actionLevels[integer(MOVE_WEST)];
-  If (isEnabled(MOVE_NORTH)) Then moveY := moveY + actionLevels[integer(MOVE_NORTH)];
-  If (isEnabled(MOVE_SOUTH)) Then moveY := moveY - actionLevels[integer(MOVE_SOUTH)];
+  If (IsActionEnabled(MOVE_EAST)) Then moveX := moveX + actionLevels[integer(MOVE_EAST)];
+  If (IsActionEnabled(MOVE_WEST)) Then moveX := moveX - actionLevels[integer(MOVE_WEST)];
+  If (IsActionEnabled(MOVE_NORTH)) Then moveY := moveY + actionLevels[integer(MOVE_NORTH)];
+  If (IsActionEnabled(MOVE_SOUTH)) Then moveY := moveY - actionLevels[integer(MOVE_SOUTH)];
 
-  If (isEnabled(MOVE_FORWARD)) Then Begin
+  If (IsActionEnabled(MOVE_FORWARD)) Then Begin
     level := actionLevels[integer(MOVE_FORWARD)];
     moveX := moveX + lastMoveOffset.x * level;
     moveY := moveY + lastMoveOffset.y * level;
   End;
-  If (isEnabled(MOVE_REVERSE)) Then Begin
+  If (IsActionEnabled(MOVE_REVERSE)) Then Begin
     level := actionLevels[integer(MOVE_REVERSE)];
     moveX := moveX - lastMoveOffset.x * level;
     moveY := moveY - lastMoveOffset.y * level;
   End;
-  If (isEnabled(MOVE_LEFT)) Then Begin
+  If (IsActionEnabled(MOVE_LEFT)) Then Begin
     level := actionLevels[integer(MOVE_LEFT)];
     offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCCW());
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
-  If (isEnabled(MOVE_RIGHT)) Then Begin
+  If (IsActionEnabled(MOVE_RIGHT)) Then Begin
     level := actionLevels[integer(MOVE_RIGHT)];
     offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCW());
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
-  If (isEnabled(MOVE_RL)) Then Begin
+  If (IsActionEnabled(MOVE_RL)) Then Begin
     level := actionLevels[integer(MOVE_RL)];
     offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCW());
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
 
-  If (isEnabled(MOVE_RANDOM)) Then Begin
+  If (IsActionEnabled(MOVE_RANDOM)) Then Begin
     level := actionLevels[integer(MOVE_RANDOM)];
     offset := asNormalizedCoord(TDir.random8(randomUint));
     moveX := moveX + offset.x * level;

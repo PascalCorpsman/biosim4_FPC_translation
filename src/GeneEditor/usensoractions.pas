@@ -111,8 +111,12 @@ Procedure printSensorsActions;
 
 Procedure UpdateActionLookUps(LookupValue: uint32);
 Procedure UpdateSensorLookups(LookupValue: uint32);
-Function IsSensorEnabled(Const Sensor: TSensor): Boolean Inline;
-Function IsActionEnabled(Const Action: TAction): Boolean Inline;
+
+// Only a subset of all possible actions might be enabled.
+// This returns true if the specified action is enabled. biosim.ini
+// for how to enable sensors and actions.
+Function IsSensorEnabled(Const Sensor: TSensor): Boolean;
+Function IsActionEnabled(Const Action: TAction): Boolean;
 
 Implementation
 
@@ -138,12 +142,12 @@ Begin
   End;
 End;
 
-Function IsSensorEnabled(Const Sensor: TSensor): Boolean Inline;
+Function IsSensorEnabled(Const Sensor: TSensor): Boolean;
 Begin
   result := AvailSensors[Sensor];
 End;
 
-Function IsActionEnabled(Const Action: TAction): Boolean Inline;
+Function IsActionEnabled(Const Action: TAction): Boolean;
 Begin
   result := AvailActions[Action];
 End;
