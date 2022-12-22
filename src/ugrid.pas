@@ -349,7 +349,8 @@ Begin
         End;
         SetBarrierCoordTmp();
       End;
-    // TODO: Wie wäre es mit einem Rechteck, das nur an einer Seite offen ist aus dem sie erst raus kommen müssen  ;)
+     TODO: Wie wäre es mit einem Rechteck, das nur an einer Seite offen ist aus dem sie erst raus kommen müssen  ;)
+       \-> eins nach Links offen, dass man es mit der Right half / Eight Challange kombinieren kann
   Else Begin
       assert(false);
     End;
@@ -367,4 +368,5 @@ Begin
 End;
 
 End.
+
 

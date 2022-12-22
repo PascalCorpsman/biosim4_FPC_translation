@@ -181,7 +181,7 @@ Begin
     SIGNAL0_FWD: result := 'Sfd';
     SIGNAL0_LR: result := 'Slr';
     GENETIC_SIM_FWD: result := 'Gen';
-    All1: result := '1';
+    All1: result := 'A 1';
   Else
     Raise exception.create('sensorShortName: Error, missing implementation.');
   End;

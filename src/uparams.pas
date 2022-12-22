@@ -65,7 +65,6 @@ Type
     Sensors: UInt32;
     Actions: UInt32;
 
-
     // These must not change after initialization
     sizeX: uint16; // 2..0x10000
     sizeY: uint16; // 2..0x10000
@@ -507,11 +506,12 @@ Begin
   privParams.deterministic := false;
   privParams.RNGSeed := 12345678;
   privParams.parameterChangeGenerationNumber := 0;
-
+  // Default alle Sensoren an
   privParams.Sensors := 0;
   For i := 0 To integer(TSensor.NUM_SENSES) - 1 Do Begin
     privParams.Sensors := privParams.Sensors Or (1 Shl i);
   End;
+  // Default alle Aktoren bis auf Kill Forward an
   privParams.Actions := 0;
   For i := 0 To integer(TAction.NUM_ACTIONS) - 1 Do Begin
     If Taction(i) <> KILL_FORWARD Then Begin
