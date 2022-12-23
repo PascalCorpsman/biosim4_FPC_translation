@@ -38,8 +38,8 @@ This example shall show that the number of neurons and the brain size matters.
 As you can see, when all 4 simulations finished the "bigger" the brain, the higher is the surviver rate.
 
 2 genes, 1 inner ~ 35.1%
-8 genes, 2 inner ~ 73,5%
-32 genes, 5 inner ~ %
+8 genes, 2 inner ~ 73.5%
+32 genes, 5 inner ~ 82.2%
 1000 genes, 127 inner ~ %
 => So keep care of your neurons ;)
 
