@@ -368,8 +368,8 @@ Begin
     // Schauen ob es zu dieser Challange schon eine .sim datei gibt, wenn ja Warnung
     For i := length(Filename) Downto 1 Do Begin
       If Filename[i] = '.' Then Begin
-        tmps := copy(Filename, 1, i - 1) + '.sim';
-        // TODO: da muss der "Pfad" raus, denn der wird beim .sim auch nicht gespeichert ...
+        tmps := ExtractFileName(Filename);
+        tmps := copy(tmps , 1, i - 1) + '.sim';
         If FileExists(tmps) Then Begin
           writeln('Warning, there already exists a .sim file. if you continue');
           writeln('this results will be overwriten.');

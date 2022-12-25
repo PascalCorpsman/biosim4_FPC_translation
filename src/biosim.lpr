@@ -5,7 +5,7 @@ Program biosim;
 Uses
 {$IFDEF UNIX}
   cthreads,
-  cmem, // Akkording to https://wiki.freepascal.org/Parallel_procedures this also speeds up the execution
+  cmem, // Acording to https://wiki.freepascal.org/Parallel_procedures this also speeds up the execution
 {$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Classes, SysUtils, uSimulator, crt
@@ -20,11 +20,6 @@ Begin
    * Known Bugs: - keine
    *
    *)
-
-// Gesehen bis 34:14
-// Challange 13 Im Video 30:28
-//   https://www.youtube.com/watch?v=N3tRFayqVtk&t=1s
-
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen
   Simulator := TSimulator.Create();

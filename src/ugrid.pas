@@ -35,7 +35,8 @@ Type
     // while thinking of x as column and y as row
     data: Array Of Array Of UInt16;
   public
-    Constructor Create();
+    Constructor Create(); virtual;
+    Destructor Destroy(); override;
 
     Procedure init(sizeX, sizeY: uint16_t);
     Procedure zeroFill();
@@ -69,7 +70,22 @@ Uses uparams;
 
 Constructor TGrid.Create;
 Begin
+  Inherited create;
   data := Nil;
+  barrierLocations := Nil;
+  barrierCenters := Nil;
+End;
+
+Destructor TGrid.Destroy;
+Var
+  i: Integer;
+Begin
+  setlength(barrierLocations, 0);
+  setlength(barrierCenters, 0);
+  For i := 0 To high(data) Do Begin
+    setlength(data[i], 0);
+  End;
+  setlength(data, 0);
 End;
 
 Procedure TGrid.init(sizeX, sizeY: uint16_t);
@@ -349,10 +365,52 @@ Begin
         End;
         SetBarrierCoordTmp();
       End;
-     TODO: Wie wäre es mit einem Rechteck, das nur an einer Seite offen ist aus dem sie erst raus kommen müssen  ;)
-       \-> eins nach Links offen, dass man es mit der Right half / Eight Challange kombinieren kann
+    7: Begin
+        // Rechter Senkrechter Strich
+        minX := (p.sizeX * 3) Div 4;
+        maxX := minX + 1;
+        minY := p.sizeY Div 4;
+        maxY := minY + p.sizeY Div 2;
+        For x := minx To maxx Do Begin
+          For y := miny To maxy Do Begin
+            set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
+            setlength(barrierLocations, high(barrierLocations) + 2);
+            barrierLocations[high(barrierLocations)].x := x;
+            barrierLocations[high(barrierLocations)].y := y;
+          End;
+        End;
+        // Obere Kante
+        minX := p.sizeX Div 4;
+        maxX := minX + p.sizeX Div 2;
+        minY := p.sizeY Div 4;
+        maxY := minY + 1;
+        For x := minx To maxx Do Begin
+          For y := miny To maxy Do Begin
+            set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
+            setlength(barrierLocations, high(barrierLocations) + 2);
+            barrierLocations[high(barrierLocations)].x := x;
+            barrierLocations[high(barrierLocations)].y := y;
+          End;
+        End;
+        // Untere Kante
+        minX := p.sizeX Div 4;
+        maxX := minX + p.sizeX Div 2;
+        minY := p.sizeY Div 4 + p.sizeY Div 2 - 1;
+        maxY := minY + 1;
+        For x := minx To maxx Do Begin
+          For y := miny To maxy Do Begin
+            set_(x, y, BARRIER);
+            // TODO: Kann man das hier noch optimieren ?
+            setlength(barrierLocations, high(barrierLocations) + 2);
+            barrierLocations[high(barrierLocations)].x := x;
+            barrierLocations[high(barrierLocations)].y := y;
+          End;
+        End;
+      End
   Else Begin
-      assert(false);
+      Raise exception.create('Error, unknown barrier: ' + inttostr(barrierType));
     End;
   End;
 End;
@@ -368,5 +426,4 @@ Begin
 End;
 
 End.
-
 
