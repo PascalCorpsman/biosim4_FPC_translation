@@ -381,8 +381,8 @@ Begin
           End;
         End;
         // Obere Kante
-        minX := p.sizeX Div 4;
-        maxX := minX + p.sizeX Div 2;
+        minX := round(p.sizeX * 0.6);
+        maxX := (p.sizeX * 3) Div 4;
         minY := p.sizeY Div 4;
         maxY := minY + 1;
         For x := minx To maxx Do Begin
@@ -395,8 +395,8 @@ Begin
           End;
         End;
         // Untere Kante
-        minX := p.sizeX Div 4;
-        maxX := minX + p.sizeX Div 2;
+        minX := round(p.sizeX * 0.6);
+        maxX := (p.sizeX * 3) Div 4;
         minY := p.sizeY Div 4 + p.sizeY Div 2 - 1;
         maxY := minY + 1;
         For x := minx To maxx Do Begin
