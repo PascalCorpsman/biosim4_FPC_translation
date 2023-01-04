@@ -365,6 +365,8 @@ Begin
         End;
         SetBarrierCoordTmp();
       End;
+
+    // ]-shaped barrier
     7: Begin
         // Rechter Senkrechter Strich
         minX := (p.sizeX * 3) Div 4;

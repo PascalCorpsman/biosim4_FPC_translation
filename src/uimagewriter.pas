@@ -255,6 +255,14 @@ Begin
     CHALLENGE_RIGHT_QUARTER: Begin
         image.canvas.Line(w Div 2 + w Div 4, 0, w Div 2 + w Div 4, h);
       End;
+    CHALLENGE_RADIOACTIVE_BARRIER: Begin
+        image.canvas.Line(w Div 2 + w Div 4, 0, w Div 2 + w Div 4, h);
+        // Die Radioaktive Linie
+        image.canvas.Pen.Color := clred;
+        image.canvas.Pen.Width := 2;
+        image.canvas.Line(w Div 2 + w Div 4, h Div 4 + p.displayScale, w Div 2 + w Div 4, h Div 4 + h Div 2 - 2 * p.displayScale);
+        image.canvas.Pen.Width := 1;
+      End;
     CHALLENGE_LEFT_EIGHTH: Begin
         image.canvas.Line(w Div 8, 0, w Div 8, h);
       End;

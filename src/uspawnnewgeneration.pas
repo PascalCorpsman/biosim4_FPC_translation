@@ -98,7 +98,8 @@ Begin
       End;
 
     // Survivors are all those on the right quarter of the arena
-    CHALLENGE_RIGHT_QUARTER: Begin
+    CHALLENGE_RADIOACTIVE_BARRIER,
+      CHALLENGE_RIGHT_QUARTER: Begin
         If (indiv^.loc.x > p.sizeX Div 2 + p.sizeX Div 4) Then Begin
           result := Pair(true, 1);
           exit;

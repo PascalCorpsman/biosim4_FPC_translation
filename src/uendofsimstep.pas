@@ -69,6 +69,36 @@ Begin
     End;
   End;
 
+  If (p.challenge = CHALLENGE_RADIOACTIVE_BARRIER) Then Begin
+    // A Radioactive wall inside the Barrier 7
+    radioactiveX := p.sizeX Div 2 + p.sizeX Div 4;
+    For index := 1 To p.population Do Begin // index 0 is reserved
+      indiv := peeps.Individual[index];
+      If (indiv^.alive) Then Begin
+        distanceFromRadioactiveWall := abs(indiv^.loc.x - radioactiveX);
+        (*
+         * The Area within Barrier 7
+         *)
+        If (indiv^.loc.y >= p.sizey Div 4) And
+          (indiv^.loc.y <= p.sizey Div 4 + p.sizey Div 2) And
+          (indiv^.loc.x <= p.sizeX Div 4 + p.sizeX Div 2) And
+          (distanceFromRadioactiveWall < p.sizeX / 4)
+
+        Then Begin
+          If distanceFromRadioactiveWall = 0 Then Begin // Das Objekt berührt die Radioaktive Wand -> instant death
+            peeps.queueForDeath(indiv);
+          End
+          Else Begin
+            chanceOfDeath := 1.0 / distanceFromRadioactiveWall;
+            If ((randomUint.Rnd() / RANDOM_UINT_MAX) < chanceOfDeath) Then Begin
+              peeps.queueForDeath(indiv);
+            End;
+          End;
+        End;
+      End;
+    End;
+  End;
+
   // If the individual is touching any wall, we set its challengeFlag to true.
   // At the end of the generation, all those with the flag true will reproduce.
   If (p.challenge = CHALLENGE_TOUCH_ANY_WALL) Then Begin
