@@ -366,7 +366,7 @@ Begin
     Filename := LoadSim(Filename);
   End
   Else Begin
-    // Schauen ob es zu dieser Challange schon eine .sim datei gibt, wenn ja Warnung
+    // Schauen ob es zu dieser Challenge schon eine .sim datei gibt, wenn ja Warnung
     For i := length(Filename) Downto 1 Do Begin
       If Filename[i] = '.' Then Begin
         tmps := ExtractFileName(Filename);

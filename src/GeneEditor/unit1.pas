@@ -332,7 +332,7 @@ Begin
   If OpenDialog1.Execute Then Begin
     LoadGenome(OpenDialog1.FileName, -1);
   End;
-  //  LoadGenome('..' + PathDelim + 'Challange_1_Right_Half.sim', 0);
+  //  LoadGenome('..' + PathDelim + 'Challenge_1_Right_Half.sim', 0);
 End;
 
 Procedure TForm1.MenuItem3Click(Sender: TObject);
@@ -581,7 +581,7 @@ Begin
   fn := StringReplace(fn, '/', PathDelim, [rfReplaceAll]);
   fn := StringReplace(fn, '\', PathDelim, [rfReplaceAll]);
   If Not FileExists(fn) Then Begin
-    showmessage('Error, could not load Challange config file: ' + fn);
+    showmessage('Error, could not load Challenge config file: ' + fn);
     sl.free;
     exit;
   End;

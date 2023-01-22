@@ -18,8 +18,8 @@ x Reine Portierung ca. 6 Wochen
 Fehlersuche und Validierung (4 bis 6 Wochen):
 x Wie testen, wenn kein Vergleich möglich ?
   \-> Ausführen, Funktion prinzipiell vorhanden
-  \-> Nachstellen der Challanges aus dem Youtube Video
-  \-> Challange 6 Fehlschlag
+  \-> Nachstellen der Challenges aus dem Youtube Video
+  \-> Challenge 6 Fehlschlag
       \-> Start Fehlersuche
 	  \-> Codereview
 	  \-> Unittests (Random Generator, diverse teilfunktionen)
@@ -50,15 +50,15 @@ Weitere Technische Themen
   - Erhöht man die Anzahl verfügbarer Sensoren dauert es länger bis eine Spezies etwas lernt !
   -"Inbetriebnahme"
     \-> 1. Big Bug, anstatt die besten Genome wurden immer die schlechtesten genommen
-           \=> dennoch einige Challanges lösbar-- Natur ist einfach Krass --
-  -"Go Right" Challange 1:
+           \=> dennoch einige Challenges lösbar-- Natur ist einfach Krass --
+  -"Go Right" Challenge 1:
     \-> Ziel ist es zu lernen nach Rechts zu gehen und dort zu überleben, Einzige Möglichkeit des "Lernens" ist der Selektionsdruck
         Ziel ist in der Regel nach 60-80 Generationen bereits erreicht, dann beginnt die Inzucht phase welche die Diversität reduziert.
   
-  -"Brain Size" Challange 6:
+  -"Brain Size" Challenge 6:
     \-> Zeigen Neuronen und Hirn sind wichtig
   
-  -"Mutation" Challange 13:
+  -"Mutation" Challenge 13:
     1. Auswerten der Number of Surviverskurve
 	   \-> Knick bei gen 35 - 80 -> Alle haben gelernt nach Rechts zu laufen 
 	                             -> sind zu viele deswegen sterben die

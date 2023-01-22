@@ -21,7 +21,7 @@ Type
     alive: bool;
       index: uint16_t; // index into peeps[] container
     loc: TCoord; // refers to a location in grid[][]
-    birthLoc: TCoord; // für die Challange: CHALLENGE_MIGRATE_DISTANCE
+    birthLoc: TCoord; // für die Challenge: CHALLENGE_MIGRATE_DISTANCE
     age: unsigned;
     genome: TGenome;
     nnet: TNeuralNet; // derived from .genome

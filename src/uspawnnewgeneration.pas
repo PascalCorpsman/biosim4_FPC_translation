@@ -387,7 +387,7 @@ Begin
       End;
 
   Else Begin
-      Raise exception.create('Error invalid challange, not known.');
+      Raise exception.create('Error invalid Challenge, not known.');
     End;
   End;
 End;
