@@ -139,7 +139,12 @@ Implementation
 // ----------------------------------------- Helper functions ------------------
 
 Const
-  // list of fourccs from http://fourcc.org/codecs.php
+  (*
+   * list of fourccs from http://fourcc.org/codecs.php -> Link is dead
+   *
+   * here is a other link that holds lots of fourccs
+   * https://www.libe.net/themen/FourCC-Codec-Codes.php#fourcc-codes
+   *)
   valid_fourcc: Array Of String = (
     '3IV1', '3IV2', '8BPS',
     'AASC', 'ABYR', 'ADV1', 'ADVJ', 'AEMI', 'AFLC', 'AFLI', 'AJPG', 'AMPG', 'ANIM', 'AP41', 'ASLC',
