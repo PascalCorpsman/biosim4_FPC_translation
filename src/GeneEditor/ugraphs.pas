@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Ugraphs                                                         23.11.2022 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Autor       : Corpsman                                                     *)
 (*                                                                            *)
@@ -18,6 +18,7 @@
 (* Warranty    : There is no warranty, use at your own risk.                  *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version merge from old ugraphs versions       *)
+(*               0.02 - Node Color                                            *)
 (*                                                                            *)
 (* Known Bugs  : none                                                         *)
 (*                                                                            *)
@@ -38,7 +39,11 @@ Const
   DefaultTextborderY = 5;
   PfeilDx = 5;
   PfeilDy = 5;
-  GraphsVersion: integer = 4; // Die Version in der die Dateien der Klasse gespeichert sind.
+  (*
+   * Historie: 0..4 = ?
+   *              5 = Hinzufügen Node.Color
+   *)
+  GraphsVersion: integer = 5; // Die Version in der die Dateien der Klasse gespeichert sind.
 
 Type
 
@@ -63,10 +68,11 @@ Type
     Marked: Boolean; // Wenn True, dann wird der Knoten mit Grün gezeichnet
     Visible: Boolean; // Wenn True, dann ist der Knoten gerade Sichtbar
     UserData: Pointer; // Nutzdaten die an den Knoten geknüpft werden können, benötigen eine Speicher Callback
+    Color: TColor; // Die Hintergrundfarbe des Knotens, default = clWhite
     //-- Ab hier kommen Teile die nicht Gespeichert werden und nur für die Internen Algorithmen genutzt werden
     Visited: Boolean; // Internen Flag, Muss nicht gespeichert werden !!
     Selected: Boolean; // Für gui Spass, dann wird das Node mit Rotem Rahmen Gerendert
-    Added: Boolean; // s.u. Zum erkennen, ob in einem neuen Einlesevorgang Das Modul hinzugefügt wurde.
+    Added: Boolean; // s.u. Zum erkennen, ob in einem neuen Einlesevorgang das Modul hinzugefügt wurde.
   End;
 
   TGraph = Class;
@@ -153,7 +159,7 @@ Type
      * Umgangen werden kann das mit den beiden Untenstehenden Routinen
      * Ablauf :
      *    1. MarkAllNodesAsNotAdded
-     *    2. Beliebig viele AddFile...
+     *    2. Beliebig viele AddNode...
      *    3. DeleteAllNodesNotMarkedAsAdded
      *)
     Procedure DeleteAllNodesNotMarkedAsAdded;
@@ -166,6 +172,8 @@ Type
      *)
     Procedure SaveToStream(Const Stream: TStream);
     Function LoadFromStream(Const Stream: TStream): Boolean;
+    Procedure SaveToFile(Const Filename: String);
+    Function LoadFromFile(Const Filename: String): Boolean;
 
 
     // Fügt eine Kante ein, wenn es die Knoten nicht gibt, werden sie via AddSingleNode angelegt
@@ -173,8 +181,8 @@ Type
     Procedure AddEdge(StartNode, EndNode: Integer; EdgeColor: TColor; Userdata: Pointer = Nil; Directed: Boolean = false; EdgeCaption: String = ''); overload;
     Procedure DelallEdges(); // Löscht alle Kanten heraus
 
-    Function GetEndIndex(x, y: integer; Const Canvas: TCanvas): Integer; // Ermittelt ob sich an der x,y Koordinate ein Knoten befindet -1 bei Fehler
-    Function GetEndIndexByName(NodeName: String): integer; // -1 Node nicht gefunden
+    Function GetNodeIndex(x, y: integer; Const Canvas: TCanvas): Integer; // Ermittelt ob sich an der x,y Koordinate ein Knoten befindet -1 bei Fehler
+    Function GetNodeIndexByName(NodeName: String): integer; // -1 Node nicht gefunden
     Function GetNodeUserData(index: integer): Pointer; // Info Pointer des Knotens nur zum Lesen
     Procedure SetNodeUserData(Index: integer; aValue: Pointer);
     Function GetNodeName(index: Integer): String; // Name des Knoten
@@ -330,6 +338,7 @@ Begin
   Fnodes[high(Fnodes)].Visited := false;
   Fnodes[high(Fnodes)].UserData := Nil;
   Fnodes[high(Fnodes)].Visible := true;
+  Fnodes[high(Fnodes)].Color := clWhite;
   Fnodes[high(Fnodes)].Selected := false;
   Fnodes[high(Fnodes)].Added := true;
   setlength(Fnodes[high(Fnodes)].Edges, 0);
@@ -402,6 +411,7 @@ Begin
   stream.Write(node.Position, sizeof(node.Position));
   stream.Write(node.Marked, sizeof(node.Marked));
   stream.Write(node.Visible, sizeof(node.Visible));
+  stream.Write(node.Color, sizeof(node.Color));
   If assigned(node.UserData) Then Begin
     If Not Assigned(OnSaveNodeUserData) Then
       Raise Exception.Create('Error ' + ClassName + '.OnSaveNodeUserData not set.');
@@ -431,6 +441,12 @@ Begin
   stream.read(result.Position, sizeof(result.Position));
   stream.read(result.Marked, sizeof(result.Marked));
   stream.read(result.Visible, sizeof(result.Visible));
+  If FileVersion > 4 Then Begin
+    stream.read(result.Color, sizeof(result.Color));
+  End
+  Else Begin
+    result.Color := clWhite;
+  End;
   result.Selected := false;
   result.Visited := false;
   result.Added := false;
@@ -620,7 +636,7 @@ Begin
     Else Begin
       canvas.Pen.Color := clblack;
     End;
-    canvas.brush.color := clwhite;
+    canvas.brush.color := Fnodes[i].Color;
     canvas.brush.Style := bssolid;
     If assigned(OnDrawNode) Then Begin
       DrawIt := Not OnDrawNode(Self, canvas, i);
@@ -810,7 +826,7 @@ Begin
   result := point(x, y);
 End;
 
-Function TGraph.GetEndIndex(x, y: integer; Const Canvas: TCanvas): Integer;
+Function TGraph.GetNodeIndex(x, y: integer; Const Canvas: TCanvas): Integer;
 Var
   i: Integer;
   s: String;
@@ -831,7 +847,7 @@ Begin
   End;
 End;
 
-Function TGraph.GetEndIndexByName(NodeName: String): integer;
+Function TGraph.GetNodeIndexByName(NodeName: String): integer;
 Var
   i: Integer;
 Begin
@@ -980,7 +996,7 @@ Begin
   // Lesen der File Version
   FileVersion := -1;
   Stream.read(FileVersion, SizeOf(FileVersion));
-  If FileVersion <> GraphsVersion Then Begin
+  If FileVersion > GraphsVersion Then Begin
     Raise Exception.Create('Invalid file version.');
     Stream.free;
     exit;
@@ -1006,6 +1022,26 @@ Begin
   End;
   FChanged := false;
   result := true;
+End;
+
+Procedure TGraph.SaveToFile(Const Filename: String);
+Var
+  f: TFileStream;
+Begin
+  f := TFileStream.Create(Filename, fmCreate Or fmOpenWrite);
+  SaveToStream(f);
+  f.free;
+End;
+
+Function TGraph.LoadFromFile(Const Filename: String): Boolean;
+Var
+  f: TFileStream;
+Begin
+  result := false;
+  If Not FileExists(Filename) Then exit;
+  f := TFileStream.Create(Filename, fmOpenRead);
+  result := LoadFromStream(f);
+  f.free;
 End;
 
 Procedure TGraph.MarkNode(Index: integer);
@@ -1451,7 +1487,7 @@ Begin
   If Autoselect Then Begin
     fGraph.DeSelectAll();
     OldSelected := fSelected;
-    fSelected := fGraph.GetEndIndex(x, y, canvas);
+    fSelected := fGraph.GetNodeIndex(x, y, canvas);
     fGraph.Select(fSelected);
   End;
   Inherited MouseDown(Button, Shift, X, Y);
@@ -1465,7 +1501,7 @@ Procedure TGraphBox.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 Begin
   If Autoselect Then Begin
     fGraph.DeSelectAll();
-    fSelected := fGraph.GetEndIndex(x, y, canvas);
+    fSelected := fGraph.GetNodeIndex(x, y, canvas);
     fGraph.Select(fSelected);
   End;
   Inherited MouseUp(Button, Shift, X, Y);
