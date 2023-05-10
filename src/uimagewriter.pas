@@ -40,14 +40,13 @@ Type
     fWritelnEvent: TWritelnEvent;
     Procedure saveOneFrameImmed(Const adata: TImageFrameData);
     Procedure Writeln(Value: String);
-    Procedure RenderChallengeToImage(Const Image: TBitmap; generation, simStep, Challenge: integer);
+    Procedure RenderChallengeToImage(Const Image: TBitmap; simStep, Challenge: integer);
   public
     Constructor Create(); virtual;
     Destructor Destroy(); override;
     Procedure startNewGeneration();
     Function saveVideoFrameSync(simStep, generation, Challenge: unsigned): bool;
     Procedure saveGenerationVideo(generation: unsigned);
-    Procedure SetCrashed(Value: Boolean);
     Procedure AddChartRendererToQueue(Const SC: TSimpleChart);
   End;
 
@@ -188,7 +187,7 @@ Begin
 
   // Draw Challenge if Possible
   If p.VisualizeChallenge Then Begin
-    RenderChallengeToImage(Image, adata.generation, adata.simStep, adata.Challenge);
+    RenderChallengeToImage(Image, adata.simStep, adata.Challenge);
   End;
 
   If ForceDirectories(ExtractFileDir(imageFilename)) Then Begin // Das ForceDir bleibt drin, damit die Filme ein Verzeichnis zum Ablegen haben !
@@ -228,7 +227,7 @@ Begin
   End;
 End;
 
-Procedure TImageWriter.RenderChallengeToImage(Const Image: TBitmap; generation,
+Procedure TImageWriter.RenderChallengeToImage(Const Image: TBitmap;
   simStep, Challenge: integer);
 Var
   radioactiveX, w, h, R: integer;
@@ -336,11 +335,6 @@ Begin
         // Wie auch immer man das Visualisiert ?
       End;
   End;
-End;
-
-Procedure TImageWriter.SetCrashed(Value: Boolean);
-Begin
-  // Nichts im Synchronen Modus ist uns das Egal
 End;
 
 Procedure TImageWriter.AddChartRendererToQueue(Const SC: TSimpleChart);

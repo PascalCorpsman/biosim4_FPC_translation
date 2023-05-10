@@ -1,7 +1,12 @@
 Unit uanalysis;
 
 {$MODE ObjFPC}{$H+}
-
+(*
+ * This kills the warning in displaySignalUse, which only is due to the fact that
+ * the killing feature is enabled, the orig C++ Source needed to be recompiled to
+ * Disable killing neuron, the FPC version does not need that
+ *)
+{$WARN 6018 off : unreachable code}
 Interface
 
 Uses

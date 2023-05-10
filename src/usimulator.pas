@@ -84,7 +84,9 @@ Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; 
 Implementation
 
 Uses usensoractions, uspawnNewGeneration, uexecuteActions,
-  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, uomp, ubasicTypes, UTF8Process;
+  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uomp, ubasicTypes, UTF8Process
+  //  , uUnittests -- Enable if running unittests
+  ;
 
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
@@ -149,6 +151,9 @@ End;
 
 Procedure TSimulator.OnWritelnCallback(Sender: TObject; Line: String);
 Begin
+  // Get rid of that warning, that sender is not used..
+  If assigned(Sender) Then Begin
+  End;
   writeln(Line);
 End;
 
@@ -330,6 +335,10 @@ Var
     BlockStart, BlockEnd: PtrInt;
     IndivIndex: integer;
   Begin
+    // get rid of that annouing not used warning.
+    If assigned(data) And assigned(item) Then Begin
+
+    End;
     (*
      * Jeder Thread bearbeitet einen gleich großen Teil der population
      * da dieses Array aber 1 Bassiert ist wird Blockstart um 1 erhöht
