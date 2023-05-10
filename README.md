@@ -259,7 +259,7 @@ If this works then edit the config file ("biosim4.ini") for the parameters you w
 ## Build log
 --------------------
 
-In case it helps for debugging the build process, here is a build log from Lazarus running under Linux Mint Mate 20.3:
+In case it helps for debugging the build process, here is a build log from Lazarus running under Linux Mint Mate 21.1:
 
 
 ```
