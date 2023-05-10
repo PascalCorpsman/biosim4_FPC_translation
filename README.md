@@ -27,11 +27,11 @@ I'll try to help if I can.
 Document Contents
 -----------------
 
-- [biosim4_FPC_translation](#biosim4_fpc_translation)
+- [biosim4\_FPC\_translation](#biosim4_fpc_translation)
   - [Why this fork?](#why-this-fork)
   - [What is this?](#what-is-this)
   - [Document Contents](#document-contents)
-  - [Code walkthrough<a name="CodeWalkthrough"></a>](#code-walkthrough)
+  - [Code walkthrough](#code-walkthrough)
     - [Main data structures](#main-data-structures)
     - [Config file](#config-file)
     - [Program output](#program-output)
@@ -40,15 +40,14 @@ Document Contents
     - [Basic value types](#basic-value-types)
     - [Pheromones](#pheromones)
     - [Useful utility functions](#useful-utility-functions)
-  - [## Installing the code](#-installing-the-code)
-  - [## Building the executable](#-building-the-executable)
+  - [Installing the code](#installing-the-code)
+  - [Building the executable](#building-the-executable)
     - [System requirements](#system-requirements)
     - [Compiling](#compiling)
       - [Using the Lazarus-IDE](#using-the-lazarus-ide)
       - [via console](#via-console)
-  - [## Execution](#-execution)
-  - [## Tools directory](#-tools-directory)
-  - [## Build log](#-build-log)
+  - [Execution](#execution)
+  - [Build log](#build-log)
 
 
 Code walkthrough<a name="CodeWalkthrough"></a>
@@ -268,19 +267,18 @@ In case it helps for debugging the build process, here is a build log from Lazar
 -------------- Build: Release in biosim4 ---------------
 lazbuild -B biosim.lpi
 
-TProject.DoLoadStateFile Statefile not found: /sda5/sda5/Tools/Projects/biosim/lib/x86_64-linux/biosim.compiled
 Hint: (11030) Start of reading config file /etc/fpc.cfg
 Hint: (11031) End of reading config file /etc/fpc.cfg
-Free Pascal Compiler version 3.2.0 [2020/07/07] for x86_64
-Copyright (c) 1993-2020 by Florian Klaempfl and others
+Free Pascal Compiler version 3.2.2+dfsg-9ubuntu1 [2022/04/11] for x86_64
+Copyright (c) 1993-2021 by Florian Klaempfl and others
 (1002) Target OS: Linux for x86-64
 (3104) Compiling biosim.lpr
 (3104) Compiling usimulator.pas
 (3104) Compiling uparams.pas
+(3104) Compiling usimulator.pas
 (3104) Compiling ugrid.pas
 (3104) Compiling ubasictypes.pas
 (3104) Compiling urandom.pas
-(3104) Compiling uomp.pas
 (3104) Compiling usignals.pas
 (3104) Compiling usimulator.pas
 (3104) Compiling upeeps.pas
@@ -293,82 +291,83 @@ Copyright (c) 1993-2020 by Florian Klaempfl and others
 (3104) Compiling upeeps.pas
 (3104) Compiling usimulator.pas
 (3104) Compiling uimagewriter.pas
+(3104) Compiling /sda5/sda5/Tools/Projects/Sample/DatenSteuerung/ufifo.pas
+(3104) Compiling /sda5/sda5/Tools/Projects/Sample/Graphik/ugwavi.pas
+(3104) Compiling /sda5/sda5/Tools/Projects/Sample/Graphik/usimplechart.pas
+(3104) Compiling /sda5/sda5/Tools/Projects/Sample/DatenSteuerung/uvectormath.pas
 (3104) Compiling usimulator.pas
 (3104) Compiling uspawnnewgeneration.pas
 (3104) Compiling uanalysis.pas
-/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(87,149) Warning: (6018) unreachable code
-/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(118,24) Hint: (5057) Local variable "sensorCounts" does not seem to be initialized
-/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(119,24) Hint: (5057) Local variable "actionCounts" does not seem to be initialized
-/sda5/sda5/Tools/Projects/biosim/uspawnnewgeneration.pas(386,68) Hint: (5024) Parameter "generation" not used
+/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(89,149) Warning: (6018) unreachable code
 (3104) Compiling uexecuteactions.pas
-/sda5/sda5/Tools/Projects/biosim/uexecuteactions.pas(153,48) Warning: (4110) range check error while evaluating constants (17 must be between 0 and 15)
 (3104) Compiling uendofsimstep.pas
 (3104) Compiling uendofgeneration.pas
 (3104) Compiling uunittests.pas
-/sda5/sda5/Tools/Projects/biosim/usimulator.pas(62,52) Hint: (5023) Unit "uUnittests" not used in uSimulator
-/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(41,35) Hint: (5024) Parameter "generation" not used
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1668,8) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3124) Inlining disabled
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
-/usr/lib/fpc/3.2.0/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3124) Inlining disabled
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(310,21) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(312,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutKeyData(const AKey:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(337,21) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(340,33) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(340,69) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(343,79) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(402,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(405,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(406,23) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(410,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(413,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(420,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(423,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(428,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(431,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(432,23) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(436,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(438,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(440,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(443,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(517,30) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(518,17) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(520,5) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(538,94) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(542,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(557,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(566,63) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(724,24) Hint: (5057) Local variable "actionLevels" does not seem to be initialized
-/sda5/sda5/Tools/Projects/biosim/uindiv.pas(727,31) Hint: (5091) Local variable "neuronAccumulators" of a managed type does not seem to be initialized
-/sda5/sda5/Tools/Projects/biosim/ugenome.pas(464,15) Hint: (5057) Local variable "bs1" does not seem to be initialized
-/sda5/sda5/Tools/Projects/biosim/ugenome.pas(465,15) Hint: (5057) Local variable "bs2" does not seem to be initialized
+/sda5/sda5/Tools/Projects/biosim/uunittests.pas(80,35) Hint: (5024) Parameter "UserData" not used
+(3104) Compiling uomp.pas
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(62,33) Hint: (5024) Parameter "Sender" not used
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(328,48) Hint: (5024) Parameter "Data" not used
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(328,63) Hint: (5024) Parameter "Item" not used
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(87,52) Hint: (5023) Unit "uUnittests" not used in uSimulator
+/sda5/sda5/Tools/Projects/biosim/usimulator.pas(87,64) Hint: (5023) Unit "Math" not used in uSimulator
+/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(43,60) Hint: (5024) Parameter "generation" not used
+/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(50,26) Hint: (5024) Parameter "Value" not used
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1568,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1578,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1573,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1637,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1647,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1642,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1657,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1652,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1662,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1674,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1668,8) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1679,1) Hint: (3124) Inlining disabled
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3123) "inherited" not yet supported inside inline procedure/function
+/usr/lib/x86_64-linux-gnu/fpc/3.2.2/units/x86_64-linux/rtl/fgl.ppu:fgl.pp(1684,1) Hint: (3124) Inlining disabled
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(336,21) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(338,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutKeyData(const AKey:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(370,33) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(370,69) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(373,79) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(444,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(447,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(452,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(454,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(461,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(464,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(469,20) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(472,22) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(477,9) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(479,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(481,7) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(484,19) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKey(Index:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(559,17) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(561,5) Note: (6058) Call to subroutine "procedure TFPGMap<System.LongInt,uindiv.TNode>.PutData(Index:LongInt;const NewData:TNode);" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(580,94) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(584,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(600,100) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetKeyData(const AKey:LongInt):<record type>;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(616,24) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.IndexOf(const AKey:LongInt):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(622,26) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.Add(const AKey:LongInt;const AData:TNode):LongInt;" marked as inline is not inlined
+/sda5/sda5/Tools/Projects/biosim/uindiv.pas(626,70) Note: (6058) Call to subroutine "function TFPGMap<System.LongInt,uindiv.TNode>.GetData(Index:LongInt):<record type>;" marked as inline is not inlined
 (9022) Compiling resource /sda5/sda5/Tools/Projects/biosim/lib/x86_64-linux/biosim.or
 (9015) Linking /sda5/sda5/Tools/Projects/biosim/biosim
-(1008) 5862 lines compiled, 3.9 sec
-(1021) 2 warning(s) issued
-(1022) 35 hint(s) issued
-(1023) 28 note(s) issued
+(1008) 12881 lines compiled, 2.5 sec
+(1021) 1 warning(s) issued
+(1022) 34 hint(s) issued
+(1023) 26 note(s) issued
 
 ```
 
