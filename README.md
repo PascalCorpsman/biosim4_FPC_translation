@@ -296,24 +296,14 @@ Copyright (c) 1993-2021 by Florian Klaempfl and others
 (3104) Compiling usimulator.pas
 (3104) Compiling uspawnnewgeneration.pas
 (3104) Compiling uanalysis.pas
-/sda5/sda5/Tools/Projects/biosim/uanalysis.pas(89,149) Warning: (6018) unreachable code
 (3104) Compiling uexecuteactions.pas
 (3104) Compiling uendofsimstep.pas
 (3104) Compiling uendofgeneration.pas
-(3104) Compiling uunittests.pas
-/sda5/sda5/Tools/Projects/biosim/uunittests.pas(80,35) Hint: (5024) Parameter "UserData" not used
 (3104) Compiling uomp.pas
-/sda5/sda5/Tools/Projects/biosim/usimulator.pas(62,33) Hint: (5024) Parameter "Sender" not used
-/sda5/sda5/Tools/Projects/biosim/usimulator.pas(328,48) Hint: (5024) Parameter "Data" not used
-/sda5/sda5/Tools/Projects/biosim/usimulator.pas(328,63) Hint: (5024) Parameter "Item" not used
-/sda5/sda5/Tools/Projects/biosim/usimulator.pas(87,52) Hint: (5023) Unit "uUnittests" not used in uSimulator
-/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(43,60) Hint: (5024) Parameter "generation" not used
-/sda5/sda5/Tools/Projects/biosim/uimagewriter.pas(50,26) Hint: (5024) Parameter "Value" not used
 (9022) Compiling resource /sda5/sda5/Tools/Projects/biosim/lib/x86_64-linux/biosim.or
 (9015) Linking /sda5/sda5/Tools/Projects/biosim/biosim
-(1008) 12881 lines compiled, 2.5 sec
-(1021) 1 warning(s) issued
-(1022) 9 hint(s) issued
+(1008) 12392 lines compiled, 2.4 sec
+(1022) 2 hint(s) issued
 
 
 ```
