@@ -1,5 +1,8 @@
 (*
- * Quelle: https://github.com/rolinh/libgwavi
+ * Orig Source: https://github.com/rolinh/libgwavi
+ *
+ * Orig Authors: 2008-2011, Michael Kohn
+ *               2013, Robin Hahling
  *
  * C-Types: https://learn.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=msvc-170
  *
