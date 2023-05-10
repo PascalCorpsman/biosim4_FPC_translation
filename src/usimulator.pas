@@ -84,7 +84,7 @@ Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; 
 Implementation
 
 Uses usensoractions, uspawnNewGeneration, uexecuteActions,
-  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, Math, uomp, ubasicTypes, UTF8Process;
+  uEndOfSimStep, uEndOfGeneration, uanalysis, crt, uUnittests, uomp, ubasicTypes, UTF8Process;
 
 Var
   fFilename: String = ''; // Das hier ist nicht gerade Ideal, aber die Class function braucht ne Variable auf die sie zugreifen kann
@@ -370,7 +370,7 @@ Begin
     For i := length(Filename) Downto 1 Do Begin
       If Filename[i] = '.' Then Begin
         tmps := ExtractFileName(Filename);
-        tmps := copy(tmps , 1, i - 1) + '.sim';
+        tmps := copy(tmps, 1, i - 1) + '.sim';
         If FileExists(tmps) Then Begin
           writeln('Warning, there already exists a .sim file. if you continue');
           writeln('this results will be overwriten.');
@@ -426,11 +426,11 @@ Begin
   peeps.init(p.population); // the peeps themselves
 
   // Unit tests:
-  //unitTestConnectNeuralNetWiringFromGenome();
-  //unitTestGridVisitNeighborhood();
-  //unitTestBasicTypes();
-  //unitTestgenerateChildGenome();
-  //unitTestIndivSensors();
+  //  unitTestConnectNeuralNetWiringFromGenome();
+  //  unitTestGridVisitNeighborhood();
+  //  unitTestBasicTypes();
+  //  unitTestgenerateChildGenome();
+  //  unitTestIndivSensors();
 
   If fLoadSim.Generation <> -1 Then Begin
     writeln('Restart simulation from generation: ' + inttostr(fLoadSim.Generation));
