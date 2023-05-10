@@ -218,7 +218,6 @@ This code is known to run in the following environment:
 * Linux 64 / Windows 64
 * Lazarus-IDE 2.30
 * FPC 3.2.0
-* python-igraph 0.8.3 (used only by tools/graph-nnet.py)
 
 <a name="Compiling"></a>
 ### Compiling
