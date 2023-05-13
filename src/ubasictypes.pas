@@ -60,25 +60,6 @@ Arithmetic
 Type
   TCompass = (SW = 0, S, SE, W, CENTER, E, NW, N, NE);
 
-  // Supports the eight directions in enum class Compass plus CENTER.
-
-  { TDir }
-
-  TDir = Packed Object // TODO: Das kann eigentlich komplett weg und wir basteln nur Helper Funktionen für TCompass
-  private
-    dir9: TCompass;
-  public
-    Function Dir(aDir: TCompass = CENTER): TDir static;
-
-    Function random8(Const randomUint: RandomUintGenerator): TDir static;
-    Function asInt(): uint8;
-
-    Function rotate(n: integer = 0): TDir;
-    Function rotate90DegCW(): Tdir;
-    Function rotate90DegCCW(): TDir;
-  End;
-
-
   // Coordinates range anywhere in the range of int16_t. Coordinate arithmetic
   // wraps like int16_t. Can be used, e.g., for a location in the simulator grid, or
   // for the difference between two locations.
@@ -90,7 +71,7 @@ Type
     x: int16;
     y: int16;
     Function length(): integer;
-    Function asDir(): TDir;
+    Function asCompass(): TCompass;
     Function Init(): TCoord static; overload;
     Function Init(ax, ay: integer): TCoord static; overload;
     Function IsNormalized(): Boolean;
@@ -101,7 +82,7 @@ Type
 
   TCoordProcedure = Procedure(Coord: TCoord; UserData: Pointer);
 
-Function asNormalizedCoord(Const Dir: TDir): TCoord; // (-1, -0, 1, -1, 0, 1)
+Function asNormalizedCoord(Const Dir: TCompass): TCoord; // (-1, -0, 1, -1, 0, 1)
 
 Procedure Nop();
 
@@ -110,16 +91,18 @@ Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; User
 Function Coord(x, y: integer): TCoord;
 
 Operator * (a: TCoord; s: integer): TCoord;
-Operator + (a: TCoord; d: TDir): TCoord;
-Operator - (a: TCoord; d: TDir): TCoord;
+Operator + (a: TCoord; d: TCompass): TCoord;
+Operator - (a: TCoord; d: TCompass): TCoord;
 Operator - (a, b: TCoord): TCoord;
 Operator + (a, b: TCoord): TCoord;
 Operator = (a, b: TCoord): Boolean;
-Operator = (a: TDir; b: TCompass): Boolean;
-Operator = (a, b: TDir): Boolean;
 
 Function FixPathDelimeter(Path: String): String;
 Function prettyTime(TimeInMs: int64): String; // Code entliehen aus CCM
+
+Function rotate90DegCW(Const aCompass: TCompass): TCompass;
+Function rotate90DegCCW(Const aCompass: TCompass): TCompass;
+Function random8(Const randomUint: RandomUintGenerator): TCompass; // gives a random Compass excluding center !
 
 Implementation
 
@@ -197,9 +180,9 @@ Const
     (x: 1; y: 1) // NE
     );
 
-Function asNormalizedCoord(Const Dir: TDir): TCoord; // (-1, -0, 1, -1, 0, 1)
+Function asNormalizedCoord(Const Dir: TCompass): TCoord; // (-1, -0, 1, -1, 0, 1)
 Begin
-  result := NormalizedCoords[dir.asInt()];
+  result := NormalizedCoords[integer(dir)];
 End;
 
 Function Coord(x, y: integer): TCoord;
@@ -226,12 +209,12 @@ Begin
   result.y := a.y * s;
 End;
 
-Operator + (a: TCoord; d: TDir): TCoord;
+Operator + (a: TCoord; d: TCompass): TCoord;
 Begin
   result := a + asNormalizedCoord(d);
 End;
 
-Operator - (a: TCoord; d: TDir): TCoord;
+Operator - (a: TCoord; d: TCompass): TCoord;
 Begin
   result := a - asNormalizedCoord(d);
 End;
@@ -239,16 +222,6 @@ End;
 Operator = (a, b: TCoord): Boolean;
 Begin
   result := (a.x = b.x) And (a.y = b.y);
-End;
-
-Operator = (a: TDir; b: TCompass): Boolean;
-Begin
-  result := a.asInt() = integer(b);
-End;
-
-Operator = (a, b: TDir): Boolean;
-Begin
-  result := a.asInt() = b.asInt();
 End;
 
 // This is a utility function used when inspecting a local neighborhood around
@@ -304,7 +277,7 @@ End;
 // the boundaries to these regions become much easier to work with as they just align with the 8 axes.
 // (Thanks to @Asa-Hopkins for this optimization -- drm)
 
-Function TCoord.asDir: TDir;
+Function TCoord.asCompass: TCompass;
 Const
   tanN = 13860;
   tanD = 33461;
@@ -324,7 +297,7 @@ Begin
   // We can easily check which side of the four boundary lines
   // the point now falls on, giving 16 cases, though only 9 are
   // possible.
-  result := result.Dir(conversion[ord(yp > 0) * 8 + ord(xp > 0) * 4 + ord(yp > xp) * 2 + ord(yp >= -xp)]);
+  result := conversion[ord(yp > 0) * 8 + ord(xp > 0) * 4 + ord(yp > xp) * 2 + ord(yp >= -xp)];
 End;
 
 Function TCoord.Init: TCoord;
@@ -346,26 +319,7 @@ End;
 
 Function TCoord.normalize: TCoord;
 Begin
-  result := asNormalizedCoord(asDir());
-End;
-
-{ TDir }
-
-Function TDir.Dir(aDir: TCompass): TDir;
-Begin
-  Result.dir9 := aDir;
-End;
-
-Function TDir.random8(Const randomUint: RandomUintGenerator): TDir;
-Begin
-  result := Dir(TCompass.N).rotate(randomUint.RndRange(0, 7));
-  assert(integer(result) <= 8);
-End;
-
-Function TDir.asInt: uint8;
-Begin
-  result := uint8(dir9);
-  assert(result <= 8);
+  result := asNormalizedCoord(asCompass());
 End;
 
 // This rotates a Dir value by the specified number of steps. There are
@@ -384,27 +338,35 @@ Const
     N, NE, E, SE, S, SW, W, NW,
     NE, E, SE, S, SW, W, NW, N);
 
-Function TDir.rotate(n: integer): TDir;
+Function rotate(Const aCompass: TCompass; n: integer): TCompass;
 Var
   tmp1: integer;
-
 Begin
   While n < 0 Do
     n := n + 8;
-  tmp1 := asInt() * 8 + (n Mod 8);
+  tmp1 := integer(aCompass) * 8 + (n Mod 8);
   assert(tmp1 >= 0);
   assert(tmp1 <= high(rotations));
-  result := dir(rotations[tmp1]);
+  result := rotations[tmp1];
 End;
 
-Function TDir.rotate90DegCW: Tdir;
+Function rotate90DegCW(Const aCompass: TCompass): TCompass;
 Begin
-  result := rotate(2);
+  result := rotate(aCompass, 2);
 End;
 
-Function TDir.rotate90DegCCW: TDir;
+Function rotate90DegCCW(Const aCompass: TCompass): TCompass;
 Begin
-  result := rotate(-2);
+  result := rotate(aCompass, -2);
+End;
+
+Function random8(Const randomUint: RandomUintGenerator): TCompass;
+Begin
+  (*
+   * giving a Random TCompass could give a 1 in 8 Chance for Center -> Fail
+   *)
+  result := rotate(N, randomUint.RndRange(0, 7));
+  assert(integer(result) <= 8);
 End;
 
 End.

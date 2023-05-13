@@ -28,7 +28,7 @@ Type
     responsiveness: float; // 0.0..1.0 (0 is like asleep)
     oscPeriod: unsigned; // 2..4*p.stepsPerGeneration (TBD, see executeActions())
     longProbeDist: unsigned; // distance for long forward probe for obstructions
-    lastMoveDir: TDir; // direction of last movement
+    lastMoveDir: TCompass; // direction of last movement
     challengeBits: unsigned; // modified when the indiv accomplishes some task
     Function feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray; // reads sensors, returns actions
 
@@ -71,7 +71,7 @@ Type
   // barrier before reaching the longProbeDist distance, returns longProbeDist.
   // Returns 0..longProbeDist.
 
-Function longProbePopulationFwd(loc: TCoord; dir: TDir; longProbeDist: unsigned): unsigned;
+Function longProbePopulationFwd(loc: TCoord; dir: TCompass; longProbeDist: unsigned): unsigned;
 Var
   Count, numLocsToTest: unsigned;
 Begin
@@ -98,7 +98,7 @@ End;
 // and no barriers are found, returns longProbeDist.
 // Returns 0..longProbeDist.
 
-Function longProbeBarrierFwd(loc: TCoord; Dir: Tdir; longProbeDist: unsigned): unsigned;
+Function longProbeBarrierFwd(loc: TCoord; Dir: TCompass; longProbeDist: unsigned): unsigned;
 Var
   numLocsToTest, Count: unsigned;
 
@@ -143,7 +143,7 @@ Begin
   End;
 End;
 
-Function getPopulationDensityAlongAxis(loc: TCoord; Dir: Tdir): float;
+Function getPopulationDensityAlongAxis(loc: TCoord; Dir: TCompass): float;
 Var
   maxSumMag, len, sensorVal: Double;
   dirVec: TCoord;
@@ -184,7 +184,7 @@ End;
 // along opposite directions of the specified axis to the sensor range. If no barriers
 // are found, the result is sensor mid-range. Ignores agents in the path.
 
-Function getShortProbeBarrierDistance(loc0: TCoord; Dir: Tdir; probeDistance: unsigned): Float;
+Function getShortProbeBarrierDistance(loc0: TCoord; Dir: TCompass; probeDistance: unsigned): Float;
 Var
   sensorVal: Float;
   countRev, countFwd, numLocsToTest: unsigned;
@@ -285,7 +285,7 @@ Begin
   End;
 End;
 
-Function getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: Tdir): Float;
+Function getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: TCompass): Float;
 Var
   dirVec: TCoord;
   sensorVal, maxSumMag, len: Double;
@@ -508,7 +508,7 @@ Begin
   age := 0;
   oscPeriod := 34; // ToDo !!! define a constant
   alive := true;
-  lastMoveDir := TDir.random8(randomUint);
+  lastMoveDir := random8(randomUint);
   responsiveness := 0.5; // range 0.0..1.0
   longProbeDist := p.longProbeDistance;
   challengeBits := 0; //(unsigned)false; // will be set true when some task gets accomplished
@@ -999,7 +999,7 @@ Begin
         End;
       TSensor.POPULATION_LR: Begin
           // Sense population density along an axis 90 degrees from last movement direction
-          sensorVal := getPopulationDensityAlongAxis(loc, lastMoveDir.rotate90DegCW());
+          sensorVal := getPopulationDensityAlongAxis(loc, rotate90DegCW(lastMoveDir));
         End;
       TSensor.BARRIER_FWD: Begin
           // Sense the nearest barrier along axis of last movement direction, mapped
@@ -1009,7 +1009,7 @@ Begin
       TSensor.BARRIER_LR: Begin
           // Sense the nearest barrier along axis perpendicular to last movement direction, mapped
           // to sensor range 0.0..1.0
-          sensorVal := getShortProbeBarrierDistance(loc, lastMoveDir.rotate90DegCW(), p.shortProbeBarrierDistance);
+          sensorVal := getShortProbeBarrierDistance(loc, rotate90DegCW(lastMoveDir), p.shortProbeBarrierDistance);
         End;
       TSensor.RANDOM: Begin
           // Returns a random sensor value in the range 0.0..1.0.
@@ -1026,7 +1026,7 @@ Begin
         End;
       TSensor.SIGNAL0_LR: Begin
           // Sense signal0 density along an axis perpendicular to last movement direction
-          sensorVal := getSignalDensityAlongAxis(0, loc, lastMoveDir.rotate90DegCW());
+          sensorVal := getSignalDensityAlongAxis(0, loc, rotate90DegCW(lastMoveDir));
         End;
       Tsensor.All1: sensorVal := 1.0;
       TSensor.GENETIC_SIM_FWD: Begin

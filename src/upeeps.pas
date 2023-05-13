@@ -151,14 +151,14 @@ Var
   moveRecord: Integer;
   indiv: PIndiv;
   newLoc: TCoord;
-  moveDir: TDir;
+  moveDir: TCompass;
 Begin
   For moveRecord := 0 To moveQueueLen - 1 Do Begin
     indiv := peeps.getIndividual(moveQueue[moveRecord].index);
     If (indiv^.alive) Then Begin
       newLoc := moveQueue[moveRecord].Loc;
-      moveDir := (newLoc - indiv^.loc).asDir();
-      assert(moveDir.asInt() <> integer(CENTER));
+      moveDir := (newLoc - indiv^.loc).asCompass();
+      assert(moveDir <> CENTER);
       If (grid.isEmptyAt(newLoc)) Then Begin
         grid.Set_(indiv^.loc, 0);
         grid.Set_(newLoc, indiv^.index);

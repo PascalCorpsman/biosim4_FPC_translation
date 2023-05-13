@@ -203,26 +203,26 @@ Begin
   End;
   If (IsActionEnabled(MOVE_LEFT)) Then Begin
     level := actionLevels[integer(MOVE_LEFT)];
-    offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCCW());
+    offset := asNormalizedCoord(rotate90DegCCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
   If (IsActionEnabled(MOVE_RIGHT)) Then Begin
     level := actionLevels[integer(MOVE_RIGHT)];
-    offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCW());
+    offset := asNormalizedCoord(rotate90DegCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
   If (IsActionEnabled(MOVE_RL)) Then Begin
     level := actionLevels[integer(MOVE_RL)];
-    offset := asNormalizedCoord(indiv^.lastMoveDir.rotate90DegCW());
+    offset := asNormalizedCoord(rotate90DegCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
 
   If (IsActionEnabled(MOVE_RANDOM)) Then Begin
     level := actionLevels[integer(MOVE_RANDOM)];
-    offset := asNormalizedCoord(TDir.random8(randomUint));
+    offset := asNormalizedCoord(random8(randomUint));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
