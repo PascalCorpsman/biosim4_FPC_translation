@@ -1,6 +1,7 @@
 Unit ubasicTypes;
 
 {$MODE ObjFPC}{$H+}
+{$MODESWITCH ADVANCEDRECORDS}
 
 Interface
 
@@ -66,14 +67,16 @@ Type
 
   { TCoord }
 
-  TCoord = Packed Object // Umstellen auf Record mit Typehelpern
-  public
+  TCoord = Record
     x: int16;
     y: int16;
+  End;
+
+  TCoordHelper = Record Helper For TCoord
     Function length(): integer;
     Function asCompass(): TCompass;
-    Function Init(): TCoord static; overload;
-    Function Init(ax, ay: integer): TCoord static; overload;
+    Function Init(): TCoord; overload;
+    Function Init(ax, ay: integer): TCoord; overload;
     Function IsNormalized(): Boolean;
     Function normalize(): TCoord;
   End;
@@ -106,7 +109,7 @@ Function random8(Const randomUint: RandomUintGenerator): TCompass; // gives a ra
 
 Implementation
 
-Uses Math, uparams;
+Uses uparams;
 
 Procedure Nop();
 Begin
@@ -246,9 +249,9 @@ Begin
   End;
 End;
 
-{ TCoord }
+{ TCoordHelper }
 
-Function TCoord.length: integer;
+Function TCoordHelper.length: integer;
 Begin
   result := trunc(sqrt(x * x + y * y)); // round down
 End;
@@ -258,7 +261,7 @@ End;
 // the boundaries to these regions become much easier to work with as they just align with the 8 axes.
 // (Thanks to @Asa-Hopkins for this optimization -- drm)
 
-Function TCoord.asCompass: TCompass;
+Function TCoordHelper.asCompass: TCompass;
 Const
   tanN = 13860;
   tanD = 33461;
@@ -281,24 +284,24 @@ Begin
   result := conversion[ord(yp > 0) * 8 + ord(xp > 0) * 4 + ord(yp > xp) * 2 + ord(yp >= -xp)];
 End;
 
-Function TCoord.Init: TCoord;
+Function TCoordHelper.Init: TCoord;
 Begin
   result.x := 0;
   result.y := 0;
 End;
 
-Function TCoord.Init(ax, ay: integer): TCoord;
+Function TCoordHelper.Init(ax, ay: integer): TCoord;
 Begin
   result.x := ax;
   result.y := ay;
 End;
 
-Function TCoord.IsNormalized: Boolean;
+Function TCoordHelper.IsNormalized: Boolean;
 Begin
   result := (x >= -1) And (x <= 1) And (y >= -1) And (y <= 1);
 End;
 
-Function TCoord.normalize: TCoord;
+Function TCoordHelper.normalize: TCoord;
 Begin
   result := asNormalizedCoord(asCompass());
 End;
