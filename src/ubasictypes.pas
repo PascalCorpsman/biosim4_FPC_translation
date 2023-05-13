@@ -227,25 +227,7 @@ End;
 // This is a utility function used when inspecting a local neighborhood around
 // some location. This function feeds each valid (in-bounds) location in the specified
 // neighborhood to the specified function. Locations include self (center of the neighborhood).
-//(* Das ist der Original Code, brauchts den noch, oder kann das weg ?
 
-Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
-Var
-  dy, y, extentY, dx, x: Integer;
-Begin
-  For dx := -trunc(min(radius, loc.x)) To trunc(min(radius, (p.sizeX - loc.x) - 1)) Do Begin
-    x := loc.x + dx;
-    assert((x >= 0) And (x < p.sizeX));
-    extentY := trunc(sqrt(max(0, radius * radius - dx * dx)));
-    For dy := -trunc(min(extentY, loc.y)) To trunc(min(extentY, (p.sizeY - loc.y) - 1)) Do Begin
-      y := loc.y + dy;
-      assert((y >= 0) And (y < p.sizeY));
-      f(Coord(x, y), UserData);
-    End;
-  End;
-End; // *)
-
-(*
 Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
 Var
   ii, i, j, x, y: integer;
@@ -262,8 +244,7 @@ Begin
       End;
     End;
   End;
-End;   *)
-
+End;
 
 { TCoord }
 
