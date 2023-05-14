@@ -74,17 +74,27 @@ Begin
 End;
 
 Destructor TPeeps.Destroy;
+Var
+  i: Integer;
 Begin
   setlengtH(deathQueue, 0);
   deathQueueLen := 0;
   setlengtH(moveQueue, 0);
   moveQueueLen := 0;
+  For i := 0 To high(individuals) Do Begin
+    individuals[i].free;
+  End;
 End;
 
 Procedure TPeeps.init(population: unsigned);
+Var
+  i: Integer;
 Begin
   // Index 0 is reserved, so add one:
   setlength(individuals, population + 1);
+  For i := 0 To high(individuals) Do Begin
+    individuals[i] := TIndiv.Create();
+  End;
   individuals[0].alive := false; // Das 1. Element ist nur ein Platzhalter, warum auch immer, aber es wird mal "Tot" initialisiert !
   setlength(deathQueue, population); // Give enough space for everyone to die
   setlength(moveQueue, population); // Give enough space for everyone to move

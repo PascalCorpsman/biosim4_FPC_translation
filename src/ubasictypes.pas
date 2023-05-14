@@ -1,7 +1,7 @@
 Unit ubasicTypes;
 
 {$MODE ObjFPC}{$H+}
-{$MODESWITCH ADVANCEDRECORDS}
+{$MODESWITCH ADVANCEDRECORDS} // for typehelpers
 
 Interface
 

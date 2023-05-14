@@ -5,46 +5,13 @@ Unit uindiv;
 Interface
 
 Uses
-  Classes, SysUtils, ubasicTypes, ugenome, urandom, usensoractions;
+  Classes, SysUtils, ubasicTypes, ugenome, urandom, usensoractions, fgl;
 
 {$I c_types.inc}
 
 // Indiv is the structure that represents one individual agent.
 
 // Also see class Peeps.
-
-Type
-
-  { TIndiv }
-
-  TIndiv = Object // Das sollte wahrscheinlich eine echt Classe werden !!
-    alive: bool;
-      index: uint16_t; // index into peeps[] container
-    loc: TCoord; // refers to a location in grid[][]
-    birthLoc: TCoord; // für die Challenge: CHALLENGE_MIGRATE_DISTANCE
-    age: unsigned;
-    genome: TGenome;
-    nnet: TNeuralNet; // derived from .genome
-    responsiveness: float; // 0.0..1.0 (0 is like asleep)
-    oscPeriod: unsigned; // 2..4*p.stepsPerGeneration (TBD, see executeActions())
-    longProbeDist: unsigned; // distance for long forward probe for obstructions
-    lastMoveDir: TCompass; // direction of last movement
-    challengeBits: unsigned; // modified when the indiv accomplishes some task
-    Function feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray; // reads sensors, returns actions
-
-    Function getSensor(Const randomUint: RandomUintGenerator; sensorNum: TSensor; simStep: unsigned): float;
-    Procedure initialize(Const randomUint: RandomUintGenerator; index_: uint16_t; loc_: TCoord; genome_: TGenome);
-    Procedure createWiringFromGenome(); // creates .nnet member from .genome member
-    Procedure printNeuralNet();
-    Procedure printIGraphEdgeList();
-    Procedure printGenome();
-  End;
-
-  PIndiv = ^TIndiv;
-
-Implementation
-
-Uses uSimulator, uparams, Math, fgl, usignals;
 
 Type
 
@@ -66,12 +33,62 @@ Type
 
   TconnectionList = Array Of TGene;
 
-  // Returns the number of locations to the next agent in the specified
-  // direction, not including loc. If the probe encounters a boundary or a
-  // barrier before reaching the longProbeDist distance, returns longProbeDist.
-  // Returns 0..longProbeDist.
+  { TIndiv }
 
-Function longProbePopulationFwd(loc: TCoord; dir: TCompass; longProbeDist: unsigned): unsigned;
+  TIndiv = Class
+  private
+    neuronAccumulators: Array Of Float; // only used in feedForward, do not replace with TBufferedArray, this slows down deterministic.ini by 2 secs !
+    ConnectionList: TconnectionList; // synaptic connections
+
+    Function longProbePopulationFwd(loc: TCoord; dir: TCompass; longProbeDist: unsigned): unsigned;
+    Function longProbeBarrierFwd(loc: TCoord; Dir: TCompass; longProbeDist: unsigned): unsigned;
+    Function getPopulationDensityAlongAxis(loc: TCoord; Dir: TCompass): float;
+    Function getShortProbeBarrierDistance(loc0: TCoord; Dir: TCompass; probeDistance: unsigned): Float;
+    Function getSignalDensity(layerNum: unsigned; loc: TCoord): float;
+    Function getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: TCompass): Float;
+
+    Procedure makeRenumberedConnectionList();
+    Procedure makeNodeList(Out NodeMap: TnodeMap);
+    Procedure cullUselessNeurons(Var nodeMap: TNodeMap);
+    Procedure removeConnectionsToNeuron(Var nodeMap: TNodeMap; neuronNumber: uint16_t);
+
+  public
+    index: uint16_t; // index into peeps[] container
+
+    alive: bool;
+    loc: TCoord; // refers to a location in grid[][]
+    birthLoc: TCoord; // für die Challenge: CHALLENGE_MIGRATE_DISTANCE
+    age: unsigned;
+    genome: TGenome;
+    nnet: TNeuralNet; // derived from .genome
+    responsiveness: float; // 0.0..1.0 (0 is like asleep)
+    oscPeriod: unsigned; // 2..4*p.stepsPerGeneration (TBD, see executeActions())
+    longProbeDist: unsigned; // distance for long forward probe for obstructions
+    lastMoveDir: TCompass; // direction of last movement
+    challengeBits: unsigned; // modified when the indiv accomplishes some task
+
+    Function feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray; // reads sensors, returns actions
+
+    Function getSensor(Const randomUint: RandomUintGenerator; sensorNum: TSensor; simStep: unsigned): float;
+    Procedure initialize(Const randomUint: RandomUintGenerator; index_: uint16_t; loc_: TCoord; genome_: TGenome);
+    Procedure createWiringFromGenome(); // creates .nnet member from .genome member
+    Procedure printNeuralNet();
+    Procedure printIGraphEdgeList();
+    Procedure printGenome();
+  End;
+
+  PIndiv = ^TIndiv;
+
+Implementation
+
+Uses uSimulator, uparams, Math, usignals;
+
+// Returns the number of locations to the next agent in the specified
+// direction, not including loc. If the probe encounters a boundary or a
+// barrier before reaching the longProbeDist distance, returns longProbeDist.
+// Returns 0..longProbeDist.
+
+Function TIndiv.longProbePopulationFwd(loc: TCoord; dir: TCompass; longProbeDist: unsigned): unsigned;
 Var
   Count, numLocsToTest: unsigned;
 Begin
@@ -98,10 +115,9 @@ End;
 // and no barriers are found, returns longProbeDist.
 // Returns 0..longProbeDist.
 
-Function longProbeBarrierFwd(loc: TCoord; Dir: TCompass; longProbeDist: unsigned): unsigned;
+Function TIndiv.longProbeBarrierFwd(loc: TCoord; Dir: TCompass; longProbeDist: unsigned): unsigned;
 Var
   numLocsToTest, Count: unsigned;
-
 Begin
   assert(longProbeDist > 0);
   count := 0;
@@ -143,7 +159,7 @@ Begin
   End;
 End;
 
-Function getPopulationDensityAlongAxis(loc: TCoord; Dir: TCompass): float;
+Function TIndiv.getPopulationDensityAlongAxis(loc: TCoord; Dir: TCompass): float;
 Var
   maxSumMag, len, sensorVal: Double;
   dirVec: TCoord;
@@ -184,36 +200,36 @@ End;
 // along opposite directions of the specified axis to the sensor range. If no barriers
 // are found, the result is sensor mid-range. Ignores agents in the path.
 
-Function getShortProbeBarrierDistance(loc0: TCoord; Dir: TCompass; probeDistance: unsigned): Float;
+Function TIndiv.getShortProbeBarrierDistance(loc0: TCoord; Dir: TCompass; probeDistance: unsigned): Float;
 Var
   sensorVal: Float;
   countRev, countFwd, numLocsToTest: unsigned;
-  loc: TCoord;
+  aloc: TCoord;
 Begin
   countFwd := 0;
   countRev := 0;
-  loc := loc0 + dir;
+  aloc := loc0 + dir;
   numLocsToTest := probeDistance;
   // Scan positive direction
-  While (numLocsToTest > 0) And (grid.isInBounds(loc) And (Not grid.isBarrierAt(loc))) Do Begin
+  While (numLocsToTest > 0) And (grid.isInBounds(aloc) And (Not grid.isBarrierAt(aloc))) Do Begin
     countFwd := countFwd + 1;
-    loc := loc + dir;
+    aloc := aloc + dir;
     numLocsToTest := numLocsToTest - 1;
   End;
 
-  If (numLocsToTest > 0) And (Not grid.isInBounds(loc)) Then Begin
+  If (numLocsToTest > 0) And (Not grid.isInBounds(aloc)) Then Begin
     countFwd := probeDistance;
   End;
 
   // Scan negative direction
   numLocsToTest := probeDistance;
-  loc := loc0 - dir;
-  While (numLocsToTest > 0) And (grid.isInBounds(loc) And (Not grid.isBarrierAt(loc))) Do Begin
+  aloc := loc0 - dir;
+  While (numLocsToTest > 0) And (grid.isInBounds(aloc) And (Not grid.isBarrierAt(aloc))) Do Begin
     countRev := countRev + 1;
-    loc := loc - dir;
+    aloc := aloc - dir;
     numLocsToTest := numLocsToTest - 1;
   End;
-  If (numLocsToTest > 0) And (Not grid.isInBounds(loc)) Then Begin
+  If (numLocsToTest > 0) And (Not grid.isInBounds(aloc)) Then Begin
     countRev := probeDistance;
   End;
 
@@ -239,7 +255,7 @@ Begin
   Data^.sumi64 := Data^.sumi64 + signals.getMagnitude(Data^.alayerNum, Coord);
 End;
 
-Function getSignalDensity(layerNum: unsigned; loc: TCoord): float;
+Function TIndiv.getSignalDensity(layerNum: unsigned; loc: TCoord): float;
 Var
   Center: TCoord;
   maxSum, sensorVal: Double;
@@ -285,7 +301,7 @@ Begin
   End;
 End;
 
-Function getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: TCompass): Float;
+Function TIndiv.getSignalDensityAlongAxis(layerNum: unsigned; loc: TCoord; Dir: TCompass): Float;
 Var
   dirVec: TCoord;
   sensorVal, maxSumMag, len: Double;
@@ -322,25 +338,25 @@ End;
 // During the culling process, we will remove any neuron that has no outputs,
 // and all the connections that feed the useless neuron.
 
-Procedure removeConnectionsToNeuron(Var connections: TConnectionList; Var nodeMap: TNodeMap; neuronNumber: uint16_t);
+Procedure TIndiv.removeConnectionsToNeuron(Var nodeMap: TNodeMap; neuronNumber: uint16_t);
 Var
   itConn, j: Integer;
   n: TNode;
 Begin
   itconn := 0;
-  While (itConn <= high(connections)) Do Begin
-    If (connections[itConn].sinkType = NEURON) And (connections[itConn].sinkNum = neuronNumber) Then Begin
+  While (itConn <= high(ConnectionList)) Do Begin
+    If (ConnectionList[itConn].sinkType = NEURON) And (ConnectionList[itConn].sinkNum = neuronNumber) Then Begin
       // Remove the connection. If the connection source is from another
       // neuron, also decrement the other neuron's numOutputs:
-      If (connections[itConn].sourceType = NEURON) Then Begin
-        n := nodemap.KeyData[connections[itConn].sourceNum];
+      If (ConnectionList[itConn].sourceType = NEURON) Then Begin
+        n := nodemap.KeyData[ConnectionList[itConn].sourceNum];
         n.numOutputs := n.numOutputs - 1;
-        nodemap.KeyData[connections[itConn].sourceNum] := n;
+        nodemap.KeyData[ConnectionList[itConn].sourceNum] := n;
       End;
-      For j := itConn To high(connections) - 1 Do Begin
-        connections[j] := connections[j + 1];
+      For j := itConn To high(ConnectionList) - 1 Do Begin
+        ConnectionList[j] := ConnectionList[j + 1];
       End;
-      SetLength(connections, high(connections));
+      SetLength(ConnectionList, high(ConnectionList));
     End
     Else Begin
       itConn := itConn + 1;
@@ -353,8 +369,7 @@ End;
 // after we remove a connection to a useless neuron, it may result in a
 // different neuron having no outputs.
 
-Procedure cullUselessNeurons(Var connections: TConnectionList;
-  Var nodeMap: TNodeMap);
+Procedure TIndiv.cullUselessNeurons(Var nodeMap: TNodeMap);
 Var
   allDone: Boolean;
   itNeuron: Integer;
@@ -370,7 +385,7 @@ Begin
       If (nodeMap.Data[itNeuron].numOutputs = nodeMap.Data[itNeuron].numSelfInputs) Then Begin // could be 0
         allDone := false;
         // Find and remove connections from sensors or other neurons
-        removeConnectionsToNeuron(connections, nodeMap, nodeMap.Keys[itNeuron]);
+        removeConnectionsToNeuron(nodeMap, nodeMap.Keys[itNeuron]);
         nodeMap.Delete(itNeuron);
       End
       Else Begin
@@ -386,11 +401,10 @@ End;
 // Sensors are renumbered 0..Sensor::NUM_SENSES - 1
 // Actions are renumbered 0..Action::NUM_ACTIONS - 1
 
-Procedure makeRenumberedConnectionList(Out ConnectionList: TconnectionList; Var Genome: Tgenome);
+Procedure TIndiv.makeRenumberedConnectionList();
 Var
   gene: Integer;
 Begin
-  ConnectionList := Nil;
   setlength(ConnectionList, length(Genome));
   For gene := 0 To high(Genome) Do Begin
     ConnectionList[gene] := Genome[gene];
@@ -429,7 +443,7 @@ End;
 // mentioned in the connections. Also keep track of how many inputs and
 // outputs each neuron has.
 
-Procedure makeNodeList(Out NodeMap: TnodeMap; Var ConnectionList: TconnectionList);
+Procedure TIndiv.makeNodeList(Out NodeMap: TnodeMap);
 Var
   it, conn: Integer;
   n: TNode;
@@ -533,20 +547,19 @@ End;
 Procedure TIndiv.createWiringFromGenome;
 Var
   NodeMap: TNodeMap; // list of neurons and their number of inputs and outputs
-  connectionList: TconnectionList; // synaptic connections
   newNumber: uint16_t;
   keyindex, node, conn, newConn, neuronNum: Integer;
   n: TNode;
 Begin
   // Convert the indiv's genome to a renumbered connection list
-  makeRenumberedConnectionList(connectionList, genome);
+  makeRenumberedConnectionList();
 
   // Make a node (neuron) list from the renumbered connection list
-  makeNodeList(nodeMap, connectionList);
+  makeNodeList(nodeMap);
 
   // Find and remove neurons that don't feed anything or only feed themself.
   // This reiteratively removes all connections to the useless neurons.
-  cullUselessNeurons(connectionList, nodeMap);
+  cullUselessNeurons(nodeMap);
 
 
   // The neurons map now has all the referenced neurons, their neuron numbers, and
@@ -569,12 +582,12 @@ Begin
   setlength(nnet.connections, 0);
 
   // First, the connections from sensor or neuron to a neuron
-  For conn := 0 To high(connectionList) Do Begin
-    If (connectionList[conn].sinkType = NEURON) Then Begin
+  For conn := 0 To high(ConnectionList) Do Begin
+    If (ConnectionList[conn].sinkType = NEURON) Then Begin
       // TODO: Kann man das hier noch optimieren ?
       setlength(nnet.connections, high(nnet.connections) + 2);
       newConn := high(nnet.connections);
-      nnet.connections[newConn] := connectionList[conn];
+      nnet.connections[newConn] := ConnectionList[conn];
 
       // fix the destination neuron number
       nnet.connections[newConn].sinkNum := NodeMap.KeyData[nnet.connections[newConn].sinkNum].remappedNumber;
@@ -587,12 +600,12 @@ Begin
   End;
 
   // Last, the connections from sensor or neuron to an action
-  For conn := 0 To high(connectionList) Do Begin
-    If (connectionList[conn].sinkType = ACTION) Then Begin
+  For conn := 0 To high(ConnectionList) Do Begin
+    If (ConnectionList[conn].sinkType = ACTION) Then Begin
       // TODO: Kann man das hier noch optimieren ?
       setlength(nnet.connections, high(nnet.connections) + 2);
       newConn := high(nnet.connections);
-      nnet.connections[newConn] := connectionList[conn];
+      nnet.connections[newConn] := ConnectionList[conn];
       newConn := high(nnet.connections);
 
       // if the source is a neuron, fix its number
@@ -635,7 +648,12 @@ Begin
   // *)
   NodeMap.Clear;
   NodeMap.Free;
-  setlength(connectionList, 0);
+  setlength(neuronAccumulators, length(nnet.neurons));
+  (*
+   * Resetting the Connectionlist here, will cost 6s in biosim_deterministic0.ini, due to the massiv allocations / deallocations
+   * makeRenumberedConnectionList does init ConnectionList by its own needs, so a reset here is not needed.
+   *)
+  // setlength(ConnectionList, 0);
 End;
 
 Procedure TIndiv.printNeuralNet;
@@ -779,9 +797,8 @@ We have three types of neurons:
 Function TIndiv.feedForward(Const randomUint: RandomUintGenerator; simStep: unsigned): TActionArray;
 Var
   actionLevels: TActionArray;
-  neuronAccumulators: Array Of Float;
   neuronOutputsComputed: Boolean;
-  gene, i, neuronIndex: Integer;
+  gene, neuronIndex: Integer;
   inputVal: Float;
 Begin
   // This container is used to return values for all the action outputs. This array
@@ -792,11 +809,7 @@ Begin
   FillChar(actionLevels, sizeof(actionLevels), 0); // undriven actions default to value 0.0
 
   // Weighted inputs to each neuron are summed in neuronAccumulators[]
-  neuronAccumulators := Nil;
-  setlength(neuronAccumulators, length(nnet.neurons));
-  For i := 0 To High(neuronAccumulators) Do Begin
-    neuronAccumulators[i] := 0.0;
-  End;
+  fillchar(neuronAccumulators[0], length(neuronAccumulators) * sizeof(neuronAccumulators[0]), 0);
 
   // Connections were ordered at birth so that all connections to neurons get
   // processed here before any connections to actions. As soon as we encounter the
@@ -1056,4 +1069,6 @@ Begin
 End;
 
 End.
+
+
 

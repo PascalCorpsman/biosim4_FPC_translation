@@ -1,7 +1,6 @@
 
 Const
   UINT8_MAX = high(uint8);
-  //RANDOM_UINT_MAX = 4ffffffff;
 
 Type
   unsigned = Uint32;

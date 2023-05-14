@@ -40,8 +40,6 @@ Type
 
     Procedure init(sizeX, sizeY: uint16_t);
     Procedure zeroFill();
-    //    uint16_t sizeX() const { return data.size(); }
-    //    uint16_t sizeY() const { return data[0].size(); }
     Function isInBounds(loc: TCoord): Boolean;
     Function isEmptyAt(loc: TCoord): Boolean;
     Function isBarrierAt(loc: TCoord): Boolean;
@@ -49,7 +47,6 @@ Type
     Function isOccupiedAt(loc: TCoord): boolean;
     Function isBorder(loc: TCoord): Boolean;
     Function at(loc: TCoord): uint16_t;
-    //    uint16_t at(uint16_t x, uint16_t y) const { return data[x][y]; }
 
     Procedure Set_(loc: TCoord; val: uint16_t); overload;
     Procedure Set_(x, y, val: uint16_t); overload;
@@ -57,9 +54,6 @@ Type
     Procedure createBarrier(Const randomUint: RandomUintGenerator; barrierType: unsigned);
     Function getBarrierLocations(): TCoordArray;
     Function getBarrierCenters(): TCoordArray;
-    // Direct access:
-//    Column & operator[](uint16_t columnXNum) { return data[columnXNum]; }
-//    const Column & operator[](uint16_t columnXNum) const { return data[columnXNum]; }
   End;
 
 Implementation
