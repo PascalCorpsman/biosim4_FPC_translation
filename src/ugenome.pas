@@ -571,6 +571,7 @@ Begin
     1: result := hammingDistanceBits(g1, g2);
     2: result := hammingDistanceBytes(g1, g2);
   Else Begin
+      Result := 0;
       assert(false);
     End;
   End;

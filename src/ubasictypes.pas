@@ -9,6 +9,7 @@ Uses
   Classes, urandom, SysUtils;
 
 {$I c_types.inc}
+{$I biosim_config.inc}
 
 (*
 Basic types used throughout the project:
@@ -107,9 +108,109 @@ Function rotate90DegCW(Const aCompass: TCompass): TCompass;
 Function rotate90DegCCW(Const aCompass: TCompass): TCompass;
 Function random8(Const randomUint: RandomUintGenerator): TCompass; // gives a random Compass excluding center !
 
+Function Sigmoid(x: Single): Single Inline;
+
 Implementation
 
-Uses uparams;
+Uses uparams
+{$IFDEF SigmoidTanh}, math{$ENDIF}
+{$IFDEF SigmoidTable}, math{$ENDIF}
+  ;
+
+{$IFDEF SigmoidTanh}
+
+Function Sigmoid(x: Single): Single Inline;
+Begin
+  result := tanh(x);
+End;
+
+{$ENDIF}
+
+{$IFDEF SigmoidTable}
+Var
+  (*
+   * The trick is to scale in that way that the elements of the array are a power of 2
+   * but also to use the "range" of at least -3 to 3 after scaling down
+   * 0 ..  32767 -> -3.2767 to 3.2767 -> range fit, results could be better
+   * 0 ..  65535 -> -6.5535 to 6.5535 -> range fit, ok
+   * 0 .. 131071 -> -1.31071 to 1.31071 -> to less range of tanh function to be usefull
+   * 0 .. 262143 -> -2.62143 to 2.62143 -> range ok, but to much ram usage -> slowdown
+   *)
+  TanHBuffer: Array[0..65535] Of Single;
+
+Procedure InitTanH();
+Var
+  i: Integer;
+Begin
+  For i := 0 To high(TanHBuffer) Do Begin
+    TanHBuffer[i] := tanh(i / high(TanHBuffer));
+  End;
+End;
+
+Function Sigmoid(x: Single): Single;
+Var
+  y: integer;
+Begin
+  If x < 0 Then Begin
+    y := trunc((-x) * 10000);
+    If y > high(TanHBuffer) Then Begin
+      result := -1.0;
+    End
+    Else Begin
+      result := -TanHBuffer[y];
+    End;
+  End
+  Else Begin
+    y := trunc(x * 10000);
+    If y > high(TanHBuffer) Then Begin
+      result := 1.0;
+    End
+    Else Begin
+      result := TanHBuffer[y];
+    End;
+  End;
+End;
+{$ENDIF}
+
+{$IFDEF SigmoidXdix1plusX}
+
+Function Sigmoid(x: Single): Single;
+Begin
+  If x < 0 Then Begin
+    result := X / (1 - x);
+  End
+  Else Begin
+    result := X / (1 + x);
+  End;
+End;
+{$ENDIF}
+
+(*
+ * Source:  https://www.musicdsp.org/en/latest/Other/238-rational-tanh-approximation.html?highlight=tanh
+ * Autor:  cschueler
+ *)
+{$IFDEF SigmoidApprox}
+
+Function Sigmoid(x: Single): Single;
+Var
+  y: Single;
+Begin
+  //result := tanh(x); -- Need unit math and is really slow (see: https://forum.lazarus.freepascal.org/index.php?topic=47937.50)
+  If x < -3 Then Begin
+    result := -1;
+  End
+  Else Begin
+    If x >= 3 Then Begin
+      result := 1;
+    End
+    Else Begin
+      //y := sqr(x);
+      y := x * x; // Akkording to runtests x*x is actually faster then sqr(x)
+      result := x * (27 + y) / (27 + 9 * y);
+    End;
+  End;
+End;
+{$ENDIF}
 
 Procedure Nop();
 Begin
@@ -271,7 +372,7 @@ Var
   xp, yp: int32_t;
 Begin
   // tanN/tanD is the best rational approximation to tan(22.5) under the constraint that
-  // tanN + tanD < 2**16 (to avoid overflows). We don't care about the scale of the result,
+  // tanN + tanD < 2^16 (to avoid overflows). We don't care about the scale of the result,
   // only the ratio of the terms. The actual rotation is (22.5 - 1.5e-8) degrees, whilst
   // the closest a pair of int16_t's come to any of these lines is 8e-8 degrees, so the result is exact
 
@@ -352,6 +453,11 @@ Begin
   result := rotate(N, randomUint.RndRange(0, 7));
   assert(integer(result) <= 8);
 End;
+
+{$IFDEF SigmoidTable}
+Initialization
+  InitTanH();
+{$ENDIF}
 
 End.
 

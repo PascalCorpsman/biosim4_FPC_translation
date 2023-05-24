@@ -152,6 +152,10 @@
         <Filename Value="..\Sample\DatenSteuerung\uvectormath.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="biosim_config.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -165,6 +169,11 @@
       <OtherUnitFiles Value="..\Sample\DatenSteuerung;..\Sample\Graphik"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <Optimizations>
+        <OptimizationLevel Value="3"/>
+      </Optimizations>
+    </CodeGeneration>
     <Other>
       <CompilerMessages>
         <IgnoredMessages idx6058="True" idx3124="True" idx3123="True"/>

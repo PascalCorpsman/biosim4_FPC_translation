@@ -29,11 +29,6 @@ Procedure LeaveCodePoint(CP: TCodePoint);
 
 Implementation
 
-Procedure NOP();
-Begin
-
-End;
-
 Var
   CSs: Array[TCodePoint] Of TRTLCriticalSection;
 

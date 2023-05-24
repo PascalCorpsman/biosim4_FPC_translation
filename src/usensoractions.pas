@@ -9,6 +9,8 @@ Uses
 
 {$I c_types.inc}
 
+{$I biosim_config.inc}
+
 // This file defines which sensor input neurons and which action output neurons
 // are compiled into the simulator. This file can be modified to create a simulator
 // executable that supports only a subset of all possible sensor or action neurons.
@@ -109,20 +111,25 @@ Function actionShortName(Action: Taction): String;
  *)
 Procedure printSensorsActions;
 
-Procedure UpdateActionLookUps(LookupValue: uint32);
+{$IFDEF EvalSensorsEnables}
 Procedure UpdateSensorLookups(LookupValue: uint32);
 
 // Only a subset of all possible actions might be enabled.
 // This returns true if the specified action is enabled. biosim.ini
 // for how to enable sensors and actions.
 Function IsSensorEnabled(Const Sensor: TSensor): Boolean;
+{$ENDIF}
+
+{$IFDEF EvalActionEnables}
+Procedure UpdateActionLookUps(LookupValue: uint32);
 Function IsActionEnabled(Const Action: TAction): Boolean;
+{$ENDIF}
 
 Implementation
 
+{$IFDEF EvalActionEnables}
 Var
   AvailActions: Array[TAction] Of Boolean;
-  AvailSensors: Array[TSensor] Of Boolean;
 
 Procedure UpdateActionLookUps(LookupValue: uint32);
 Var
@@ -132,6 +139,16 @@ Begin
     AvailActions[i] := (LookupValue And (1 Shl integer(i))) <> 0;
   End;
 End;
+
+Function IsActionEnabled(Const Action: TAction): Boolean;
+Begin
+  result := AvailActions[Action];
+End;
+{$ENDIF}
+
+{$IFDEF EvalSensorsEnables}
+Var
+  AvailSensors: Array[TSensor] Of Boolean;
 
 Procedure UpdateSensorLookups(LookupValue: uint32);
 Var
@@ -146,11 +163,7 @@ Function IsSensorEnabled(Const Sensor: TSensor): Boolean;
 Begin
   result := AvailSensors[Sensor];
 End;
-
-Function IsActionEnabled(Const Action: TAction): Boolean;
-Begin
-  result := AvailActions[Action];
-End;
+{$ENDIF}
 
 // This converts sensor numbers to mnemonic strings.
 // Useful for later processing by graph-nnet.py.
@@ -241,6 +254,7 @@ Begin
     MOVE_RANDOM: result := 'move random';
     SET_LONGPROBE_DIST: result := 'set longprobe dist';
   Else Begin
+      result := '';
       assert(false);
     End;
   End;
@@ -270,6 +284,7 @@ Begin
     MOVE_RANDOM: result := 'Mrn';
     SET_LONGPROBE_DIST: result := 'LPD';
   Else
+    result := '';
     assert(false);
   End;
 End;

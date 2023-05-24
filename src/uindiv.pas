@@ -9,6 +9,8 @@ Uses
 
 {$I c_types.inc}
 
+{$I biosim_config.inc}
+
 // Indiv is the structure that represents one individual agent.
 
 // Also see class Peeps.
@@ -827,7 +829,7 @@ Begin
       // update and latch all the neuron outputs to their proper range (-1.0..1.0)
       For neuronIndex := 0 To high(nnet.neurons) Do Begin
         If (nnet.neurons[neuronIndex].driven) Then Begin
-          nnet.neurons[neuronIndex].output := TanH(neuronAccumulators[neuronIndex]);
+          nnet.neurons[neuronIndex].output := Sigmoid(neuronAccumulators[neuronIndex]);
         End;
       End;
       neuronOutputsComputed := true;
@@ -888,6 +890,7 @@ Var
 Begin
   (* Sensor Values are in Range 0.0 .. 1.0 *)
   sensorVal := 0.0;
+{$IFDEF EvalSensorsEnables}
   (*
    * If Sensor "Changes" are implemented, some could change the behaviour at this position
    * Pro: every gene that is connected to a sensor, the sensor is used and working
@@ -897,7 +900,8 @@ Begin
    *     -> The con wins, the Sensor is blocked here.
    *        If you want a different behavior you need to adjust makeRenumberedConnectionList
    *)
-  If IsSensorEnabled(Tsensor(sensorNum)) Then Begin
+  If IsSensorEnabled(Tsensor(sensorNum)) Then
+{$ENDIF}Begin
     Case Tsensor(sensorNum) Of
       tsensor.AGE: Begin
           // Converts age (units of simSteps compared to life expectancy)
@@ -1058,17 +1062,10 @@ Begin
     End;
   End;
 
-  If IsNan(sensorVal) Or (sensorVal < -0.01) Or (sensorVal > 1.01) Then Begin
-    writelN('sensorVal=' + inttostr(trunc(sensorVal)) + ' for ' + sensorName(TSensor(sensorNum)));
-    sensorVal := max(0.0, min(sensorVal, 1.0)); // clip
-  End;
-
   assert((Not isnan(sensorVal)) And (sensorVal >= -0.01) And (sensorVal <= 1.01));
 
   result := sensorVal;
 End;
 
 End.
-
-
 

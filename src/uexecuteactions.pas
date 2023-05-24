@@ -4,6 +4,8 @@ Unit uexecuteActions;
 
 Interface
 
+{$I biosim_config.inc}
+
 Uses
   Classes, SysUtils, urandom, uindiv, usensoractions, ubasicTypes;
 
@@ -36,7 +38,6 @@ Begin
   k := p.responsivenessCurveKFactor;
   result := power((r - 2.0), -2.0 * k) - power(2.0, -2.0 * k) * (1.0 - r);
 End;
-
 
 (**********************************************************************************
 Action levels are driven by sensors or internal neurons as connected by an agent's
@@ -89,9 +90,11 @@ Begin
   // Responsiveness action - convert neuron action level from arbitrary float range
   // to the range 0.0..1.0. If this action neuron is enabled but not driven, will
   // default to mid-level 0.5.
-  If (IsActionEnabled(SET_RESPONSIVENESS)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(SET_RESPONSIVENESS)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(SET_RESPONSIVENESS)]; // default 0.0
-    level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
+    level := (Sigmoid(level) + 1.0) / 2.0; // convert to 0.0..1.0
     indiv^.responsiveness := level;
   End;
 
@@ -102,9 +105,11 @@ Begin
   // Oscillator period action - convert action level nonlinearly to
   // 2..4*p.stepsPerGeneration. If this action neuron is enabled but not driven,
   // will default to 1.5 + e^(3.5) = a period of 34 simSteps.
-  If (IsActionEnabled(SET_OSCILLATOR_PERIOD)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(SET_OSCILLATOR_PERIOD)) Then
+{$ENDIF}Begin
     periodf := actionLevels[integer(SET_OSCILLATOR_PERIOD)];
-    newPeriodf01 := (tanh(periodf) + 1.0) / 2.0; // convert to 0.0..1.0
+    newPeriodf01 := (Sigmoid(periodf) + 1.0) / 2.0; // convert to 0.0..1.0
     newPeriod := 1 + trunc(1.5 + exp(7.0 * newPeriodf01));
     assert((newPeriod >= 2) And (newPeriod <= 2048));
     indiv^.oscPeriod := newPeriod;
@@ -113,9 +118,11 @@ Begin
   // Set longProbeDistance - convert action level to 1..maxLongProbeDistance.
   // If this action neuron is enabled but not driven, will default to
   // mid-level period of 17 simSteps.
-  If (IsActionEnabled(SET_LONGPROBE_DIST)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(SET_LONGPROBE_DIST)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(SET_LONGPROBE_DIST)];
-    level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
+    level := (Sigmoid(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := 1 + level * maxLongProbeDistance;
     indiv^.longProbeDist := trunc(level);
   End;
@@ -125,9 +132,11 @@ Begin
   // signal (pheromone).
   // Pheromones may be emitted immediately (see signals.cpp). If this action neuron
   // is enabled but not driven, nothing will be emitted.
-  If (IsActionEnabled(EMIT_SIGNAL0)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(EMIT_SIGNAL0)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(EMIT_SIGNAL0)];
-    level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
+    level := (Sigmoid(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;
     If ((level > emitThreshold) And prob2bool(randomUint, level)) Then Begin
       signals.increment(0, indiv^.loc); // Das ist Thread sicher aus zu führen ?!
@@ -137,9 +146,14 @@ Begin
   // Kill forward -- if this action value is > threshold, value is converted to probability
   // of an attempted murder. Probabilities under the threshold are considered 0.0.
   // If this action neuron is enabled but not driven, the neighbors are safe.
-  If (IsActionEnabled(KILL_FORWARD)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(KILL_FORWARD))
+{$ELSE}
+  If p.killEnable
+{$ENDIF}
+  Then Begin
     level := actionLevels[integer(KILL_FORWARD)];
-    level := (tanh(level) + 1.0) / 2.0; // convert to 0.0..1.0
+    level := (Sigmoid(level) + 1.0) / 2.0; // convert to 0.0..1.0
     level := level * responsivenessAdjusted;
     If (level > killThreshold) And (prob2bool(randomUint, (level - ACTION_MIN) / ACTION_RANGE)) Then Begin
       otherLoc := indiv^.loc + indiv^.lastMoveDir;
@@ -173,54 +187,84 @@ Begin
 
   // moveX,moveY will be the accumulators that will hold the sum of all the
   // urges to move along each axis. (+- floating values of arbitrary range)
+{$IFDEF EvalActionEnables}
   If IsActionEnabled(MOVE_X) Then Begin
     moveX := actionLevels[integer(MOVE_X)];
   End
   Else Begin
     moveX := 0.0;
   End;
+{$ELSE}
+  moveX := 0.0;
+{$ENDIF}
+{$IFDEF EvalActionEnables}
   If IsActionEnabled(MOVE_Y) Then Begin
     moveY := actionLevels[integer(MOVE_Y)];
   End
   Else Begin
     moveY := 0.0;
   End;
-
-  If (IsActionEnabled(MOVE_EAST)) Then moveX := moveX + actionLevels[integer(MOVE_EAST)];
-  If (IsActionEnabled(MOVE_WEST)) Then moveX := moveX - actionLevels[integer(MOVE_WEST)];
-  If (IsActionEnabled(MOVE_NORTH)) Then moveY := moveY + actionLevels[integer(MOVE_NORTH)];
-  If (IsActionEnabled(MOVE_SOUTH)) Then moveY := moveY - actionLevels[integer(MOVE_SOUTH)];
-
-  If (IsActionEnabled(MOVE_FORWARD)) Then Begin
+{$ELSE}
+  movey := 0.0;
+{$ENDIF}
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_EAST)) Then
+{$ENDIF}
+    moveX := moveX + actionLevels[integer(MOVE_EAST)];
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_WEST)) Then
+{$ENDIF}
+    moveX := moveX - actionLevels[integer(MOVE_WEST)];
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_NORTH)) Then
+{$ENDIF}
+    moveY := moveY + actionLevels[integer(MOVE_NORTH)];
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_SOUTH)) Then
+{$ENDIF}
+    moveY := moveY - actionLevels[integer(MOVE_SOUTH)];
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_FORWARD)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_FORWARD)];
     moveX := moveX + lastMoveOffset.x * level;
     moveY := moveY + lastMoveOffset.y * level;
   End;
-  If (IsActionEnabled(MOVE_REVERSE)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_REVERSE)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_REVERSE)];
     moveX := moveX - lastMoveOffset.x * level;
     moveY := moveY - lastMoveOffset.y * level;
   End;
-  If (IsActionEnabled(MOVE_LEFT)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_LEFT)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_LEFT)];
     offset := asNormalizedCoord(rotate90DegCCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
-  If (IsActionEnabled(MOVE_RIGHT)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_RIGHT)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_RIGHT)];
     offset := asNormalizedCoord(rotate90DegCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
-  If (IsActionEnabled(MOVE_RL)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_RL)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_RL)];
     offset := asNormalizedCoord(rotate90DegCW(indiv^.lastMoveDir));
     moveX := moveX + offset.x * level;
     moveY := moveY + offset.y * level;
   End;
 
-  If (IsActionEnabled(MOVE_RANDOM)) Then Begin
+{$IFDEF EvalActionEnables}
+  If (IsActionEnabled(MOVE_RANDOM)) Then
+{$ENDIF}Begin
     level := actionLevels[integer(MOVE_RANDOM)];
     offset := asNormalizedCoord(random8(randomUint));
     moveX := moveX + offset.x * level;
@@ -229,8 +273,8 @@ Begin
 
   // Convert the accumulated X, Y sums to the range -1.0..1.0 and scale by the
   // individual's responsiveness (0.0..1.0) (adjusted by a curve)
-  moveX := tanh(moveX);
-  moveY := tanh(moveY);
+  moveX := Sigmoid(moveX);
+  moveY := Sigmoid(moveY);
   moveX := moveX * responsivenessAdjusted;
   moveY := moveY * responsivenessAdjusted;
 

@@ -9,11 +9,17 @@ Uses
 
 {$I c_types.inc}
 
+{$I biosim_config.inc}
+
 Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 
 Implementation
 
-Uses uparams, uSimulator, uImageWriter, usimplechart, usensoractions;
+Uses uparams, uSimulator, uImageWriter, usimplechart
+{$IFDEF EvalActionEnables}
+  , usensoractions
+{$ENDIF}
+  ;
 
 // At the end of each generation, we save a video file (if p.saveVideo is true) and
 // print some genomic statistics to stdout (if p.updateGraphLog is true).
@@ -64,8 +70,13 @@ Begin
     Diversity.YAxis.MaxVal := 1.0;
     Diversity.YAxis.MarkFormat := '%0.2f';
     Diversity.YAxis.Pos := apRight;
-
-    If IsActionEnabled(KILL_FORWARD) Then Begin
+    murders := Nil; // Kill compiler warning
+{$IFDEF EvalActionEnables}
+    If (IsActionEnabled(KILL_FORWARD))
+{$ELSE}
+    If p.killEnable
+{$ENDIF}
+    Then Begin
       murders := TSeries.Create();
       murders.SeriesColor := $00C0C0;
       murders.SeriesCaption := 'Murders';
@@ -83,7 +94,12 @@ Begin
       x := strtointdef(sa[0], -1);
       Survivors.AddDataPoint(x, strtointdef(sa[1], 0));
       Diversity.AddDataPoint(x, strtofloatdef(sa[2], 0));
-      If IsActionEnabled(KILL_FORWARD) Then Begin
+{$IFDEF EvalActionEnables}
+      If (IsActionEnabled(KILL_FORWARD))
+{$ELSE}
+      If p.killEnable
+{$ENDIF}
+      Then Begin
         murders.AddDataPoint(x, strtointdef(sa[4], 0));
       End;
     End;
@@ -93,7 +109,6 @@ Begin
      *)
     ImageWriter.AddChartRendererToQueue(sc);
     sl.free;
-
   End;
 End;
 

@@ -10,6 +10,8 @@ Uses
 
 {$I c_types.inc}
 
+{$I biosim_config.inc}
+
 Type
 
   TRunMode = (rmStop, rmRun, rmPause, rmAbort);
@@ -38,7 +40,9 @@ Type
     pointMutationRate: double; // 0.0..1.0
     geneInsertionDeletionRate: double; // 0.0..1.0
     deletionRatio: double; // 0.0..1.0
-    // killEnable: bool; -- Replaced by Actions
+{$IFNDEF EvalActionEnables}
+    killEnable: bool; // -- Replaced by Actions
+{$ENDIF}
     sexualReproduction: bool;
     chooseParentsByFitness: bool;
     populationSensorRadius: float; // > 0.0
@@ -62,8 +66,12 @@ Type
     barrierType: unsigned; // >= 0
     deterministic: bool;
     RNGSeed: unsigned; // >= 0
+{$IFDEF EvalSensorsEnables}
     Sensors: UInt32;
+{$ENDIF}
+{$IFDEF EvalActionEnables}
     Actions: UInt32;
+{$ENDIF}
 
     // These must not change after initialization
     sizeX: uint16; // 2..0x10000
@@ -110,7 +118,15 @@ Var
 
 Implementation
 
-Uses uSimulator, ubasicTypes, usensoractions;
+Uses uSimulator, ubasicTypes
+{$IFDEF EvalSensorsEnables}
+  , usensoractions
+{$ELSE}
+{$IFDEF EvalActionEnables}
+  , usensoractions
+{$ENDIF}
+{$ENDIF}
+  ;
 
 Function checkIfUint(s: String): Bool;
 Var
@@ -219,6 +235,8 @@ Var
 Begin
   aname := LowerCase(aname);
   aval := LowerCase(aval);
+  uVal := 0; // Kill Compiler warning
+  dVal := 0.0; // Kill Compiler warning
 
   Case aname Of
     'sizex': Begin
@@ -305,6 +323,7 @@ Begin
       End;
     'killenable': Begin
         If (isBool) Then Begin
+{$IFDEF EvalActionEnables}
           If bval Then Begin
             privParams.Actions := privParams.Actions Or (1 Shl integer(KILL_FORWARD));
           End
@@ -312,19 +331,30 @@ Begin
             privParams.Actions := privParams.Actions And Not (1 Shl integer(KILL_FORWARD));
           End;
           UpdateActionLookUps(privParams.Actions);
+{$ELSE}
+          privParams.killEnable := bval;
+{$ENDIF}
         End;
       End;
     'sensors': Begin
+{$IFDEF EvalSensorsEnables}
         If isBinNumber() Then Begin
           privParams.Sensors := uVal;
           UpdateSensorLookups(privParams.Sensors);
         End;
+{$ELSE}
+        writeln('Waring: sensor evaluation is disabled, using default sensor settings!');
+{$ENDIF}
       End;
     'actions': Begin
+{$IFDEF EvalActionEnables}
         If isBinNumber() Then Begin
           privParams.Actions := uVal;
           UpdateActionLookUps(privParams.Actions);
         End;
+{$ELSE}
+        writeln('Waring: action evaluation is disabled, using default action settings!');
+{$ENDIF}
       End;
     'sexualreproduction': Begin
         If (isBool) Then Begin
@@ -461,8 +491,15 @@ Begin
 End;
 
 Procedure TParamManager.setDefaults;
+{$IFDEF EvalSensorsEnables}
 Var
   i: integer;
+{$ELSE}
+{$IFDEF EvalActionEnables}
+Var
+  i: integer;
+{$ENDIF}
+{$ENDIF}
 Begin
   privParams.sizeX := 128;
   privParams.sizeY := 128;
@@ -506,11 +543,15 @@ Begin
   privParams.deterministic := false;
   privParams.RNGSeed := 12345678;
   privParams.parameterChangeGenerationNumber := 0;
+{$IFDEF EvalSensorsEnables}
   // Default alle Sensoren an
   privParams.Sensors := 0;
   For i := 0 To integer(TSensor.NUM_SENSES) - 1 Do Begin
     privParams.Sensors := privParams.Sensors Or (1 Shl i);
   End;
+  UpdateSensorLookups(privParams.Sensors);
+{$ENDIF}
+{$IFDEF EvalActionEnables}
   // Default alle Aktoren bis auf Kill Forward an
   privParams.Actions := 0;
   For i := 0 To integer(TAction.NUM_ACTIONS) - 1 Do Begin
@@ -519,7 +560,9 @@ Begin
     End;
   End;
   UpdateActionLookUps(privParams.Actions);
-  UpdateSensorLookups(privParams.Sensors);
+{$ELSE}
+  privParams.killEnable := false;
+{$ENDIF}
 End;
 
 Procedure TParamManager.registerConfigFile(filename: String);
