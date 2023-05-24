@@ -10,6 +10,10 @@ Uses
   Interfaces, // this includes the LCL widgetset
   Classes, SysUtils, uSimulator, crt
   ;
+(*
+ * This .inc is not needed here, its only listed here to give easy and fast access to the configurable compiler switches.
+ *)
+{$I biosim_config.inc}
 
 Var
   Simulator: TSimulator;
