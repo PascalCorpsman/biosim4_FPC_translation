@@ -9,7 +9,7 @@
   => Changing the sigmoid function definitly changes results so choose wise.
 
 1. SigmoidTable (1:14min):
-  - Mathematically correct, but discrete sampled -> not ideal but the fastest !
+  - Mathematically correct, but discrete sampled -> not ideal (due to the "discret" feature it seems that there is a little "simulated" extra mutation)but the fastest !
 
 2. SigmoidXdix1plusX (1:36min):
   - a common used sigmoid function -> fast but 10% worse than SigmoidTanh
