@@ -296,7 +296,7 @@ Begin
   movementOffset := coord(trunc(probX * signumX), trunc(probY * signumY));
 
   // Move there if it's a valid location
-//  If (movementOffset.x <> 0) or (movementOffset.y <> 0) Then Begin // Skip no movement -> Das Braucht es nicht, weil das Indiv ja auf newLoc sitzt und deswegen isEmptyAt fehl schlägt !
+  //  If (movementOffset.x <> 0) or (movementOffset.y <> 0) Then Begin // Skip no movement -> Das Braucht es nicht, weil das Indiv ja auf newLoc sitzt und deswegen isEmptyAt fehl schlägt !
   newLoc := indiv^.loc + movementOffset;
   If (grid.isInBounds(newLoc) And grid.isEmptyAt(newLoc)) Then Begin
     peeps.queueForMove(indiv, newLoc);

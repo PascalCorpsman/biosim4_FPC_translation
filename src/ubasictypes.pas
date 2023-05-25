@@ -195,18 +195,48 @@ Function Sigmoid(x: Single): Single;
 Var
   y: Single;
 Begin
-  //result := tanh(x); -- Need unit math and is really slow (see: https://forum.lazarus.freepascal.org/index.php?topic=47937.50)
-  If x < -3 Then Begin
+  //result := tanh(x); -- This is really slow (see: https://forum.lazarus.freepascal.org/index.php?topic=47937.50)
+  (*
+   * If you do the analytical math, sigmoid(x) for x in [-3 .. 3]
+   * stays perfect in [-1 .. 1] as (x * (27 + x * x)) / (27 + 9 * x * x) is
+   * 1 for x = 3, and -1 for x = -3 with a maximum difference to tanh(x) at
+   * x = +- 1.56603 with arround +-2.352% (see zero crossings of derivative of:
+   * (x * (27 + x * x)) / (27 + 9 * x * x) - tanh(x) )
+   * additional sigmoid can be cropped to +-1 at x = +-3 with C0 / C1 / C2 continuity.
+   *
+   * But in a computer with all its rounding / IEEE errors it could be that
+   * result is slightly bigger / lower than wanted
+   * => as the simulation needs sigmoid(x) to be exactly in [-1 .. 1] we have 2 options here:
+   *  -Option 1: Clamp the result to [-1 .. 1]
+   *   -> this will need further 2 comparisons on each evaluation of Sigmoid
+   *      as sigmoid is called massivly in the simulator this is "too" much.
+   *  -Option 2: Clamp the range to +-2.6
+   *   -> Sigmoid(+-2.6) is +-0.999 and tanh(+-2.6) is 0.989 clamping here to 1
+   *      gives a error of 1.1% which is still better then the above worst of 2.352%.
+   *      Due to the discret evaluations we do not have C0 / C1 / C2 continuity
+   *      anyways so this could be accepted ;)
+   *)
+  If x <= -2.6 Then Begin // Orig code has had -3 here
     result := -1;
   End
   Else Begin
-    If x >= 3 Then Begin
+    If x >= 2.6 Then Begin // Orig code has had 3 here
       result := 1;
     End
     Else Begin
       //y := sqr(x);
       y := x * x; // Akkording to runtests x*x is actually faster then sqr(x)
-      result := x * (27 + y) / (27 + 9 * y);
+      result := (x * (27 + y)) / (27 + 9 * y);
+      (* -- This is "More" correct but slower than option 2 (see above)
+        If result > 1.0 Then Begin
+          result := 1.0;
+        End
+        Else Begin
+          If result < -1.0 Then Begin
+            result := -1.0;
+          End;
+        End;
+       *)
     End;
   End;
 End;
