@@ -129,30 +129,69 @@ End;
 {$IFDEF SigmoidTable}
 Var
   (*
-   * The trick is to scale in that way that the elements of the array are a power of 2
-   * but also to use the "range" of at least -3 to 3 after scaling down
-   * 0 ..  32767 -> -3.2767 to 3.2767 -> range fit, results could be better
-   * 0 ..  65535 -> -6.5535 to 6.5535 -> range fit, ok
-   * 0 .. 131071 -> -1.31071 to 1.31071 -> to less range of tanh function to be usefull
-   * 0 .. 262143 -> -2.62143 to 2.62143 -> range ok, but to much ram usage -> slowdown
+   * The bigger the buffer, the finer the sampling.
+   * To big will result in to much costs due to referencing the buffer
+   * 16-Bit seems to be the optimum (at least for the CPU the test runned of)
+   *
+   *
    *)
   TanHBuffer: Array[0..65535] Of Single;
+
+Const
+  (*
+   * has to be choosen in that way that
+   * high(TanHBuffer) / TanTableScaling is at least >= 2.6 (see SigmoidApprox
+   * for that reason)
+   *
+   * 25000 ~ high(TanHBuffer) / 2.6
+   *)
+  TanTableScaling = 25000;
 
 Procedure InitTanH();
 Var
   i: Integer;
 Begin
   For i := 0 To high(TanHBuffer) Do Begin
-    TanHBuffer[i] := tanh(i / high(TanHBuffer));
+    TanHBuffer[i] := tanh(i / TanTableScaling);
   End;
 End;
 
 Function Sigmoid(x: Single): Single;
 Var
   y: integer;
+{$IFDEF SigmoidTableInterpolated}
+  xx: Single;
+{$ENDIF}
 Begin
+{$IFDEF SigmoidTableInterpolated}
+  // -- Lookup mit Interpolation zwischen den Discreten stellen
   If x < 0 Then Begin
-    y := trunc((-x) * 10000);
+    x := -x;
+    x := x * TanTableScaling;
+    y := trunc(x);
+    If y >= high(TanHBuffer) Then Begin
+      result := -1.0;
+    End
+    Else Begin
+      xx := x - y; // [0.. 1[
+      result := -(TanHBuffer[y] * (1 - xx) + TanHBuffer[y + 1] * xx);
+    End;
+  End
+  Else Begin
+    x := x * TanTableScaling;
+    y := trunc(x);
+    If y >= high(TanHBuffer) Then Begin
+      result := 1.0;
+    End
+    Else Begin
+      xx := x - y; // [0.. 1[
+      result := (TanHBuffer[y] * (1 - xx) + TanHBuffer[y + 1] * xx);
+    End;
+  End;
+{$ELSE}
+  // -- Einfache Lookup version
+  If x < 0 Then Begin
+    y := trunc((-x) * TanTableScaling);
     If y > high(TanHBuffer) Then Begin
       result := -1.0;
     End
@@ -161,7 +200,7 @@ Begin
     End;
   End
   Else Begin
-    y := trunc(x * 10000);
+    y := trunc(x * TanTableScaling);
     If y > high(TanHBuffer) Then Begin
       result := 1.0;
     End
@@ -169,6 +208,7 @@ Begin
       result := TanHBuffer[y];
     End;
   End;
+{$ENDIF}
 End;
 {$ENDIF}
 

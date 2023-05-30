@@ -150,7 +150,6 @@ Type
     End;
   End;
 
-
 Var
   index, gene, i: Integer;
   Indiv: PIndiv;
@@ -173,7 +172,6 @@ Begin
     If (peeps[index]^.alive) Then Begin
       indiv := peeps.Individual[index];
       For gene := 0 To high(indiv^.nnet.connections) Do Begin
-
         If (indiv^.nnet.connections[gene].sourceType = SENSOR) Then Begin
           assert(indiv^.nnet.connections[gene].sourceNum < integer(NUM_SENSES));
           sensorCounts[indiv^.nnet.connections[gene].sourceNum].Value := sensorCounts[indiv^.nnet.connections[gene].sourceNum].Value + 1;

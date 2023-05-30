@@ -1,6 +1,6 @@
 (*
  * Following are some Features selectable by compiler switch
- * main reason to do so is performance, so be carefull when changing settings
+ * main reason to do so, is performance, so be carefull when changing settings
  *)
 
 (*
@@ -9,7 +9,14 @@
   => Changing the sigmoid function definitly changes results so choose wise.
 
 1. SigmoidTable (1:14min):
-  - Mathematically correct, but discrete sampled -> not ideal (due to the "discret" feature it seems that there is a little "simulated" extra mutation)but the fastest !
+  - Mathematically correct, but discrete sampled
+    -> not ideal (due to the "discret" feature it seems that there is a little
+       "simulated" extra mutation) but the fastest !
+
+1.5 SigmoidTableInterpolated (1:25min):
+  - Mathematically correct, inbeetween samples interpolated
+    -> not ideal as the interpolation is linear, but better than Table version
+       at cost of calculationtime
 
 2. SigmoidXdix1plusX (1:36min):
   - a common used sigmoid function -> fast but 10% worse than SigmoidTanh
@@ -21,9 +28,14 @@
   - Mathematically correct, but damn fucking slow
 *)
 
-{.$DEFINE SigmoidTable}
+{$DEFINE SigmoidTable}
+
+{$IFDEF SigmoidTable}
+{$DEFINE SigmoidTableInterpolated}
+{$ENDIF}
+
 {.$DEFINE SigmoidXdix1plusX}
-{$DEFINE SigmoidApprox}
+{.$DEFINE SigmoidApprox}
 {.$DEFINE SigmoidTanh}
 
 (*
