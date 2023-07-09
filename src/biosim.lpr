@@ -22,7 +22,7 @@ Var
 Begin
   (*
    * Known Bugs: - keine
-   *
+   * Version Info stored in usimulator.pas
    *)
   Randomize;
   //  RandSeed := 42; // -- Zum Fehlersuchen

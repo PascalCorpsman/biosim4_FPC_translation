@@ -379,6 +379,10 @@ Function tgwavi.Open(Const Filename: String; Width, Height: Integer;
 Begin
   result := false;
   fLastError := '';
+  // Reset all internal Buffers in case the user calls multiple time open, ADD_*, close without freeing the instance
+  foffset_count := 0;
+  If assigned(fFile) Then ffile.free;
+  ffile := Nil;
   If (Not check_fourcc(fourcc)) Then
     fLastError := fLastError + format('WARNING: given fourcc does not seem to be valid: %s' + LineEnding, [fourcc]);
   If (fps < 1) Then exit;

@@ -65,7 +65,8 @@ Var
 Begin
   sl := TStringList.Create;
   If (generation <> 0) Then Begin
-    sl.LoadFromFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
+    If FileExists(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt') Then // In case of a restart of a sim file without having any data, the file could be not existing.
+      sl.LoadFromFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
   End
   Else Begin
     sl.clear;

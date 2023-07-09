@@ -37,6 +37,14 @@ Const
   CHALLENGE_ALTRUISM_SACRIFICE = 18;
   CHALLENGE_RADIOACTIVE_BARRIER = 19;
 
+  (*
+   * History: 0.01 - Initialversion
+   *          0.02 - Fix Bug in Video creation (invalid frame count)
+   *                 Fix crash when continuing a .sim file without having the "old" data.
+   *                 ADD Rudimentary sensor / Action Checks into .sim files to prevent total garbage beeing produced (still possible if user "changes" sensor actions but not adding / deleting them)
+   *)
+  biosimVersion = '0.02';
+
 Type
 
   TLoadSim = Record
@@ -141,7 +149,7 @@ Procedure TSimulator.PrintHelp;
 Begin
   // TODO: Bessere Meldungen einbauen..
   //       12345678901234567890123456789012345678901234567890123456789012345678901234567890
-  writeln('biosim, ported by corpsman to lazarus /fpc');
+  writeln('biosim, ported by corpsman to lazarus /fpc, ver.' + biosimVersion);
   writeln('press ESC to end simulation after next full generation.');
   writeln('press V to force video rendering on the next generation simulation.');
   writeln('press I display sample genome in console.');
@@ -185,6 +193,12 @@ Begin
   sl := TStringList.Create;
   sl.add(fFilename); // 1. Die Biosim.ini merken
   sl.add(inttostr(Generation)); // Die Aktuelle Generation
+  (*
+   * Eigentlich sollte der Check über die Sensoren / actoren deutlich "Krasser" sein, aber so ist er wenigstens ein bisschen da..
+   *)
+  sl.add(inttostr(integer(NUM_SENSES)));
+  sl.add(inttostr(integer(NUM_ACTIONS)));
+  // Die Eigentlichen Gene
   sl.Add(inttostr(length(parentGenomes)));
   For i := 0 To high(parentGenomes) Do Begin
     t := inttostr(length(parentGenomes[i])) + ' ';
@@ -250,16 +264,30 @@ Begin
   If Not FileExists(Filename) Then exit;
   sl := TStringList.Create;
   sl.LoadFromFile(Filename);
-  If sl.count < 3 Then Begin // Da kann was nicht Stimmen,
+  If sl.count < 5 Then Begin // Da kann was nicht Stimmen,
+    writeln('Error, invalid .sim file: ' + Filename);
     sl.free;
     exit;
   End;
   Result := FixPathDelimeter(sl[0]);
   fLoadSim.Generation := StrToIntDef(sl[1], 0);
-  GeneCount := StrToIntDef(sl[2], 0);
+  (*
+   * Eigentlich sollte der Check über die Sensoren / actoren deutlich "Krasser" sein, aber so ist er wenigstens ein bisschen da..
+   *)
+  If integer(NUM_SENSES) <> StrToIntDef(sl[2], 0) Then Begin
+    result := '';
+    writeln('Error, invalid sensor mapping in .sim file, result will be garbage. Abort now.');
+    exit;
+  End;
+  If integer(NUM_ACTIONS) <> StrToIntDef(sl[3], 0) Then Begin
+    result := '';
+    writeln('Error, invalid action mapping in .sim file, result will be garbage. Abort now.');
+    exit;
+  End;
+  GeneCount := StrToIntDef(sl[4], 0);
   setlength(fLoadSim.parentGenomes, GeneCount);
   For i := 0 To GeneCount - 1 Do Begin
-    fLoadSim.parentGenomes[i] := StrToGenom(sl[3 + i]);
+    fLoadSim.parentGenomes[i] := StrToGenom(sl[5 + i]);
     If Not assigned(fLoadSim.parentGenomes[i]) Then Begin
       sl.free;
       result := '';
@@ -396,9 +424,12 @@ Begin
     End;
   End;
   If (trim(Filename) = '') Or (Not FileExists(Filename)) Then Begin
-    writeln('Error during loading:');
+    writeln('Error during loading first parameter:');
     WriteLn('  "' + Filename + '"');
     writeln('does not exist, is not loadable. Simulation will close now.');
+    If trim(Filename) = '' Then Begin
+      writeln('You need to pass a .ini or .sim file as first parameter!.');
+    End;
     exit;
   End;
   fFilename := Filename; // For das SaveSim
