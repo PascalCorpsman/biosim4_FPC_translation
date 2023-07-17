@@ -132,8 +132,6 @@ Var
    * The bigger the buffer, the finer the sampling.
    * To big will result in to much costs due to referencing the buffer
    * 16-Bit seems to be the optimum (at least for the CPU the test runned of)
-   *
-   *
    *)
   TanHBuffer: Array[0..65535] Of Single;
 
@@ -161,10 +159,27 @@ Var
   y: integer;
 {$IFDEF SigmoidTableInterpolated}
   xx: Single;
+  //  s: Integer;
 {$ENDIF}
 Begin
 {$IFDEF SigmoidTableInterpolated}
   // -- Lookup mit Interpolation zwischen den Discreten stellen
+  (*
+    This code has one branch less, which should in theory be faster as the CPU Pipeline will less often thrown away
+    but at least by testing with deterministic0.ini the expected results could not be reproduced.
+    The code was 1 to 2 seconds slower. So i keept the old design and only show the "test" version within the comment.
+  s := ord(x > 0.0) - ord(x < 0.0); // Calculate Sign of x
+  x := s * x; // x := abs(x);
+  x := x * TanTableScaling;
+  y := trunc(x);
+  If y < high(TanHBuffer) Then Begin
+    xx := x - y; // [0.. 1[
+    result := s * (TanHBuffer[y] * (1 - xx) + TanHBuffer[y + 1] * xx);
+  End
+  Else Begin
+    result := s;
+  End;
+  // *)
   If x < 0 Then Begin
     x := -x;
     x := x * TanTableScaling;
@@ -188,6 +203,7 @@ Begin
       result := (TanHBuffer[y] * (1 - xx) + TanHBuffer[y + 1] * xx);
     End;
   End;
+  // *)
 {$ELSE}
   // -- Einfache Lookup version
   If x < 0 Then Begin
