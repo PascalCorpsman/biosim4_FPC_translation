@@ -80,7 +80,40 @@ Begin
     Raise exception.create('Error, unable to write into folder:' + p.logDir);
     exit;
   End;
-  sl.SaveToFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
+  Try
+    (*
+     * If there is a Virus scanner on the computer, this scanner sometimes
+     * blocks the writing of the epoch-log.txt as it is written really often.
+     *
+     * Instead of crashing and loosing all data the program waits 100ms and
+     * then retries to save. If this also fail it will prompt the user for
+     * a last try. If this also fails something "harder" to solve is happening
+     * -> The program is going down and tries at least to create the .sim file.
+     *)
+    sl.SaveToFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
+  Except
+    On av: exception Do Begin
+      writeln('Error could not store: epoch-log.txt');
+      writeln('Reason: ' + av.Message);
+      writeln('Will wait and retry in 100ms..');
+      sleep(100);
+      Try
+        sl.SaveToFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
+        writeln('retry suceed, continue as normal..');
+      Except
+        writeln('Second try also failed, simulation halted, press return for last retry.');
+        readln();
+        Try
+          sl.SaveToFile(IncludeTrailingPathDelimiter(p.logDir) + 'epoch-log.txt');
+          writeln('Suceed, continue..');
+        Except
+          writeln('Failed again, trying to save what possible and going down.');
+          // Das sollte ein SaveSim triggern..
+          p.maxGenerations := generation + 1;
+        End;
+      End;
+    End;
+  End;
   sl.free;
 End;
 

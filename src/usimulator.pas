@@ -42,8 +42,9 @@ Const
    *          0.02 - Fix Bug in Video creation (invalid frame count)
    *                 Fix crash when continuing a .sim file without having the "old" data.
    *                 ADD Rudimentary sensor / Action Checks into .sim files to prevent total garbage beeing produced (still possible if user "changes" sensor actions but not adding / deleting them)
+   *          0.03 - on some systems the access to epoch log file is blocked due to a virus scanner, implemented a second try after user input!
    *)
-  biosimVersion = '0.02';
+  biosimVersion = '0.03';
 
 Type
 
