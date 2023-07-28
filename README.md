@@ -215,7 +215,7 @@ Copy the directory structure to a location of your choice.
 
 This code is known to run in the following environment:
 
-* Linux 64 / Windows 64
+* Linux 64 / Windows 64 / MAC 
 * Lazarus-IDE 2.30
 * FPC 3.2.0
 
