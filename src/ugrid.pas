@@ -56,6 +56,9 @@ Type
     Function getBarrierCenters(): TCoordArray;
   End;
 
+Var
+  grid: TGrid = Nil; // The 2D world where the creatures live
+
 Implementation
 
 Uses uparams;
@@ -338,7 +341,7 @@ Begin
         //barrierLocations[high(barrierLocations)] := center2;
 
         BarrierCoordTmp := Nil;
-        visitNeighborhood(center0, radius, @SetBarierCoord, @BarrierCoordTmp);
+        visitNeighborhood(center0, Coord(p.sizeX, p.sizeY), radius, @SetBarierCoord, @BarrierCoordTmp);
         //visitNeighborhood(center1, radius, @SetBarierCoord);
         //visitNeighborhood(center2, radius, @SetBarierCoord);
 
@@ -355,7 +358,7 @@ Begin
         BarrierCoordTmp := Nil;
         For x := 1 To numberOfLocations Do Begin
           loc := coord((p.sizeX Div 2), (x * verticalSliceSize));
-          visitNeighborhood(loc, radius, @SetBarierCoord, @BarrierCoordTmp);
+          visitNeighborhood(loc, Coord(p.sizeX, p.sizeY), radius, @SetBarierCoord, @BarrierCoordTmp);
         End;
         SetBarrierCoordTmp();
       End;

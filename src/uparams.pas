@@ -106,9 +106,10 @@ Type
     Constructor Create();
     Destructor Destroy(); override;
     //    const Params &getParamRef() const { return privParams; } // for public read-only access
-    Procedure setDefaults();
-    Procedure registerConfigFile(filename: String);
-    Procedure updateFromConfigFile(generationNumber: unsigned);
+    Procedure setDefaults(DefaultChallenge: Integer);
+    Procedure registerConfigFile(const filename: String);
+    procedure updateFromConfigFile(generationNumber: unsigned;
+      ReloadConfigini: Boolean);
     Procedure checkParameters();
   End;
 
@@ -118,7 +119,9 @@ Var
 
 Implementation
 
-Uses uSimulator, ubasicTypes
+Uses
+  //uSimulator,
+  ubasicTypes
 {$IFDEF EvalSensorsEnables}
   , usensoractions
 {$ELSE}
@@ -490,7 +493,7 @@ Begin
   configFileContent := Nil;
 End;
 
-Procedure TParamManager.setDefaults;
+Procedure TParamManager.setDefaults(DefaultChallenge: Integer);
 {$IFDEF EvalSensorsEnables}
 Var
   i: integer;
@@ -503,7 +506,7 @@ Var
 Begin
   privParams.sizeX := 128;
   privParams.sizeY := 128;
-  privParams.challenge := CHALLENGE_CORNER_WEIGHTED;
+  privParams.challenge := DefaultChallenge;
 
   privParams.genomeInitialLengthMin := 24;
   privParams.genomeInitialLengthMax := 24;
@@ -565,7 +568,7 @@ Begin
 {$ENDIF}
 End;
 
-Procedure TParamManager.registerConfigFile(filename: String);
+Procedure TParamManager.registerConfigFile(const filename: String);
 Begin
   configFilename := filename;
   If assigned(configFileContent) Then configFileContent.free;
@@ -577,7 +580,7 @@ Begin
   configFileContent.LoadFromFile(configFilename);
 End;
 
-Procedure TParamManager.updateFromConfigFile(generationNumber: unsigned);
+Procedure TParamManager.updateFromConfigFile(generationNumber: unsigned; ReloadConfigini: Boolean);
 
 Type
   TLine = Record

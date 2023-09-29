@@ -93,9 +93,12 @@ Type
     Procedure Free;
   End;
 
+Var
+  ImageWriter: TImageWriterThread = Nil; // This is for generating the movies
+
 Implementation
 
-Uses uparams, uindiv, uSimulator, ugenome, crt;
+Uses uparams, uindiv, ugenome, crt, upeeps, ugrid;
 
 // Pushes a new image frame onto .imageList.
 

@@ -11,6 +11,33 @@ Uses
 {$I c_types.inc}
 {$I biosim_config.inc}
 
+Const
+  // Some of the survival challenges to try. Some are interesting, some
+  // not so much. Fine-tune the challenges by tweaking the corresponding code
+  // in survival-criteria.cpp.
+  CHALLENGE_CIRCLE = 0;
+  CHALLENGE_RIGHT_HALF = 1;
+  CHALLENGE_RIGHT_QUARTER = 2;
+  CHALLENGE_STRING = 3;
+  CHALLENGE_CENTER_WEIGHTED = 4;
+  CHALLENGE_CENTER_UNWEIGHTED = 40;
+  CHALLENGE_CORNER = 5;
+  CHALLENGE_CORNER_WEIGHTED = 6;
+  CHALLENGE_MIGRATE_DISTANCE = 7;
+  CHALLENGE_CENTER_SPARSE = 8;
+  CHALLENGE_LEFT_EIGHTH = 9;
+  CHALLENGE_RADIOACTIVE_WALLS = 10;
+  CHALLENGE_AGAINST_ANY_WALL = 11;
+  CHALLENGE_TOUCH_ANY_WALL = 12;
+  CHALLENGE_EAST_WEST_EIGHTHS = 13;
+  CHALLENGE_NEAR_BARRIER = 14;
+  CHALLENGE_PAIRS = 15;
+  CHALLENGE_LOCATION_SEQUENCE = 16;
+  CHALLENGE_ALTRUISM = 17;
+  CHALLENGE_ALTRUISM_SACRIFICE = 18;
+  CHALLENGE_RADIOACTIVE_BARRIER = 19;
+
+
 (*
 Basic types used throughout the project:
 
@@ -90,7 +117,7 @@ Function asNormalizedCoord(Const Dir: TCompass): TCoord; // (-1, -0, 1, -1, 0, 1
 
 Procedure Nop();
 
-Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
+Procedure visitNeighborhood(Const loc, dim: TCoord; Const radius: float; Const f: TCoordProcedure; UserData: Pointer);
 
 Function Coord(x, y: integer): TCoord;
 
@@ -112,10 +139,15 @@ Function Sigmoid(x: Single): Single Inline;
 
 Implementation
 
-Uses uparams
-{$IFDEF SigmoidTanh}, math{$ENDIF}
-{$IFDEF SigmoidTable}, math{$ENDIF}
-  ;
+{$IFDEF SigmoidTanh}
+Uses
+  math;
+{$ENDIF}
+
+{$IFDEF SigmoidTable}
+Uses
+  math;
+{$ENDIF}
 
 {$IFDEF SigmoidTanh}
 
@@ -418,7 +450,7 @@ End;
 // some location. This function feeds each valid (in-bounds) location in the specified
 // neighborhood to the specified function. Locations include self (center of the neighborhood).
 
-Procedure visitNeighborhood(loc: TCoord; radius: float; f: TCoordProcedure; UserData: Pointer);
+Procedure visitNeighborhood(Const loc, dim: TCoord; Const radius: float; Const f: TCoordProcedure; UserData: Pointer);
 Var
   ii, i, j, x, y: integer;
 Begin
@@ -428,7 +460,7 @@ Begin
       If ii + sqr(j) <= sqr(radius) Then Begin
         x := loc.x + i;
         y := loc.y + j;
-        If (x >= 0) And (x < p.sizeX) And (y >= 0) And (y < p.sizeY) Then Begin
+        If (x >= 0) And (x < dim.x) And (y >= 0) And (y < Dim.Y) Then Begin
           f(coord(x, y), UserData);
         End;
       End;

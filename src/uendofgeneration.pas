@@ -15,7 +15,7 @@ Procedure endOfGeneration(generation: unsigned; AdditionalVideoFrame: Boolean);
 
 Implementation
 
-Uses uparams, uSimulator, uImageWriter, usimplechart
+Uses uparams, uImageWriter, usimplechart
 {$IFDEF EvalActionEnables}
   , usensoractions
 {$ENDIF}

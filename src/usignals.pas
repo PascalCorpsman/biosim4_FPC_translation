@@ -38,9 +38,12 @@ Type
     Procedure fade(layerNum: unsigned);
   End;
 
+Var
+  signals: TSignals = Nil; // A 2D array of pheromones that overlay the world grid
+
 Implementation
 
-Uses uparams, uSimulator, Math, uomp;
+Uses uparams, Math, uomp;
 
 { TSignals }
 
@@ -127,7 +130,7 @@ Begin
 
   EnterCodePoint(cpSignals_increment);
   Try
-    visitNeighborhood(loc, radius, @visitNeighborhoodCallback, @DummyLayer);
+    visitNeighborhood(loc, Coord(p.sizeX, p.sizeY), radius, @visitNeighborhoodCallback, @DummyLayer);
     If (signals.fdata[layerNum][loc.x][loc.y] < SIGNAL_MAX) Then Begin
       signals.fdata[layerNum][loc.x][loc.y] := min(SIGNAL_MAX, signals.fdata[layerNum][loc.x][loc.y] + centerIncreaseAmount);
     End;

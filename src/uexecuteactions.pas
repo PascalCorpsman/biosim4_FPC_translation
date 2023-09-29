@@ -13,7 +13,7 @@ Procedure executeActions(Const randomUint: RandomUintGenerator; Indiv: Pindiv; a
 
 Implementation
 
-Uses math, uparams, uSimulator;
+Uses math, uparams, usignals, ugrid, upeeps;
 
 // Given a factor in the range 0.0..1.0, return a bool with the
 // probability of it being true proportional to factor. For example, if

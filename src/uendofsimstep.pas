@@ -13,7 +13,7 @@ Procedure endOfSimStep(Const randomUint: RandomUintGenerator; simStep, generatio
 
 Implementation
 
-Uses uparams, uSimulator, uImageWriter, ubasicTypes;
+Uses uparams, uImageWriter, ubasicTypes, usignals, upeeps, ugrid;
 
 (*
 At the end of each sim step, this function is called in single-thread

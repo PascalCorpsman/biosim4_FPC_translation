@@ -11,32 +11,8 @@ Uses
 
 {$I c_types.inc}
 {$INTERFACES corba} // Für TImageWriter, so kann man Interfaces ohne den .net Gruscht nutzen
-Const
-  // Some of the survival challenges to try. Some are interesting, some
-  // not so much. Fine-tune the challenges by tweaking the corresponding code
-  // in survival-criteria.cpp.
-  CHALLENGE_CIRCLE = 0;
-  CHALLENGE_RIGHT_HALF = 1;
-  CHALLENGE_RIGHT_QUARTER = 2;
-  CHALLENGE_STRING = 3;
-  CHALLENGE_CENTER_WEIGHTED = 4;
-  CHALLENGE_CENTER_UNWEIGHTED = 40;
-  CHALLENGE_CORNER = 5;
-  CHALLENGE_CORNER_WEIGHTED = 6;
-  CHALLENGE_MIGRATE_DISTANCE = 7;
-  CHALLENGE_CENTER_SPARSE = 8;
-  CHALLENGE_LEFT_EIGHTH = 9;
-  CHALLENGE_RADIOACTIVE_WALLS = 10;
-  CHALLENGE_AGAINST_ANY_WALL = 11;
-  CHALLENGE_TOUCH_ANY_WALL = 12;
-  CHALLENGE_EAST_WEST_EIGHTHS = 13;
-  CHALLENGE_NEAR_BARRIER = 14;
-  CHALLENGE_PAIRS = 15;
-  CHALLENGE_LOCATION_SEQUENCE = 16;
-  CHALLENGE_ALTRUISM = 17;
-  CHALLENGE_ALTRUISM_SACRIFICE = 18;
-  CHALLENGE_RADIOACTIVE_BARRIER = 19;
 
+Const
   (*
    * History: 0.01 - Initialversion
    *          0.02 - Fix Bug in Video creation (invalid frame count)
@@ -76,16 +52,12 @@ Type
     Property Crashed: Boolean write SetCrashed;
     Constructor Create();
     Destructor Destroy(); override;
-    Class Procedure SaveSim(Generation: integer; Const parentGenomes: TGenomeArray); // This container will hold the genomes of the survivors
+    Procedure SaveSim(Generation: integer; Const parentGenomes: TGenomeArray); // This container will hold the genomes of the survivors
 
     Procedure Simulator(Filename: String); // Init Procedure
   End;
 
 Var
-  grid: TGrid = Nil; // The 2D world where the creatures live
-  signals: TSignals = Nil; // A 2D array of pheromones that overlay the world grid
-  peeps: TPeeps = Nil; // The container of all the individuals in the population
-  ImageWriter: TImageWriterThread = Nil; // This is for generating the movies
   ReloadConfigini: Boolean = false; // If true, the next generation the config will will be reloaded from disk
 
 Procedure simStepOneIndiv(Const randomUint: RandomUintGenerator; Indiv: Pindiv; simStep: unsigned); // Für die weiteren Sim Threads
@@ -173,7 +145,7 @@ Begin
   End;
 End;
 
-Class Procedure TSimulator.SaveSim(Generation: integer;
+Procedure TSimulator.SaveSim(Generation: integer;
   Const parentGenomes: TGenomeArray);
 Var
   SimFilename, t: String; // Ziel Dateiname !
@@ -437,9 +409,9 @@ Begin
 
   // Simulator parameters are available read-only through the global
   // variable p after paramManager is initialized.
-  fparamManager.setDefaults();
+  fparamManager.setDefaults(CHALLENGE_CORNER_WEIGHTED);
   fparamManager.registerConfigFile(Filename);
-  fparamManager.updateFromConfigFile(0);
+  fparamManager.updateFromConfigFile(0, ReloadConfigini);
   fparamManager.checkParameters(); // check and report any problems
 
   If p.numThreads > 1 Then Begin
@@ -454,7 +426,7 @@ Begin
   // Init all random number generators for all threads
   setlength(fThreadRandomGenerators, p.numThreads);
   For i := 0 To p.numThreads - 1 Do Begin
-    fThreadRandomGenerators[i].initialize(i);
+    fThreadRandomGenerators[i].initialize(i, p.deterministic, p.RNGSeed);
   End;
   AdditionalVideoFrame := false;
   ShowGenomeInfo := false;
@@ -478,7 +450,7 @@ Begin
     generation := fLoadSim.Generation + 1;
     // Nachladen aller "Konfigurationen" der Bisherigen Generationen
     For i := 0 To fLoadSim.Generation Do Begin
-      fparamManager.updateFromConfigFile(i);
+      fparamManager.updateFromConfigFile(i, ReloadConfigini);
     End;
 
     If length(fLoadSim.parentGenomes) = 0 Then Begin
@@ -592,7 +564,7 @@ Begin
      * "Barrier" korrekt in SpawnNewGeneration gesetzt werden, sonst kommt
      * das seine Gen zu spät !
      *)
-    fparamManager.updateFromConfigFile(generation + 1);
+    fparamManager.updateFromConfigFile(generation + 1, ReloadConfigini);
 
     (*
      * Das Muss vor spawnNewGeneration gemacht werden, weil dort auch das
@@ -609,11 +581,11 @@ Begin
       End;
     End;
 
-    numberSurvivors := spawnNewGeneration(fThreadRandomGenerators[0], generation, murderCount);
+    numberSurvivors := spawnNewGeneration(fThreadRandomGenerators[0], generation, murderCount, @SaveSim);
     endOfGeneration(generation, AdditionalVideoFrameSaver); // Das muss nach der spawnNewGeneration gemacht werden, da diese ja erst die Epochlog erstellt !
 
     If ((numberSurvivors > 0) And (generation Mod p.genomeAnalysisStride = 0)) Or ShowGenomeInfo Then Begin
-      displaySampleGenomes(p.displaySampleGenomes);
+      displaySampleGenomes(p.displaySampleGenomes, peeps);
     End;
     ShowGenomeInfo := false;
 

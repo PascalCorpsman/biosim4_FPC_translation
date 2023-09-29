@@ -9,6 +9,9 @@ Uses
 
 {$I c_types.inc}
 
+Type
+  TSaveSimCallback = Procedure(Generation: integer; Const parentGenomes: TGenomeArray) Of Object;
+
 Var
   LastSpawnTime: uint64 = 0; // Zum Aussmessen der Dauer der Berechnung einer Generation
 
@@ -28,11 +31,11 @@ Procedure initializeNewGeneration(Const randomUint: RandomUintGenerator; Var par
 // nets instead of rebuilding them.
 // Returns number of survivor-reproducers.
 // Must be called in single-thread mode between generations.
-Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; SaveCallback: TSaveSimCallback): unsigned;
 
 Implementation
 
-Uses uSimulator, uparams, uindiv, uanalysis, ubasicTypes, math;
+Uses uparams, uindiv, uanalysis, ubasicTypes, math, usignals, ugrid, upeeps;
 
 Type
   TBoolPair = Record
@@ -124,7 +127,7 @@ Begin
         End;
 
         occupiedCount := 0;
-        visitNeighborhood(indiv^.loc, radius, @VisitOccupied, @occupiedCount);
+        visitNeighborhood(indiv^.loc, Coord(p.sizeX, p.sizeY), radius, @VisitOccupied, @occupiedCount);
         If (occupiedCount >= minNeighbors_CHALLENGE_STRING) And (occupiedCount <= maxNeighbors_CHALLENGE_STRING) Then Begin
           result := Pair(true, 1);
           exit;
@@ -171,7 +174,7 @@ Begin
         distance := offset.length();
         If (distance <= outerRadius) Then Begin
           occupiedCount := 0;
-          visitNeighborhood(indiv^.loc, innerRadius, @VisitOccupied, @occupiedCount);
+          visitNeighborhood(indiv^.loc, Coord(p.sizeX, p.sizeY), innerRadius, @VisitOccupied, @occupiedCount);
           If (occupiedCount >= minNeighbors_CHALLENGE_CENTER_SPARSE) And (occupiedCount <= maxNeighbors_CHALLENGE_CENTER_SPARSE) Then Begin
             result := pair(true, 1.0);
             exit;
@@ -468,7 +471,7 @@ Begin
   End;
 End;
 
-Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned): unsigned;
+Function spawnNewGeneration(Const randomUint: RandomUintGenerator; generation, murderCount: unsigned; SaveCallback: TSaveSimCallback): unsigned;
 Const
   altruismFactor = 10; // the saved:sacrificed ratio
   generationToApplyKinship = 10;
@@ -607,7 +610,7 @@ Begin
     ', genetic diversity = ' + format('%d%', [round(gendiversity * 100)]) +
     tmp
     );
-  appendEpochLog(randomUint, generation, length(parentGenomes), murderCount, gendiversity);
+  appendEpochLog(randomUint, generation, length(parentGenomes), murderCount, gendiversity, peeps);
   // displaySignalUse(); // for debugging only
 
   // Now we have a container of zero or more parents' genomes
@@ -623,7 +626,7 @@ Begin
   End;
   (* Store Simulation settings for continueing on a later time :-) *)
   If generation = p.maxGenerations - 1 Then Begin
-    TSimulator.SaveSim(generation, parentGenomes);
+    SaveCallback(generation, parentGenomes);
   End;
 
   result := length(parentGenomes);

@@ -83,7 +83,7 @@ Type
 
 Implementation
 
-Uses uSimulator, uparams, Math, usignals;
+Uses uparams, Math, usignals, ugrid, upeeps;
 
 // Returns the number of locations to the next agent in the specified
 // direction, not including loc. If the probe encounters a boundary or a
@@ -187,7 +187,7 @@ Begin
 
   Data.popcountloc := loc;
 
-  visitNeighborhood(loc, p.populationSensorRadius, @CountPopulationDensity, @Data);
+  visitNeighborhood(loc, Coord(p.sizeX, p.sizeY), p.populationSensorRadius, @CountPopulationDensity, @Data);
 
   maxSumMag := 6.0 * p.populationSensorRadius;
   assert((Data.sum >= -maxSumMag) And (Data.sum <= maxSumMag));
@@ -272,7 +272,7 @@ Begin
 
   Data.alayerNum := layerNum;
 
-  visitNeighborhood(center, p.signalSensorRadius, @CountSignalDensity, @Data);
+  visitNeighborhood(center, Coord(p.sizeX, p.sizeY), p.signalSensorRadius, @CountSignalDensity, @Data);
   maxSum := Data.countLocs * SIGNAL_MAX;
   sensorVal := Data.sumi64 / maxSum; // convert to 0.0..1.0
 
@@ -327,7 +327,7 @@ Begin
 
   data.popcountloc := loc;
   data.alayerNum := layerNum;
-  visitNeighborhood(loc, p.signalSensorRadius, @CountSensorRadius, @data);
+  visitNeighborhood(loc, Coord(p.sizeX, p.sizeY), p.signalSensorRadius, @CountSensorRadius, @data);
 
   maxSumMag := 6.0 * p.signalSensorRadius * SIGNAL_MAX;
   assert((data.sum >= -maxSumMag) And (data.sum <= maxSumMag));
@@ -1006,7 +1006,7 @@ Begin
           // 0..100% to sensor range
           FCountPopulation.countLocs := 0;
           FCountPopulation.countOccupied := 0;
-          visitNeighborhood(loc, p.populationSensorRadius, @CountPopulation, @FCountPopulation);
+          visitNeighborhood(loc, Coord(p.sizeX, p.sizeY), p.populationSensorRadius, @CountPopulation, @FCountPopulation);
           sensorVal := FCountPopulation.countOccupied / FCountPopulation.countLocs;
         End;
       TSensor.POPULATION_FWD: Begin

@@ -10,18 +10,47 @@ Unit uanalysis;
 Interface
 
 Uses
-  Classes, urandom, SysUtils;
+  Classes, urandom, SysUtils, usignals, upeeps;
 
 {$I c_types.inc}
 
-Procedure displaySignalUse();
-Procedure displaySampleGenomes(count: unsigned);
-Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
+Procedure displaySignalUse(Const signals: TSignals);
+Procedure displaySampleGenomes(count: unsigned; Const Peeps: TPeeps);
+Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float; Const peeps: TPeeps);
+Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
 
 Implementation
 
 Uses
-  uparams, uSimulator, ugenome, usensoractions, ubasicTypes, uindiv;
+  math, uparams, ugenome, usensoractions, ubasicTypes, uindiv;
+
+Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
+Var
+  count: unsigned;
+  numSamples: integer;
+  similaritySum: Float;
+  index0, index1: unsigned;
+Begin
+  If (p.population < 2) Then Begin
+    result := 0.0;
+    exit;
+  End;
+
+  // count limits the number of genomes sampled for performance reasons.
+  count := min(1000, p.population);
+  numSamples := 0;
+  similaritySum := 0.0;
+
+  While count > 0 Do Begin
+    index0 := randomUint.RndRange(1, p.population - 1); // skip first and last elements
+    index1 := index0 + 1;
+    similaritySum := similaritySum + genomeSimilarity(peeps[index0]^.genome, peeps[index1]^.genome);
+    count := Count - 1;
+    numSamples := numSamples + 1;
+  End;
+
+  result := 1.0 - (similaritySum / numSamples);
+End;
 
 (*
 Example format:
@@ -40,7 +69,7 @@ Example format:
     Neuron y ...
 *)
 
-Function averageGenomeLength(Const randomUint: RandomUintGenerator): Float;
+Function averageGenomeLength(Const randomUint: RandomUintGenerator; Const peeps: TPeeps): Float;
 Var
   count, numberSamples: unsigned;
   sum: uint32_t;
@@ -59,7 +88,7 @@ End;
 // The epoch log contains one line per generation in a format that can be
 // fed to graphlog.gp to produce a chart of the simulation progress.
 
-Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float);
+Procedure appendEpochLog(Const randomUint: RandomUintGenerator; generation, numberSurvivors, murderCount: unsigned; aGeneticDiversity: Float; Const peeps: TPeeps);
 Var
   sl: TStringlist;
 Begin
@@ -74,7 +103,7 @@ Begin
     sl.add('Generation;Number of survivors;genetic diversity;average genome length;murder count');
   End;
   FormatSettings.DecimalSeparator := '.';
-  sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength(randomUint)) + ';' + inttostr(murderCount));
+  sl.add(inttostr(generation) + ';' + inttostr(numberSurvivors) + ';' + floattostr(aGeneticDiversity) + ';' + floattostr(averageGenomeLength(randomUint, peeps)) + ';' + inttostr(murderCount));
   If Not ForceDirectories(ExcludeTrailingPathDelimiter(p.logDir)) Then Begin
     sl.free;
     Raise exception.create('Error, unable to write into folder:' + p.logDir);
@@ -119,7 +148,7 @@ End;
 
 // Print stats about pheromone usage.
 
-Procedure displaySignalUse();
+Procedure displaySignalUse(Const signals: TSignals);
 Var
   sum: uint64;
   magnitude, count: unsigned;
@@ -149,7 +178,7 @@ End;
 // each kind of action neuron over the entire population. This helps us to
 // see which sensors and actions are most useful for survival.
 
-Procedure displaySensorActionReferenceCounts();
+Procedure displaySensorActionReferenceCounts(Const Peeps: TPeeps);
 Type
   TindexPair = Record
     index, Value: integer;
@@ -234,7 +263,7 @@ Begin
   End;
 End;
 
-Procedure displaySampleGenomes(count: unsigned);
+Procedure displaySampleGenomes(count: unsigned; Const Peeps: TPeeps);
 Var
   index: unsigned;
 Begin
@@ -253,7 +282,7 @@ Begin
     End;
   End;
 
-  displaySensorActionReferenceCounts();
+  displaySensorActionReferenceCounts(Peeps);
 End;
 
 End.

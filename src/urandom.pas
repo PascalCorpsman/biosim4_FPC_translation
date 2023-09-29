@@ -26,14 +26,13 @@ Type
     // for the Jenkins algorithm
     a, b, c, d: uint32;
   public
-    Procedure initialize(InitSeedOffset: integer); // must be called to seed the RNG
+    Procedure initialize(InitSeedOffset: integer; deterministic: Boolean;
+      RNGSeed: unsigned); // must be called to seed the RNG
     Function Rnd(): uint32_t;
     Function RndRange(min, max: unsigned): unsigned;
   End;
 
 Implementation
-
-Uses uparams;
 
 // This file provides a random number generator (RNG) for the main thread
 // and child threads. The global-scoped RNG instance named randomUint is declared
@@ -52,19 +51,19 @@ Uses uparams;
 // the Jenkins algorithms. The member function operator() determines
 // which algorithm is actually used.
 
-Procedure RandomUintGenerator.initialize(InitSeedOffset: integer);
+Procedure RandomUintGenerator.initialize(InitSeedOffset: integer; deterministic: Boolean; RNGSeed: unsigned);
 Begin
 
-  If (p.deterministic) Then Begin
+  If (deterministic) Then Begin
     // Initialize Marsaglia. Overflow wrap-around is ok. We just want
     // the four parameters to be unrelated. In the extremely unlikely
     // event that a coefficient is zero, we'll force it to an arbitrary
     // non-zero value. Each thread uses a different seed, yet
     // deterministic per-thread.
-    rngx := p.RNGSeed + 123456789 + InitSeedOffset;
-    rngy := p.RNGSeed + 362436000 + InitSeedOffset;
-    rngz := p.RNGSeed + 521288629 + InitSeedOffset;
-    rngc := p.RNGSeed + 7654321 + InitSeedOffset;
+    rngx := RNGSeed + 123456789 + InitSeedOffset;
+    rngy := RNGSeed + 362436000 + InitSeedOffset;
+    rngz := RNGSeed + 521288629 + InitSeedOffset;
+    rngc := RNGSeed + 7654321 + InitSeedOffset;
     If rngx = 0 Then rngx := 123456789;
     If rngy = 0 Then rngy := 123456789;
     If rngz = 0 Then rngz := 123456789;
@@ -72,9 +71,9 @@ Begin
 
     // Initialize Jenkins determinstically per-thread:
     a := $F1EA5EED;
-    b := p.RNGSeed + InitSeedOffset;
-    c := p.RNGSeed + InitSeedOffset;
-    d := p.RNGSeed + InitSeedOffset;
+    b := RNGSeed + InitSeedOffset;
+    c := RNGSeed + InitSeedOffset;
+    d := RNGSeed + InitSeedOffset;
     If (b = 0) Then Begin
       b := d + 123456789;
       c := d + 123456789;

@@ -56,9 +56,12 @@ Type
     Function getIndiv(loc: TCoord): PIndiv;
   End;
 
+Var
+  peeps: TPeeps = Nil; // The container of all the individuals in the population
+
 Implementation
 
-Uses usimulator, uomp;
+Uses uomp, ugrid;
 
 Function TPeeps.getIndividual(index: uint16_t): PIndiv;
 Begin

@@ -90,8 +90,6 @@ Function makeRandomGenome(Const randomUint: RandomUintGenerator): TGenome;
 
 Function generateChildGenome(Const randomUint: RandomUintGenerator; Var parentGenomes: TGenomeArray): TGenome;
 
-Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
-
 Function genomeSimilarity(Const g1, g2: TGenome): Float;
 Function GetCompressedGene(Const gene: TGene): uint32_t; // Komprimiert die TGene Datenstruktur in 32-Bit (damit die dann "Packed" ist).
 Function GetGeneFromUInt(value: uint32_t): TGene; // Umkehrfunktion zu GetCompressedGene
@@ -100,7 +98,7 @@ Operator = (g1, g2: TGene): Boolean; // True if genes are identical
 
 Implementation
 
-Uses uparams, Math, upeeps, uSimulator;
+Uses uparams, Math;
 
 Operator = (g1, g2: TGene): Boolean;
 Begin
@@ -405,34 +403,6 @@ Begin
   assert(length(genome) <= p.genomeMaxLength);
 
   result := genome;
-End;
-
-Function geneticDiversity(Const randomUint: RandomUintGenerator): float;
-Var
-  count: unsigned;
-  numSamples: integer;
-  similaritySum: Float;
-  index0, index1: unsigned;
-Begin
-  If (p.population < 2) Then Begin
-    result := 0.0;
-    exit;
-  End;
-
-  // count limits the number of genomes sampled for performance reasons.
-  count := min(1000, p.population);
-  numSamples := 0;
-  similaritySum := 0.0;
-
-  While count > 0 Do Begin
-    index0 := randomUint.RndRange(1, p.population - 1); // skip first and last elements
-    index1 := index0 + 1;
-    similaritySum := similaritySum + genomeSimilarity(peeps[index0]^.genome, peeps[index1]^.genome);
-    count := Count - 1;
-    numSamples := numSamples + 1;
-  End;
-
-  result := 1.0 - (similaritySum / numSamples);
 End;
 
 // Approximate gene match: Has to match same source, sink, with similar weight
