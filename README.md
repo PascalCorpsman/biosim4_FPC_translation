@@ -2,7 +2,7 @@
 
 ## Why this fork?
 
-At the starting this fork was a 1:1 crosscompilation from the origin C++ version to FreePascal 
+At the starting this fork was a 1:1 crosscompilation from the origin C++ version to Free Pascal 
 (using the Lazarus IDE). Beside the advantage of having a crossplattform codebase i mainly did
 this for the purpose of learning C++ Code and beeing able to adjust the simulation for my own 
 needs in my most favourite programming language.
